@@ -1,6 +1,6 @@
 <?php return [
     'slang' => 'Мультимова',
-    'slang_icon' => 'fad fa-language',
+    'slang_icon' => 'fa fa-globe-europe',
     'slang_desc' => 'Управління налаштуваннями мов сайту',
     'description' => '<b>sLang</b> дозволяє виконувати переклад статичних текстів (спливаючих повідомлень, назв кнопок) та контенту по всьому сайту.',
     'dictionary' => 'Словник',

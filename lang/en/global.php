@@ -1,6 +1,6 @@
 <?php return [
     'slang' => 'Multilanguage',
-    'slang_icon' => 'fad fa-language',
+    'slang_icon' => 'fa fa-globe-europe',
     'slang_desc' => 'Managing site language settings',
     'description' => '<b>sLang</b> allows you to translate static texts (pop-up messages, button names) as well as content throughout the site.',
     'dictionary' => 'Dictionary',

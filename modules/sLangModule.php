@@ -3,18 +3,15 @@
  *	Language management module
  */
 
-if(!defined('IN_MANAGER_MODE') || IN_MANAGER_MODE != 'true') die("No access");
+use Illuminate\Support\Str;
+use Seiger\sLang\Controllers\sLangController;
 
-require_once MODX_BASE_PATH . 'assets/modules/seigerlang/sLang.class.php';
-require_once MODX_BASE_PATH . 'assets/modules/seigerlang/models/sLangTranslate.php';
+if (!defined('IN_MANAGER_MODE') || IN_MANAGER_MODE != 'true') die("No access");
 
-$sLang  = new sLang();
-$data['get']    = isset($_REQUEST['get']) ? $_REQUEST['get'] : "translates";
-$data['sLang']  = $sLang;
-$data['url']    = $sLang->url;
-$tbl_system_settings  = evo()->getDatabase()->getFullTableName('system_settings');
-$tbl_site_content     = evo()->getDatabase()->getFullTableName('site_content');
-$tbl_a_lang           = evo()->getDatabase()->getFullTableName('s_lang');
+$sLangController = new sLangController();
+$data['get'] = request()->get ?? "translates";
+$data['sLangController']  = $sLangController;
+$data['url'] = $sLangController->url;
 
 switch ($data['get']) {
     default:
@@ -60,4 +57,4 @@ switch ($data['get']) {
         break;
 }
 
-$sLang->view('index', $data);
+echo $sLangController->view('index', $data);

@@ -2,8 +2,7 @@
 
 @section('content')
     <div class="notifier"><div class="notifier-txt"></div></div>
-    <h1><i class="fa fa-globe-americas"></i> {{$_lang['slang_title']}}</h1>
-    <p style="margin-left:15px;">{!!$_lang['slang_description']!!}</p>
+    <h1><i class="@lang('sLang::global.slang_icon')" data-tooltip="@lang('sLang::global.description')"></i> @lang('sLang::global.slang_desc')</h1>
 
     <div class="sectionBody">
         <div class="tab-pane" id="resourcesPane">
@@ -13,7 +12,7 @@
                 <h2 class="tab"><a href="{!!$url!!}&get=translates"><span><i class="fa fa-language"></i> {{$_lang['slang_dictionary']}}</span></a></h2>
                 <script>tpResources.addTabPage(document.getElementById('translatesTab'));</script>
                 @if($get == 'translates')
-                    @include('translatesTab')
+                    @include('sLang::translatesTab')
                 @endif
             </div>
 
@@ -21,7 +20,7 @@
                 <h2 class="tab"><a href="{!!$url!!}&get=settings"><span><i class="fa fa-cogs"></i> {{$_lang['slang_settings']}}</span></a></h2>
                 <script>tpResources.addTabPage(document.getElementById('settingsTab'));</script>
                 @if($get == 'settings')
-                    @include('settingsTab')
+                    @include('sLang::settingsTab')
                 @endif
             </div>
 

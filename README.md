@@ -1,4 +1,4 @@
-# sGallery for Evolution CMS 3
+# sLang for Evolution CMS 3
 ![sLang](https://user-images.githubusercontent.com/12029039/167660172-9596574a-47ae-4304-a389-814bfa4c9e87.png)
 [![Latest Stable Version](https://img.shields.io/packagist/v/seiger/slang?label=version)](https://packagist.org/packages/seiger/slang)
 [![CMS Evolution](https://img.shields.io/badge/CMS-Evolution-brightgreen.svg)](https://github.com/evolution-cms/evolution)
@@ -33,7 +33,7 @@ php artisan package:installrequire seiger/slang "*"
 ```
 
 ```console
-php artisan vendor:publish --provider="Seiger\sGallery\sGalleryServiceProvider"
+php artisan vendor:publish --provider="Seiger\sLang\sLangServiceProvider"
 ```
 
 Run make DB structure with command:
