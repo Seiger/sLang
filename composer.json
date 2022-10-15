@@ -1,8 +1,8 @@
 {
     "name": "seiger/slang",
     "license": "GPL-3.0",
-    "type": "EvolutionCMS-Plugin",
-    "description": "Evocms package for work with Multi lang management for Resource and modules in Evolution CMS",
+    "type": "EvolutionCMS-Module",
+    "description": "Evocms package for work with Multi lang management for Resource and modules in Evolution CMS. Seiger Lang multi language Management Module for Evolution CMS admin panel. The work of the module is based on the use of the standard Laravel functionality for multilingualism.",
     "keywords": ["evocms", "evolution-cms", "lang", "language", "translation-management"],
     "authors": [
         {
