@@ -1,4 +1,4 @@
-<?php
+<?php namespace Seiger\sLang;
 /**
  * Class SeigerLang - Seiger Lang Management Module for Evolution CMS admin panel.
  */
@@ -32,7 +32,7 @@ class sLang
         $this->tblSiteContent = evo()->getDatabase()->getFullTableName($this->tblSiteContent);
         $this->tblLang = evo()->getDatabase()->getFullTableName($this->tblLang);
 
-        Paginator::defaultView('pagination');
+        Paginator::defaultView('sLang::partials.pagination');
     }
 
     /**
@@ -136,28 +136,6 @@ class sLang
             $langFront = explode(',', $sLangFront);
         }
         return $langFront;
-    }
-
-    /**
-     * List of DB translations
-     *
-     * @return array
-     */
-    public function dictionary()
-    {
-        if (request()->has('search')) {
-            $where[] = '`key` LIKE \'%'.request()->search.'%\'';
-            foreach ($this->langConfig() as $item) {
-                $where[] = '`'.$item.'` LIKE \'%'.request()->search.'%\'';
-            }
-            $translates = sLangTranslate::whereRaw(implode(' OR ', $where))->orderByDesc('tid')->paginate(17);
-            $translates->withPath($this->url.'&search='.request()->search);
-        } else {
-            $translates = sLangTranslate::orderByDesc('tid')->paginate(17);
-            $translates->withPath($this->url);
-        }
-
-        return $translates;
     }
 
     /**

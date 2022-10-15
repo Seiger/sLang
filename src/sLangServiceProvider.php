@@ -18,17 +18,17 @@ class sLangServiceProvider extends ServiceProvider
             include(__DIR__.'/Http/routes.php');
 
             // Migration for create tables
-            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+            $this->loadMigrationsFrom(dirname(__DIR__) . '/database/migrations');
 
             // Views
-            $this->loadViewsFrom(__DIR__ . '/../views', 'sLang');
+            $this->loadViewsFrom(dirname(__DIR__) . '/views', 'sLang');
 
             // MultiLang
-            $this->loadTranslationsFrom(__DIR__.'/../lang', 'sLang');
+            $this->loadTranslationsFrom(dirname(__DIR__) . '/lang', 'sLang');
 
             // For use config
             $this->publishes([
-                __DIR__ . '/../config/sLangAlias.php' => config_path('app/aliases/sLang.php', true),
+                dirname(__DIR__) . '/config/sLangAlias.php' => config_path('app/aliases/sLang.php', true),
             ]);
         }
 

@@ -1,9 +1,12 @@
 <?php namespace Seiger\sLang\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Seiger\sLang\Models\sLangTranslate;
+use Seiger\sLang\sLang;
 
 class sLangController
 {
@@ -15,7 +18,28 @@ class sLangController
     public function __construct()
     {
         $this->url = $this->moduleUrl();
-        //Paginator::defaultView('pagination');
+    }
+
+    /**
+     * List of DB translations
+     *
+     * @return array
+     */
+    public function dictionary()
+    {
+        if (request()->has('search')) {
+            $where[] = '`key` LIKE \'%'.request()->search.'%\'';
+            foreach (sLang::langConfig() as $item) {
+                $where[] = '`'.$item.'` LIKE \'%'.request()->search.'%\'';
+            }
+            $translates = sLangTranslate::whereRaw(implode(' OR ', $where))->orderByDesc('tid')->paginate(17);
+            $translates->withPath($this->url.'&search='.request()->search);
+        } else {
+            $translates = sLangTranslate::orderByDesc('tid')->paginate(17);
+            $translates->withPath($this->url);
+        }
+
+        return $translates;
     }
 
     /**

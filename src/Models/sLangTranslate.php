@@ -1,4 +1,4 @@
-<?php namespace sLang\Models;
+<?php namespace Seiger\sLang\Models;
 
 use Illuminate\Database\Eloquent;
 
