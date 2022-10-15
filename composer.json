@@ -1,0 +1,36 @@
+{
+    "name": "seiger/slang",
+    "license": "GPL-3.0",
+    "type": "EvolutionCMS-Plugin",
+    "description": "Evocms package for work with Multi lang management for Resource and modules in Evolution CMS",
+    "keywords": ["evocms", "evolution-cms", "lang", "language", "translation-management"],
+    "authors": [
+        {
+            "name": "Serhii Korneliuk",
+            "email": "info@seigerit.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Seiger\\sLang\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Seiger\\sLang\\sLangServiceProvider"
+            ],
+            "aliases": {
+                "sLang": "Seiger\\sLang\\Facades\\sLang"
+            }
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "php artisan migrate"
+        ]
+    }
+}
