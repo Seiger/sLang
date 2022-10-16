@@ -5,13 +5,14 @@
 
 use Illuminate\Support\Str;
 use Seiger\sLang\Controllers\sLangController;
+use Seiger\sLang\Facades\sLang;
 
 if (!defined('IN_MANAGER_MODE') || IN_MANAGER_MODE != 'true') die("No access");
 
 $sLangController = new sLangController();
 $data['get'] = request()->get ?? "translates";
 $data['sLangController']  = $sLangController;
-$data['url'] = $sLangController->url;
+$data['url'] = sLang::moduleUrl();
 
 switch ($data['get']) {
     default:
@@ -38,21 +39,34 @@ switch ($data['get']) {
         }
         break;
     case "settings":
+        // Default language
+        if (request()->has('s_lang_default')) {
+            $sLangController->setLangDefault(request()->s_lang_default);
+        }
+
+        // Default language display
+        if (request()->has('s_lang_default_show')) {
+            $sLangController->setLangDefaultShow(request()->s_lang_default_show);
+        }
+
+        // List of site languages
+        if (request()->has('s_lang_config')) {
+            $sLangController->setLangConfig(request()->s_lang_config);
+        }
+
+        // List of languages for the frontend
+        if (request()->has('s_lang_front')) {
+            $sLangController->setLangFront(request()->s_lang_front);
+        }
+
         if (count($_POST) > 0) {
-            // Default language
-            $sLang->setLangDefault($_POST['s_lang_default']);
-
-            // Default language display
-            $sLang->setLangDefaultShow($_POST['s_lang_default_show']);
-
-            // List of site languages
-            $sLang->setLangConfig($_POST['s_lang_config']);
-
-            // List of languages for the frontend
-            $sLang->setLangFront($_POST['s_lang_front']);
-
             // Table modification
-            $sLang->setModifyTables();
+            $sLangController->setModifyTables();
+
+            // Set On the Module
+            if (evo()->getConfig("s_lang_enable", 9999) == 9999) {
+                $sLangController->setOnOffLangModule(1);
+            }
         }
         break;
 }

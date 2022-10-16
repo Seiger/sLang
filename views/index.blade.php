@@ -2,14 +2,14 @@
 
 @section('content')
     <div class="notifier"><div class="notifier-txt"></div></div>
-    <h1><i class="@lang('sLang::global.slang_icon')" data-tooltip="@lang('sLang::global.description')"></i> @lang('sLang::global.slang_desc')</h1>
+    <h1><i class="@lang('sLang::global.slang_icon')" data-tooltip="@lang('sLang::global.description')"></i> @lang('sLang::global.slang_desc') <i class="fa fa-question-circle" data-tooltip="@lang('sLang::global.example_usage')"></i></h1>
 
     <div class="sectionBody">
         <div class="tab-pane" id="resourcesPane">
             <script>tpResources = new WebFXTabPane(document.getElementById('resourcesPane'), false);</script>
 
             <div class="tab-page translatesTab" id="translatesTab">
-                <h2 class="tab"><a href="{!!$url!!}&get=translates"><span><i class="fa fa-language" data-tooltip="@lang('sLang::global.example_usage')"></i> {{$_lang['slang_dictionary']}}</span></a></h2>
+                <h2 class="tab"><a href="{!!$url!!}&get=translates"><span><i class="fa fa-language"></i> @lang('sLang::global.dictionary')</span></a></h2>
                 <script>tpResources.addTabPage(document.getElementById('translatesTab'));</script>
                 @if($get == 'translates')
                     @include('sLang::translatesTab')
@@ -17,7 +17,7 @@
             </div>
 
             <div class="tab-page settingsTab" id="settingsTab">
-                <h2 class="tab"><a href="{!!$url!!}&get=settings"><span><i class="fa fa-cogs"></i> {{$_lang['slang_settings']}}</span></a></h2>
+                <h2 class="tab"><a href="{!!$url!!}&get=settings"><span><i class="fa fa-cogs"></i> @lang('sLang::global.settings')</span></a></h2>
                 <script>tpResources.addTabPage(document.getElementById('settingsTab'));</script>
                 @if($get == 'settings')
                     @include('sLang::settingsTab')

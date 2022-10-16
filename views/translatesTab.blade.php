@@ -1,5 +1,4 @@
 <form action="{!!$url!!}&get=translates&action=save" method="post">
-    <p>@lang('sLang::global.example_usage')</p>
     <div class="input-group">
         <input type="text" class="form-control" name="search" value="{{request()->search ?? ''}}" />
         <span class="input-group-btn">
@@ -50,7 +49,7 @@
     <div class="modal-dialog">
         <form>
             <div class="modal-content">
-                <div class="modal-header">{{$_lang['slang_add_translation']}}</div>
+                <div class="modal-header">@lang('sLang::global.add_translation')</div>
                 <div class="modal-body">
                     <div class="input-group mb-3">
                         <span class="input-group-text" style="padding: 0.25rem 0.75rem;">KEY</span>
@@ -87,7 +86,7 @@
                 <span>@lang('global.add')</span>
             </a>
             @if(evo()->hasPermission('settings'))
-                <a id="Button1" href="{!!$url!!}&get=translates&action=synchronize" class="btn btn-success" title="{{$_lang["slang_synchronize_help"]}}">
+                <a id="Button1" href="{!!$url!!}&get=translates&action=synchronize" class="btn btn-success" title="@lang('sLang::global.synchronize_help')">
                     <i class="fa fa-sync-alt"></i>
                     <span>@lang('sLang::global.synchronize')</span>
                 </a>

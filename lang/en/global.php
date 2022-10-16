@@ -14,7 +14,7 @@
     'must_contain' => 'and must contain the default language',
     'must_contain_lang' => 'and must contain the Default Language as well as values from the Language List',
     'lang_front' => 'List of frontend languages',
-    'example_usage' => 'Use the construct <b>@lang(\'phrase\')</b> to embed translation phrases into a template. for example <b>@lang(\'Hallo World!\')</b>',
+    'example_usage' => 'Use the construct <b>@lang(\'phrase\')</b> to embed translation phrases into a Blade template. for example <b>@lang(\'Hallo World!\')</b>',
     'synchronize' => 'Synchronize',
     'synchronize_help' => 'Synchronize translations of templates and site database',
     'auto_translate' => 'Auto-translation',

@@ -34,12 +34,6 @@ class CreateSLangTables extends Migration
             $table->unique('resource', 'lang');
             $table->timestamps();
         });
-
-        DB::raw("REPLACE INTO ".DB::getTablePrefix()."system_settings (`setting_name`, `setting_value`) VALUES ('s_lang_enable', '1')");
-        DB::raw("REPLACE INTO ".DB::getTablePrefix()."system_settings (`setting_name`, `setting_value`) VALUES ('s_lang_default_show', '0')");
-        DB::raw("REPLACE INTO ".DB::getTablePrefix()."system_settings (`setting_name`, `setting_value`) VALUES ('s_lang_default', 'uk')");
-        DB::raw("REPLACE INTO ".DB::getTablePrefix()."system_settings (`setting_name`, `setting_value`) VALUES ('s_lang_config', 'uk,en')");
-        DB::raw("REPLACE INTO ".DB::getTablePrefix()."system_settings (`setting_name`, `setting_value`) VALUES ('s_lang_front', 'uk,en')");
     }
 
     /**
