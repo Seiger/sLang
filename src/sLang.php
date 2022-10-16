@@ -196,135 +196,14 @@ class sLang
     }
 
     /**
-     * Parsing Translations in Blade Templates
-     *
-     * @return bool
-     */
-    public function parseBlade(): bool
-    {
-        $list = [];
-        $langDefault = $this->langDefault();
-        if (is_dir(MODX_BASE_PATH . 'views')) {
-            $views = array_merge(glob(MODX_BASE_PATH . 'views/*.blade.php'), glob(MODX_BASE_PATH . 'views/*/*.blade.php'));
-
-            if (is_array($views) && count($views)) {
-                foreach ($views as $view) {
-                    $data = file_get_contents($view);
-                    preg_match_all("/@lang\('\K.+?(?='\))/", $data, $match);
-
-                    if (is_array($match) && is_array($match[0]) && count($match[0])) {
-                        foreach ($match[0] as $item) {
-                            $list[] = str_replace(["@lang('", "')"], '', $item);
-                        }
-                    }
-                }
-            }
-        }
-        $list = array_unique($list);
-
-        $sLangs = sLangTranslate::all()->pluck('key')->toArray();
-
-        $needs = array_diff($list, $sLangs);
-        if (count($needs)) {
-            foreach ($needs as &$need) {
-                $key = Str::limit($need, 125, '...');
-                if (!in_array($key, $sLangs)) {
-                    $sLangTranslate = new sLangTranslate();
-                    $sLangTranslate->key = $key;
-                    $sLangTranslate->{$langDefault} = $need;
-                    $sLangTranslate->save();
-                }
-            }
-        }
-
-        $this->updateLangFiles();
-
-        return true;
-    }
-
-    /**
      * Get automatic translation
-     *
-     * @param $source
-     * @param $target
-     * @return string
-     */
-    public function getAutomaticTranslate($source, $target): string
-    {
-        $result = '';
-        $langDefault = $this->langDefault();
-        $phrase = sLangTranslate::find($source);
-
-        if ($phrase) {
-            $text = $phrase[$langDefault];
-            $result = $this->googleTranslate($text, $langDefault, $target);
-        }
-
-        if (trim($result)) {
-            $phrase->{$target} = $result;
-            $phrase->save();
-        }
-
-        $this->updateLangFiles();
-
-        return $result;
-    }
-
-    /**
-     * Update translation field
-     *
-     * @param $source
-     * @param $target
-     * @param $value
-     * @return bool
-     */
-    public function updateTranslate($source, $target, $value): bool
-    {
-        $result = false;
-        $phrase = sLangTranslate::find($source);
-
-        if ($phrase) {
-            $phrase->{$target} = $value;
-            $phrase->update();
-
-            $this->updateLangFiles();
-
-            $result = true;
-        }
-
-        return $result;
-    }
-
-    /**
-     * Save new translate and return HTML
-     *
-     * @param array $data
-     * @return string|void
-     */
-    public function saveTranslate(array $data)
-    {
-        if (isset($data['translate']) && count($data['translate'])) {
-            $phrase = sLangTranslate::firstOrCreate(['key' => $data['translate']['key']]);
-            foreach ($data['translate'] as $field => $translate) {
-                $phrase->{$field} = $translate;
-            }
-            $phrase->save();
-
-            $this->updateLangFiles();
-
-            return $this->getElementRow($phrase);
-        }
-    }
-
-    /**
-     * Get automatic translation without save
      *
      * @param $text
      * @param $source
      * @param $target
      * @return string
      */
-    public function getAutomaticTranslateOnly($text, $source, $target)
+    public function getAutomaticTranslate($text, $source, $target)
     {
         return $this->googleTranslate($text, $source, $target);
     }
@@ -361,51 +240,6 @@ class sLang
         ]);
         echo View::make($tpl, $data);
         return true;
-    }
-
-    /**
-     * Get html element for row table
-     *
-     * @param $data
-     * @return string
-     */
-    protected function getElementRow($data)
-    {
-        global $_lang;
-        if (is_file($this->basePath . 'lang/' . evo()->getConfig('manager_language', 'uk') . '.php')) {
-            require_once $this->basePath . 'lang/' . evo()->getConfig('manager_language', 'uk') . '.php';
-        }
-
-        $html = '<tr><td>'.$data->key.'</td>';
-        foreach($this->langConfig() as $langConfig) {
-            $html .= '<td data-tid="'.$data->tid.'" data-lang="'.$langConfig.'">';
-            if ($langConfig == $this->langDefault()) {
-                $html .= '<input type="text" class="form-control" name="sLang['.$data->tid.']['.$langConfig.']" value="'.$data->{$langConfig}.'" />';
-            } else {
-                $html .= '<div class="input-group">';
-                $html .= '<input type="text" class="form-control" name="sLang['.$data->tid.']['.$langConfig.']" value="'.$data->{$langConfig}.'" />';
-                $html .= '<span class="input-group-btn">';
-                $html .= '<button class="btn btn-light js_translate" type="button" title="'.$_lang['slang_auto_translate'].' '.strtoupper($this->langDefault()).' => '.strtoupper($langConfig).'" style="padding:0 5px;color:#0275d8;">';
-                $html .= '<i class="fa fa-language" style="font-size:xx-large;"></i>';
-                $html .= '</button></span></div>';
-            }
-            $html .= '</td>';
-        }
-        $html .= '</tr>';
-
-        return $html;
-    }
-
-    /**
-     * Update translation files
-     */
-    protected function updateLangFiles(): void
-    {
-        foreach ($this->langConfig() as &$lang) {
-            $json = sLangTranslate::all()->pluck($lang, 'key')->toJson();
-
-            file_put_contents(MODX_BASE_PATH . 'core/lang/' . $lang . '.json', $json);
-        }
     }
 
     /**

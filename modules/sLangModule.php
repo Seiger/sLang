@@ -20,19 +20,19 @@ switch ($data['get']) {
         switch ($action) {
             case "synchronize":
                 // Parsing Blade Templates
-                $sLang->parseBlade();
+                $sLangController->parseBlade();
                 break;
             case "translate":
-                $result = $sLang->getAutomaticTranslate($_POST['source'], $_POST['target']);
+                $result = $sLangController->setAutomaticTranslate($_POST['source'], $_POST['target']);
                 die($result);
             case "update":
-                $result = $sLang->updateTranslate($_POST['source'], $_POST['target'], $_POST['value']);
+                $result = $sLangController->updateTranslate($_POST['source'], $_POST['target'], $_POST['value']);
                 die($result);
             case "translate-only":
-                $result = $sLang->getAutomaticTranslateOnly($_POST['text'], $_POST['source'], $_POST['target']);
+                $result = sLang::getAutomaticTranslate($_POST['text'], $_POST['source'], $_POST['target']);
                 die($result);
             case "add-new":
-                $result = $sLang->saveTranslate($_POST);
+                $result = $sLangController->saveTranslate($_POST);
                 die($result);
             default:
                 break;
