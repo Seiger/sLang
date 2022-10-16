@@ -5,14 +5,12 @@
 
 use EvolutionCMS\Facades\UrlProcessor;
 use EvolutionCMS\Models\SiteContent;
-
-$e = evo()->event;
+use Seiger\sLang\Facades\sLang;
 
 /**
  * Parse custom lang placeholders
  */
-if ($e->name == 'OnParseDocument') {
-    $sLang  = new sLang();
+Event::listen('evolution.OnParseDocument', function($params) {
     $base_url = UrlProcessor::makeUrl(evo()->getConfig('site_start', 1), '', '', 'full');
 
     // parse id as number
@@ -25,19 +23,19 @@ if ($e->name == 'OnParseDocument') {
             if ($match[1][$key] == evo()->getConfig('site_start', 1)) {
                 evo()->documentOutput = str_replace($value, $base_url, evo()->documentOutput);
             } else {
-                if (evo()->getConfig('lang') != $sLang->langDefault()) {
+                if (evo()->getConfig('lang') != sLang::langDefault()) {
                     evo()->setConfig('virtual_dir', evo()->getConfig('lang').'/');
                 }
                 evo()->documentOutput = str_replace($value, UrlProcessor::makeUrl($match[1][$key], '', '', 'full'), evo()->documentOutput);
             }
         }
     }
-}
+});
 
 /**
  * Filling in the fields when opening a resource in the admin panel
  */
-if ($e->name == 'OnDocFormPrerender') {
+/*if ($e->name == 'OnDocFormPrerender') {
     global $content;
     $sLang  = new sLang();
     $content = $sLang->prepareFields($content);
@@ -46,11 +44,11 @@ if ($e->name == 'OnDocFormPrerender') {
 /**
  * Modifying fields before saving a resource
  */
-if ($e->name == 'OnBeforeDocFormSave') {
+/*if ($e->name == 'OnBeforeDocFormSave') {
     if (empty($e->params['id'])) {
         $id = collect(DB::select("
-            SELECT AUTO_INCREMENT 
-            FROM `information_schema`.`tables` 
+            SELECT AUTO_INCREMENT
+            FROM `information_schema`.`tables`
             WHERE `table_name` = '".evo()->getDatabase()->getFullTableName('site_content')."'"))
             ->pluck('AUTO_INCREMENT')
             ->first();
@@ -78,10 +76,10 @@ if ($e->name == 'OnBeforeDocFormSave') {
 /**
  * Alias generation
  */
-if ($e->name == 'OnDocFormSave') {
+/*if ($e->name == 'OnDocFormSave') {
     if (isset($e->params['id']) && !empty($e->params['id'])) {
         $sLang  = new sLang();
-        $sLangDefault = $sLang->langDefault();
+        $langDefault = $sLang->langDefault();
         $data = [];
 
         foreach (request()->all() as $key => $value) {
@@ -120,7 +118,7 @@ if ($e->name == 'OnDocFormSave') {
 /**
  * Replacing standard fields with multilingual frontend
  */
-if ($e->name == 'OnAfterLoadDocumentObject') {
+/*if ($e->name == 'OnAfterLoadDocumentObject') {
     $sLang  = new sLang();
     $lang = evo()->getLocale();
 
@@ -138,34 +136,33 @@ if ($e->name == 'OnAfterLoadDocumentObject') {
 /**
  * Parameterization of the current language
  */
-if (in_array($e->name, ['OnPageNotFound'])) {
-    if (!isset($e->params['have-redirect'])) {
+Event::listen('evolution.OnPageNotFound', function($params) {
+    if (!isset($params['have-redirect'])) {
         $hash = '';
         $identifier = evo()->getConfig('error_page', 1);
-        $sLangDefault = evo()->getConfig('s_lang_default', 'uk');
+        $langDefault = sLang::langDefault();
 
         if (isset($_SERVER['REQUEST_URI'])) {
             $url = explode('/', ltrim($_SERVER['REQUEST_URI'], '/'), 2);
-            $sLangFront = explode(',', evo()->getConfig('s_lang_front', 'uk'));
 
             if (trim($url[0])) {
-                if ($url[0] == $sLangDefault && evo()->config['s_lang_default_show'] != 1) {
+                if ($url[0] == $langDefault && evo()->config['s_lang_default_show'] != 1) {
                     evo()->sendRedirect(str_replace($url[0] . '/', '', $_SERVER['REQUEST_URI']));
                     die;
                 }
 
-                if (in_array($url[0], $sLangFront)) {
-                    $sLangDefault = $url[0];
+                if (in_array($url[0], sLang::langFront()) || (evo()->getLoginUserID('mgr') && in_array($url[0], sLang::langConfig()))) {
+                    $langDefault = $url[0];
                     $_SERVER['REQUEST_URI'] = str_replace($url[0] . '/', '', $_SERVER['REQUEST_URI']);
                 }
             }
         }
 
-        evo()->setLocale($sLangDefault);
-        evo()->config['lang'] = $sLangDefault;
+        evo()->setLocale($langDefault);
+        evo()->config['lang'] = $langDefault;
 
-        if (evo()->config['s_lang_default'] != $sLangDefault || evo()->config['s_lang_default_show'] == 1) {
-            evo()->config['base_url'] .= $sLangDefault . '/';
+        if (evo()->config['s_lang_default'] != $langDefault || evo()->config['s_lang_default_show'] == 1) {
+            evo()->config['base_url'] .= $langDefault . '/';
         }
 
         if (!isset($_SERVER['REQUEST_URI']) || !trim($_SERVER['REQUEST_URI']) || $_SERVER['REQUEST_URI'] == '/') {
@@ -180,7 +177,7 @@ if (in_array($e->name, ['OnPageNotFound'])) {
             }
         }
 
-        evo()->systemCacheKey = $identifier . '_' . $sLangDefault . $hash;
+        evo()->systemCacheKey = $identifier . '_' . $langDefault . $hash;
 
         if ($identifier == evo()->getConfig('error_page', 1) && $identifier != evo()->getConfig('site_start', 1)) {
             if (request()->is('api/*')) {
@@ -196,35 +193,29 @@ if (in_array($e->name, ['OnPageNotFound'])) {
             }
         }
 
-        evo()->invokeEvent('OnWebPageInit', ['lang' => $sLangDefault]);
+        evo()->invokeEvent('OnWebPageInit', ['lang' => $langDefault]);
         evo()->sendForward($identifier);
         exit();
     }
-}
+});
 
-if (in_array($e->name, ['OnWebPageInit'])) {
-    if (isset($e->params['lang'])) {
-        $sLangDefault = $e->params['lang'];
+Event::listen('evolution.OnWebPageInit', function($params) {
+    if (isset($params['lang'])) {
+        $langDefault = $params['lang'];
     } else {
-        $sLangDefault = evo()->getConfig('s_lang_default', 'uk');
+        $langDefault = sLang::langDefault();
 
         if (isset($_SERVER['REQUEST_URI'])) {
             $url = explode('/', ltrim($_SERVER['REQUEST_URI'], '/'), 2);
-            $sLangFront = explode(',', evo()->getConfig('s_lang_front', 'uk'));
 
             if (trim($url[0])) {
-                if (in_array($url[0], $sLangFront)) {
-                    $sLangDefault = $url[0];
+                if (in_array($url[0], sLang::langFront())) {
+                    $langDefault = $url[0];
                 }
             }
         }
     }
 
-    evo()->setLocale($sLangDefault);
-    evo()->config['lang'] = $sLangDefault;
-}
-
-/*if ($e->name == 'OnDocFormRender') {
-    $sLang  = new sLang();
-    evo()->regClientScript($sLang->baseUrl.'scripts/wisywingEditor.js');
-}*/
+    evo()->setLocale($langDefault);
+    evo()->config['lang'] = $langDefault;
+});

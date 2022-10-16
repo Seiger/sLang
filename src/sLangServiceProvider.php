@@ -43,11 +43,11 @@ class sLangServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // Add plugins to Evo
+        $this->loadPluginsFrom(dirname(__DIR__) . '/plugins/');
+
         // Only Manager
         if (IN_MANAGER_MODE) {
-            // Add plugins to Evo
-            $this->loadPluginsFrom(dirname(__DIR__) . '/plugins/');
-
             // Add module to Evo. Module ID is md5('sLangModule').
             $lang = 'en';
             if (isset($_SESSION['mgrUsrConfigSet']['manager_language'])) {
