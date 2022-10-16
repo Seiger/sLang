@@ -1,5 +1,5 @@
 <form action="{!!$url!!}&get=translates&action=save" method="post">
-    <p>{!! $_lang['slang_example_usage'] !!}</p>
+    <p>@lang('sLang::global.example_usage')</p>
     <div class="input-group">
         <input type="text" class="form-control" name="search" value="{{request()->search ?? ''}}" />
         <span class="input-group-btn">
@@ -14,24 +14,24 @@
             <thead>
             <tr>
                 <td style="text-align:center !important;"><b>KEY</b></td>
-                @foreach($sLang->langConfig() as $langConfig)
+                @foreach(sLang::langConfig() as $langConfig)
                     <td style="text-align:center !important;"><b>{{strtoupper($langConfig)}}</b></td>
                 @endforeach
             </tr>
             </thead>
             <tbody>
-            @foreach($sLang->dictionary() as $dictionary)
+            @foreach($sLangController->dictionary() as $dictionary)
                 <tr>
                     <td>{{$dictionary['key']}}</td>
-                    @foreach($sLang->langConfig() as $langConfig)
+                    @foreach(sLang::langConfig() as $langConfig)
                         <td data-tid="{{$dictionary['tid']}}" data-lang="{{$langConfig}}">
-                            @if($langConfig == $sLang->langDefault())
+                            @if($langConfig == sLang::langDefault())
                                 <input type="text" class="form-control" name="sLang[{{$dictionary['tid']}}][{{$langConfig}}]" value="{{$dictionary[$langConfig]}}" />
                             @else
                                 <div class="input-group">
                                     <input type="text" class="form-control" name="sLang[{{$dictionary['tid']}}][{{$langConfig}}]" value="{{$dictionary[$langConfig]}}" />
                                     <span class="input-group-btn">
-                                        <button class="btn btn-light js_translate" type="button" title="{{$_lang['slang_auto_translate']}} {{strtoupper($sLang->langDefault())}} => {{strtoupper($langConfig)}}" style="padding:0 5px;color:#0275d8;">
+                                        <button class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($langConfig)}}" style="padding:0 5px;color:#0275d8;">
                                             <i class="fa fa-language" style="font-size:xx-large;"></i>
                                         </button>
                                     </span>
@@ -45,7 +45,7 @@
         </table>
     </div>
 </form>
-{{$sLang->dictionary()->render()}}
+{{$sLangController->dictionary()->render()}}
 <div class="modal fade" id="addTranslate" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog">
         <form>
@@ -56,13 +56,13 @@
                         <span class="input-group-text" style="padding: 0.25rem 0.75rem;">KEY</span>
                         <input type="text" name="translate[key]" class="form-control" value="">
                     </div>
-                    @foreach($sLang->langConfig() as $langConfig)
+                    @foreach(sLang::langConfig() as $langConfig)
                         <div class="input-group mb-3">
                             <span class="input-group-text" style="padding: 0.25rem 0.75rem;">{{strtoupper($langConfig)}}</span>
                             <input type="text" name="translate[{{$langConfig}}]" class="form-control" value="">
-                            @if($sLang->langDefault() != $langConfig)
+                            @if(sLang::langDefault() != $langConfig)
                                 <span class="input-group-btn">
-                                    <button data-lang="{{$langConfig}}" class="btn btn-light js_translate_only" type="button" title="{{$_lang['slang_auto_translate']}} {{strtoupper($sLang->langDefault())}} => {{strtoupper($langConfig)}}" style="padding:0 5px;color:#0275d8;">
+                                    <button data-lang="{{$langConfig}}" class="btn btn-light js_translate_only" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($langConfig)}}" style="padding:0 5px;color:#0275d8;">
                                         <i class="fa fa-language" style="font-size: xx-large;"></i>
                                     </button>
                                 </span>
@@ -71,8 +71,8 @@
                     @endforeach
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">{{$_lang["cancel"]}}</button>
-                    <span class="btn btn-success js_add_translation">{{$_lang['add']}}</span>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">@lang('global.cancel')</button>
+                    <span class="btn btn-success js_add_translation">@lang('global.add')</span>
                 </div>
             </div>
         </form>
@@ -84,12 +84,12 @@
         <div class="btn-group">
             <a id="Button2" class="btn btn-primary" href="#" data-toggle="modal" data-target="#addTranslate">
                 <i class="fa fa-plus"></i>
-                <span>{{$_lang['add']}}</span>
+                <span>@lang('global.add')</span>
             </a>
-            @if($modx->hasPermission('settings'))
+            @if(evo()->hasPermission('settings'))
                 <a id="Button1" href="{!!$url!!}&get=translates&action=synchronize" class="btn btn-success" title="{{$_lang["slang_synchronize_help"]}}">
                     <i class="fa fa-sync-alt"></i>
-                    <span>{{$_lang["slang_synchronize"]}}</span>
+                    <span>@lang('sLang::global.synchronize')</span>
                 </a>
             @endif
         </div>
@@ -131,14 +131,14 @@
         });
 
         jQuery(document).on("keyup", "#addTranslate [name=\"translate[key]\"]", function () {
-            jQuery(document).find("#addTranslate [name=\"translate[{{ $sLang->langDefault() }}]\"]").val(jQuery(this).val());
+            jQuery(document).find("#addTranslate [name=\"translate[{{sLang::langDefault()}}]\"]").val(jQuery(this).val());
         });
 
         jQuery(document).on("click", ".js_translate_only", function () {
             var _this = jQuery(this);
-            var source = '{{$sLang->langDefault()}}';
+            var source = '{{sLang::langDefault()}}';
             var target = _this.data('lang');
-            var _text = jQuery(document).find("#addTranslate [name=\"translate[{{ $sLang->langDefault() }}]\"]").val();
+            var _text = jQuery(document).find("#addTranslate [name=\"translate[{{sLang::langDefault()}}]\"]").val();
 
             jQuery.ajax({
                 url: '{!!$url!!}&get=translates&action=translate-only',
@@ -184,7 +184,7 @@
     </script>
     <style>
         .langTable {margin-left: 16%; width: 84%;}
-        .langTable table {width: {{count($sLang->langConfig())*25+35}}%;}
+        .langTable table {width: {{count(sLang::langConfig())*25+35}}%;}
         .langTable td:first-child {vertical-align: middle; position: absolute; width: 16%; margin-left: -16%;}
         .langTable tbody td:first-child {padding-top: 10px;}
     </style>

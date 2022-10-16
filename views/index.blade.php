@@ -9,7 +9,7 @@
             <script>tpResources = new WebFXTabPane(document.getElementById('resourcesPane'), false);</script>
 
             <div class="tab-page translatesTab" id="translatesTab">
-                <h2 class="tab"><a href="{!!$url!!}&get=translates"><span><i class="fa fa-language"></i> {{$_lang['slang_dictionary']}}</span></a></h2>
+                <h2 class="tab"><a href="{!!$url!!}&get=translates"><span><i class="fa fa-language" data-tooltip="@lang('sLang::global.example_usage')"></i> {{$_lang['slang_dictionary']}}</span></a></h2>
                 <script>tpResources.addTabPage(document.getElementById('translatesTab'));</script>
                 @if($get == 'translates')
                     @include('sLang::translatesTab')
@@ -29,7 +29,7 @@
     </div>
     <div id="copyright">
         <span class="badge bg-seigerit">
-            {!!$_lang['slang_copyright']!!} <strong><a href="https://seigerit.com/" target="_blank">Seiger IT</a></strong>
+        @lang('sLang::global.copyright') <strong><a href="https://seigerit.com/" target="_blank">Seiger IT</a></strong>
         </span>
     </div>
 @endsection
