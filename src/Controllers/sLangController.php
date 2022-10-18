@@ -1,23 +1,357 @@
 <?php namespace Seiger\sLang\Controllers;
 
+use EvolutionCMS\ManagerTheme;
+use EvolutionCMS\Models\SiteContent;
+use EvolutionCMS\Models\SiteTmplvar;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Seiger\sLang\Facades\sLang;
+use Seiger\sLang\Models\sLangContent;
 use Seiger\sLang\Models\sLangTranslate;
 
 class sLangController
 {
     /**
-     * Show tab page with sOffer files
+     * Show tabs module
      *
      * @return View
      */
     public function index(): View
     {
         return $this->view('index');
+    }
+
+    /**
+     * Show tabs resource
+     *
+     * @return View
+     */
+    public function tabs($params = []): View
+    {
+        global $_lang, $_style, $content;
+        $id = (int)$params['id'];
+
+        $data['theme'] = new ManagerTheme(evo(), evo()->getConfig('manager_theme', 'default'));
+
+        $data['_style'] = [];
+        if (is_file($data['theme']->getThemeDir(true) . 'style.php')) {
+            include $data['theme']->getThemeDir(true) . 'style.php';
+            $data['_style'] = $_style;
+        }
+
+        $data['richtexteditorIds'] = [evo()->getConfig('which_editor') => []];
+        $data['richtexteditorOptions'] = [evo()->getConfig('which_editor') => []];
+
+        $group_tvs = evo()->getConfig('group_tvs');
+        $templateVariablesOutput = '';
+        if (($content['type'] == 'document' || EvolutionCMS()->getManagerApi()->action == '4') || ($content['type'] == 'reference' || EvolutionCMS()->getManagerApi()->action == 72)) {
+            $template = getDefaultTemplate();
+            if (isset ($_REQUEST['newtemplate'])) {
+                $template = $_REQUEST['newtemplate'];
+            } else {
+                if (isset ($content['template'])) {
+                    $template = $content['template'];
+                }
+            }
+            $tvs = SiteTmplvar::query()->select('site_tmplvars.*', 'site_tmplvar_contentvalues.value', 'site_tmplvar_templates.rank as tvrank', 'site_tmplvar_templates.rank', 'site_tmplvars.id', 'site_tmplvars.rank')
+                ->join('site_tmplvar_templates', 'site_tmplvar_templates.tmplvarid', '=', 'site_tmplvars.id')
+                ->leftJoin('site_tmplvar_contentvalues', function ($join) use ($id) {
+                    $join->on('site_tmplvar_contentvalues.tmplvarid', '=', 'site_tmplvars.id');
+                    $join->on('site_tmplvar_contentvalues.contentid', '=', \DB::raw($id));
+                })->leftJoin('site_tmplvar_access', 'site_tmplvar_access.tmplvarid', '=', 'site_tmplvars.id');
+
+            if ($group_tvs) {
+                $tvs = $tvs->select('site_tmplvars.*',
+                    'site_tmplvar_contentvalues.value', 'categories.id as category_id', 'categories.category as category_name', 'categories.rank as category_rank', 'site_tmplvar_templates.rank', 'site_tmplvars.id', 'site_tmplvars.rank');
+                $tvs = $tvs->leftJoin('categories', 'categories.id', '=', 'site_tmplvars.category');
+                //$sort = 'category_rank,category_id,' . $sort;
+                $tvs = $tvs->orderBy('category_rank', 'ASC');
+                $tvs = $tvs->orderBy('category_id', 'ASC');
+            }
+            $tvs = $tvs->orderBy('site_tmplvar_templates.rank', 'ASC');
+            $tvs = $tvs->orderBy('site_tmplvars.rank', 'ASC');
+            $tvs = $tvs->orderBy('site_tmplvars.id', 'ASC');
+            $tvs = $tvs->where('site_tmplvar_templates.templateid', $template);
+
+            if ($_SESSION['mgrRole'] != 1) {
+                $tvs = $tvs->leftJoin('document_groups', 'site_tmplvar_contentvalues.contentid', '=', 'document_groups.document');
+                $tvs = $tvs->where(function ($query) {
+                    $query->whereNull('site_tmplvar_access.documentgroup')
+                        ->orWhereIn('document_groups.document_group', $_SESSION['mgrDocgroups']);
+                });
+            }
+
+            $tvs = $tvs->get();
+            if (count($tvs)>0) {
+                $tvsArray = $tvs->toArray();
+
+                $templateVariablesOutput = '';
+                $templateVariablesGeneral = '';
+
+                $i = $ii = 0;
+                $tab = '';
+                foreach ($tvsArray as $row) {
+                    $row['category'] = $row['category_name'] ?? '';
+                    if(!isset($row['category_id'])){
+                        $row['category_id'] = 0;
+                        $row['category'] = $_lang['no_category'];
+                        $row['category_rank'] = 0;
+                    }
+                    if($row['value'] == '') $row['value'] = $row['default_text'];
+                    if ($group_tvs && $row['category_id'] != 0) {
+                        $ii = 0;
+                        if ($tab !== $row['category_id']) {
+                            if ($group_tvs == 1 || $group_tvs == 3) {
+                                if ($i === 0) {
+                                    $templateVariablesOutput .= '
+                            <div class="tab-section" id="tabTV_' . $row['category_id'] . '">
+                                <div class="tab-header">' . $row['category'] . '</div>
+                                <div class="tab-body tmplvars">
+                                    <table>' . "\n";
+                                } else {
+                                    $templateVariablesOutput .= '
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="tab-section" id="tabTV_' . $row['category_id'] . '">
+                                <div class="tab-header">' . $row['category'] . '</div>
+                                <div class="tab-body tmplvars">
+                                    <table>';
+                                }
+                            } else if ($group_tvs == 2 || $group_tvs == 4) {
+                                if ($i === 0) {
+                                    $templateVariablesOutput .= '
+                            <div id="tabTV_' . $row['category_id'] . '" class="tab-page tmplvars">
+                                <h2 class="tab">' . $row['category'] . '</h2>
+                                <script type="text/javascript">tpTemplateVariables.addTabPage(document.getElementById(\'tabTV_' . $row['category_id'] . '\'));</script>
+
+                                <div class="tab-body tmplvars">
+                                    <table>';
+                                } else {
+                                    $templateVariablesOutput .= '
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div id="tabTV_' . $row['category_id'] . '" class="tab-page tmplvars">
+                                <h2 class="tab">' . $row['category'] . '</h2>
+                                <script type="text/javascript">tpTemplateVariables.addTabPage(document.getElementById(\'tabTV_' . $row['category_id'] . '\'));</script>
+
+                                <div class="tab-body tmplvars">
+                                    <table>';
+                                }
+                            } else if ($group_tvs == 5) {
+                                if ($i === 0) {
+                                    $templateVariablesOutput .= '
+                                <div id="tabTV_' . $row['category_id'] . '" class="tab-page tmplvars">
+                                    <h2 class="tab">' . $row['category'] . '</h2>
+                                    <script type="text/javascript">tpSettings.addTabPage(document.getElementById(\'tabTV_' . $row['category_id'] . '\'));</script>
+                                    <table>';
+                                } else {
+                                    $templateVariablesOutput .= '
+                                    </table>
+                                </div>
+
+                                <div id="tabTV_' . $row['category_id'] . '" class="tab-page tmplvars">
+                                    <h2 class="tab">' . $row['category'] . '</h2>
+                                    <script type="text/javascript">tpSettings.addTabPage(document.getElementById(\'tabTV_' . $row['category_id'] . '\'));</script>
+
+                                    <table>';
+                                }
+                            }
+                            $split = 0;
+                        } else {
+                            $split = 1;
+                        }
+                    }
+
+                    // Go through and display all Template Variables
+                    if ($row['type'] == 'richtext' || $row['type'] == 'htmlarea') {
+                        // determine TV-options
+                        $tvOptions = EvolutionCMS()->parseProperties($row['elements']);
+                        if (!empty($tvOptions)) {
+                            // Allow different Editor with TV-option {"editor":"CKEditor4"} or &editor=Editor;text;CKEditor4
+                            $editor = isset($tvOptions['editor']) ? $tvOptions['editor'] : EvolutionCMS()->getConfig('which_editor');
+                        };
+                        // Add richtext editor to the list
+                        $richtexteditorIds[$editor][] = "tv" . $row['id'];
+                        $richtexteditorOptions[$editor]["tv" . $row['id']] = $tvOptions;
+                    }
+
+                    $templateVariablesTmp = '';
+
+                    // splitter
+                    if ($group_tvs) {
+                        if ((! empty($split) && $i) || $ii) {
+                            $templateVariablesTmp .= '
+                                            <tr><td colspan="2"><div class="split"></div></td></tr>' . "\n";
+                        }
+                    } else if ($i) {
+                        $templateVariablesTmp .= '
+                                        <tr><td colspan="2"><div class="split"></div></td></tr>' . "\n";
+                    }
+
+                    // post back value
+                    if (array_key_exists('tv' . $row['id'], $_POST)) {
+                        if (is_array($_POST['tv' . $row['id']])) {
+                            $tvPBV = implode('||', $_POST['tv' . $row['id']]);
+                        } else {
+                            $tvPBV = $_POST['tv' . $row['id']];
+                        }
+                    } else {
+                        $tvPBV = $row['value'];
+                    }
+
+                    $tvDescription = (!empty($row['description'])) ? '<br /><span class="comment">' . $row['description'] . '</span>' : '';
+                    $tvInherited = (substr($tvPBV, 0, 8) == '@INHERIT') ? '<br /><span class="comment inherited">(' . $_lang['tmplvars_inherited'] . ')</span>' : '';
+                    $tvName = EvolutionCMS()->hasPermission('edit_template') ? '<br/><small class="protectedNode">[*' . $row['name'] . '*]</small>' : '';
+
+                    $templateVariablesTmp .= '
+                                        <tr>
+                                            <td><span class="warning">' . $row['caption'] . $tvName . '</span>' . $tvDescription . $tvInherited . '</td>
+                                            <td><div style="position:relative;' . ($row['type'] == 'date' ? '' : '') . '">' .
+                        renderFormElement(
+                            $row['type'],
+                            $row['id'],
+                            $row['default_text'],
+                            $row['elements'],
+                            $tvPBV,
+                            '',
+                            $row,
+                            $tvsArray,
+                            $content
+                        ) .
+                        '</div></td>
+                                        </tr>';
+
+                    if ($group_tvs && $row['category_id'] == 0) {
+                        $templateVariablesGeneral .= $templateVariablesTmp;
+                        $ii++;
+                    } else {
+                        $templateVariablesOutput .= $templateVariablesTmp;
+                        $tab = $row['category_id'];
+                        $i++;
+                    }
+                }
+
+                if ($templateVariablesGeneral) {
+                    echo '<table id="tabTV_0" class="tmplvars"><tbody>' . $templateVariablesGeneral . '</tbody></table>';
+                }
+
+                $templateVariables .= '
+                        <!-- Template Variables -->' . "\n";
+                if (!$group_tvs) {
+                    $templateVariables .= '
+                                    <div class="sectionHeader" id="tv_header">' . $_lang['settings_templvars'] . '</div>
+                                        <div class="sectionBody tmplvars">
+                                            <table>';
+                } else if ($group_tvs == 2) {
+                    $templateVariables .= '
+                    <div class="tab-section">
+                        <div class="tab-header" id="tv_header">' . $_lang['settings_templvars'] . '</div>
+                        <div class="tab-pane" id="paneTemplateVariables">
+                            <script type="text/javascript">
+                                tpTemplateVariables = new WebFXTabPane(document.getElementById(\'paneTemplateVariables\'), ' . (EvolutionCMS()->getConfig('remember_last_tab') ? 'true' : 'false') . ');
+                            </script>';
+                } else if ($group_tvs == 3) {
+                    $templateVariables .= '
+                        <div id="templateVariables" class="tab-page tmplvars">
+                            <h2 class="tab">' . $_lang['settings_templvars'] . '</h2>
+                            <script type="text/javascript">tpSettings.addTabPage(document.getElementById(\'templateVariables\'));</script>';
+                } else if ($group_tvs == 4) {
+                    $templateVariables .= '
+                    <div id="templateVariables" class="tab-page tmplvars">
+                        <h2 class="tab">' . $_lang['settings_templvars'] . '</h2>
+                        <script type="text/javascript">tpSettings.addTabPage(document.getElementById(\'templateVariables\'));</script>
+                        <div class="tab-pane" id="paneTemplateVariables">
+                            <script type="text/javascript">
+                                tpTemplateVariables = new WebFXTabPane(document.getElementById(\'paneTemplateVariables\'), ' . (EvolutionCMS()->getConfig('remember_last_tab') ? 'true' : 'false') . ');
+                            </script>';
+                }
+                if ($templateVariablesOutput) {
+                    $templateVariables .= $templateVariablesOutput;
+                    $templateVariables .= '
+                                    </table>
+                                </div>' . "\n";
+                    if ($group_tvs == 1) {
+                        $templateVariables .= '
+                            </div>' . "\n";
+                    } else if ($group_tvs == 2 || $group_tvs == 4) {
+                        $templateVariables .= '
+                            </div>
+                        </div>
+                    </div>' . "\n";
+                    } else if ($group_tvs == 3) {
+                        $templateVariables .= '
+                            </div>
+                        </div>' . "\n";
+                    }
+                }
+                $templateVariables .= '
+                        <!-- end Template Variables -->' . "\n";
+            }
+        }
+        $data['group_tvs'] = $group_tvs;
+        $data['templateVariablesOutput'] = $templateVariablesOutput;
+        $data['content'] = $content;
+
+        return $this->view('tabs', $data);
+    }
+
+    /**
+     * Preparing Resource Fields
+     *
+     * @param $content array
+     * @return array
+     */
+    public function prepareFields(array $content): array
+    {
+        $contentLang = [];
+
+        foreach (sLang::langConfig() as $langConfig) {
+            foreach (sLang::siteContentFields() as $siteContentField) {
+                $contentLang[$langConfig . '_' . $siteContentField] = '';
+            }
+        }
+
+        $translates = sLangContent::whereResource($content['id'] ?? 0)->get()->toArray();
+
+        if (is_array($translates) && count($translates)) {
+            foreach ($translates as $translate) {
+                $currentLang = $translate['lang'];
+                unset($translate['id'], $translate['resource'], $translate['lang'], $translate['created_at'], $translate['updated_at']);
+
+                foreach ($translate as $key => $value) {
+                    if (is_null($value)) {
+                        $value = '';
+                    }
+                    $contentLang[$currentLang . '_' . $key] = $value;
+                }
+            }
+        } else {
+            foreach (sLang::siteContentFields() as $siteContentField) {
+                $contentLang[sLang::langDefault() . '_' . $siteContentField] = (string)($content[$siteContentField] ?? '');
+            }
+        }
+
+        return array_merge($content, $contentLang);
+    }
+
+    /**
+     * Recording resource translations
+     *
+     * @param int $resourceId
+     * @param string $langKey
+     * @param array $fields
+     * @return void
+     */
+    public function setLangContent(int $resourceId, string $langKey, array $fields): void
+    {
+        sLangContent::updateOrCreate(['resource' => $resourceId, 'lang' => $langKey], $fields);
     }
 
     /**

@@ -31,7 +31,7 @@ class CreateSLangTables extends Migration
             $table->string('menutitle', 255)->default('')->comment('Translate menutitle');
             $table->string('seotitle', 128)->default('')->comment('SEO title document');
             $table->string('seodescription', 128)->default('')->comment('SEO description document');
-            $table->unique('resource', 'lang');
+            $table->unique(['resource', 'lang'], 'resource_lang');
             $table->timestamps();
         });
     }
@@ -43,6 +43,9 @@ class CreateSLangTables extends Migration
      */
     public function down()
     {
+        Schema::table('s_lang_content', function ($table) {
+            $table->dropUnique('resource_lang');
+        });
         Schema::dropIfExists('s_lang_content');
         Schema::dropIfExists('s_lang_translates');
     }

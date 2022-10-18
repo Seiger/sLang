@@ -8,8 +8,8 @@ use EvolutionCMS\Models\SystemSetting;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
-use sLang\Models\sLangContent;
-use sLang\Models\sLangTranslate;
+use Seiger\sLang\Models\sLangContent;
+use Seiger\sLang\Models\sLangTranslate;
 
 class sLang
 {
@@ -131,58 +131,6 @@ class sLang
     }
 
     /**
-     * Preparing Resource Fields
-     *
-     * @param $content array
-     * @return array
-     */
-    public function prepareFields(array $content): array
-    {
-        $contentLang = [];
-
-        foreach ($this->langConfig() as $langConfig) {
-            foreach ($this->siteContentFields as $siteContentField) {
-                $contentLang[$langConfig . '_' . $siteContentField] = '';
-            }
-        }
-
-        $translates = sLangContent::whereResource($content['id'] ?? 0)->get()->toArray();
-
-        if (is_array($translates) && count($translates)) {
-            foreach ($translates as $translate) {
-                $currentLang = $translate['lang'];
-                unset($translate['id'], $translate['resource'], $translate['lang'], $translate['created_at'], $translate['updated_at']);
-
-                foreach ($translate as $key => $value) {
-                    if (is_null($value)) {
-                        $value = '';
-                    }
-                    $contentLang[$currentLang . '_' . $key] = $value;
-                }
-            }
-        } else {
-            foreach ($this->siteContentFields as $siteContentField) {
-                $contentLang[$this->langDefault() . '_' . $siteContentField] = (string)($content[$siteContentField] ?? '');
-            }
-        }
-
-        return array_merge($content, $contentLang);
-    }
-
-    /**
-     * Recording resource translations
-     *
-     * @param int $resourceId
-     * @param string $langKey
-     * @param array $fields
-     * @return void
-     */
-    public function setLangContent(int $resourceId, string $langKey, array $fields): void
-    {
-        sLangContent::updateOrCreate(['resource' => $resourceId, 'lang' => $langKey], $fields);
-    }
-
-    /**
      * Getting a translation of a resource
      *
      * @param int $resourceId
@@ -216,6 +164,16 @@ class sLang
     public function moduleUrl(): string
     {
         return 'index.php?a=112&id=' . md5(__('sLang::global.slang'));
+    }
+
+    /**
+     * Fields list on content
+     *
+     * @return array
+     */
+    public function siteContentFields(): array
+    {
+        return $this->siteContentFields;
     }
 
     /**

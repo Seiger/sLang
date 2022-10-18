@@ -95,6 +95,7 @@
     </div>
     <script>
         jQuery(document).on("click", ".js_translate", function () {
+            window.parent.document.getElementById('mainloader').classList.add('show');
             var _this = jQuery(this).parents('td');
             var source = _this.data('tid');
             var target = _this.data('lang');
@@ -105,6 +106,7 @@
                 data: 'source=' + source + '&target=' + target,
                 success: function (ajax) {
                     _this.find('input').val(ajax);
+                    window.parent.document.getElementById('mainloader').classList.remove('show');
                 }
             });
         });
@@ -134,6 +136,7 @@
         });
 
         jQuery(document).on("click", ".js_translate_only", function () {
+            window.parent.document.getElementById('mainloader').classList.add('show');
             var _this = jQuery(this);
             var source = '{{sLang::langDefault()}}';
             var target = _this.data('lang');
@@ -145,11 +148,13 @@
                 data: 'text=' + _text + '&source=' + source + '&target=' + target,
                 success: function (ajax) {
                     _this.parent().parent().find('input').val(ajax);
+                    window.parent.document.getElementById('mainloader').classList.remove('show');
                 }
             });
         });
 
         jQuery(document).on("click", ".js_add_translation", function () {
+            window.parent.document.getElementById('mainloader').classList.add('show');
             var _form = jQuery(document).find("#addTranslate form");
 
             jQuery.ajax({
@@ -160,6 +165,7 @@
                 success: function (ajax) {
                     $('.sectionTrans tbody').prepend(ajax);
                     $('#addTranslate').modal('hide');
+                    window.parent.document.getElementById('mainloader').classList.remove('show');
                 }
             });
         });

@@ -5,6 +5,7 @@
 
 use EvolutionCMS\Facades\UrlProcessor;
 use EvolutionCMS\Models\SiteContent;
+use Seiger\sLang\Controllers\sLangController;
 use Seiger\sLang\Facades\sLang;
 
 /**
@@ -33,105 +34,19 @@ Event::listen('evolution.OnParseDocument', function($params) {
 });
 
 /**
- * Filling in the fields when opening a resource in the admin panel
- */
-/*if ($e->name == 'OnDocFormPrerender') {
-    global $content;
-    $sLang  = new sLang();
-    $content = $sLang->prepareFields($content);
-}
-
-/**
- * Modifying fields before saving a resource
- */
-/*if ($e->name == 'OnBeforeDocFormSave') {
-    if (empty($e->params['id'])) {
-        $id = collect(DB::select("
-            SELECT AUTO_INCREMENT
-            FROM `information_schema`.`tables`
-            WHERE `table_name` = '".evo()->getDatabase()->getFullTableName('site_content')."'"))
-            ->pluck('AUTO_INCREMENT')
-            ->first();
-        $e->params['id'] = $id;
-    }
-
-    $sLang  = new sLang();
-
-    foreach ($sLang->langConfig() as $langConfig) {
-        $fields = [];
-        foreach (request()->all() as $key => $value) {
-            if (str_starts_with($key, $langConfig.'_')) {
-                $keyName = str_replace($langConfig.'_', '', $key);
-                $fields[$keyName] = $value;
-                unset($_REQUEST[$key]);
-            }
-        }
-
-        if (count($fields)) {
-            $sLang->setLangContent($e->params['id'], $langConfig, $fields);
-        }
-    }
-}
-
-/**
- * Alias generation
- */
-/*if ($e->name == 'OnDocFormSave') {
-    if (isset($e->params['id']) && !empty($e->params['id'])) {
-        $sLang  = new sLang();
-        $langDefault = $sLang->langDefault();
-        $data = [];
-
-        foreach (request()->all() as $key => $value) {
-            if (str_starts_with($key, $sLang->langDefault().'_')) {
-                $keyName = str_replace($sLang->langDefault().'_', '', $key);
-                $data[$keyName] = evo()->getDatabase()->escape($value);
-            }
-        }
-
-        if (request()->has('alias') && !trim(request('alias')) && request()->has('en_pagetitle')) {
-            $alias = strtolower(evolutionCMS()->stripAlias(trim(request('en_pagetitle'))));
-            if (SiteContent::withTrashed()
-                    ->where('id', '<>', $id)
-                    ->where('alias', $alias)->count() > 0) {
-                $cnt = 1;
-                $tempAlias = $alias;
-                while (SiteContent::withTrashed()
-                        ->where('id', '<>', $id)
-                        ->where('alias', $tempAlias)->count() > 0) {
-                    $tempAlias = $alias;
-                    $tempAlias .= $cnt;
-                    $cnt++;
-                }
-                $alias = $tempAlias;
-            }
-            $data['alias'] = $alias;
-        }
-
-        if (!empty($data)) {
-            unset($data['seotitle'], $data['seodescription']);
-            evo()->db->update($data, evo()->getDatabase()->getFullTableName('site_content'), 'id=' . $e->params['id']);
-        }
-    }
-}
-
-/**
  * Replacing standard fields with multilingual frontend
  */
-/*if ($e->name == 'OnAfterLoadDocumentObject') {
-    $sLang  = new sLang();
-    $lang = evo()->getLocale();
-
-    $langContentField = $sLang->getLangContent($e->params['documentObject']['id'], $lang);
+Event::listen('evolution.OnAfterLoadDocumentObject', function($params) {
+    $langContentField = sLang::getLangContent($params['documentObject']['id'], evo()->getLocale());
 
     if (count($langContentField)) {
-        foreach ($sLang->siteContentFields as $siteContentField) {
-            $e->params['documentObject'][$siteContentField] = $langContentField[$siteContentField];
+        foreach (sLang::siteContentFields() as $siteContentField) {
+            $params['documentObject'][$siteContentField] = $langContentField[$siteContentField];
         }
     }
 
-    evo()->documentObject = $e->params['documentObject'];
-}
+    evo()->documentObject = $params['documentObject'];
+});
 
 /**
  * Parameterization of the current language
@@ -218,4 +133,88 @@ Event::listen('evolution.OnWebPageInit', function($params) {
 
     evo()->setLocale($langDefault);
     evo()->config['lang'] = $langDefault;
+});
+
+/**
+ * Filling in the fields when opening a resource in the admin panel
+ */
+Event::listen('evolution.OnDocFormTemplateRender', function($params) {
+    global $content;
+    $content['parent'] = $content['parent'] ?? 0;
+    $sLangController = new sLangController();
+    $content = $sLangController->prepareFields($content);
+    return $sLangController->tabs($params);
+});
+
+/**
+ * Modifying fields before saving a resource
+ */
+Event::listen('evolution.OnBeforeDocFormSave', function($params) {
+    if (empty($params['id'])) {
+        $id = collect(DB::select("
+            SELECT AUTO_INCREMENT
+            FROM `information_schema`.`tables`
+            WHERE `table_name` = '".evo()->getDatabase()->getFullTableName('site_content')."'"))
+            ->pluck('AUTO_INCREMENT')
+            ->first();
+        $params['id'] = $id;
+    }
+
+    $sLangController = new sLangController();
+
+    foreach (sLang::langConfig() as $langConfig) {
+        $fields = [];
+        foreach (request()->all() as $key => $value) {
+            if (str_starts_with($key, $langConfig.'_')) {
+                $keyName = str_replace($langConfig.'_', '', $key);
+                $fields[$keyName] = $value;
+                unset($_REQUEST[$key]);
+            }
+        }
+
+        if (count($fields)) {
+            $sLangController->setLangContent($params['id'], $langConfig, $fields);
+        }
+    }
+});
+
+/**
+ * Alias generation
+ */
+Event::listen('evolution.OnDocFormSave', function($params) {
+    if (isset($params['id']) && !empty($params['id'])) {
+        $sLangController = new sLangController();
+        $data = [];
+
+        foreach (request()->all() as $key => $value) {
+            if (str_starts_with($key, sLang::langDefault().'_')) {
+                $keyName = str_replace(sLang::langDefault().'_', '', $key);
+                $data[$keyName] = evo()->getDatabase()->escape($value);
+            }
+        }
+
+        if (request()->has('alias') && !trim(request('alias')) && request()->has('en_pagetitle')) {
+            $alias = strtolower(evo()->stripAlias(trim(request('en_pagetitle'))));
+            if (SiteContent::withTrashed()
+                    ->where('id', '<>', $params['id'])
+                    ->where('alias', $alias)->count() > 0) {
+                $cnt = 1;
+                $tempAlias = $alias;
+                while (SiteContent::withTrashed()
+                        ->where('id', '<>', $params['id'])
+                        ->where('alias', $tempAlias)->count() > 0) {
+                    $tempAlias = $alias;
+                    $tempAlias .= $cnt;
+                    $cnt++;
+                }
+                $alias = $tempAlias;
+            }
+            $data['alias'] = $alias;
+        }
+
+        if (!empty($data)) {
+            unset($data['seotitle'], $data['seodescription']);
+            evo()->db->update($data, evo()->getDatabase()->getFullTableName('site_content'), 'id=' . $params['id']);
+        }
+    }
 });
