@@ -1,5 +1,5 @@
 # sLang for Evolution CMS 3
-![sLang](https://user-images.githubusercontent.com/12029039/167660172-9596574a-47ae-4304-a389-814bfa4c9e87.png)
+![sLang](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.jpg)
 [![Latest Stable Version](https://img.shields.io/packagist/v/seiger/slang?label=version)](https://packagist.org/packages/seiger/slang)
 [![CMS Evolution](https://img.shields.io/badge/CMS-Evolution-brightgreen.svg)](https://github.com/evolution-cms/evolution)
 ![PHP version](https://img.shields.io/packagist/php-v/seiger/slang)
@@ -16,7 +16,10 @@ The work of the module is based on the use of the standard Laravel functionality
 
 - [x] Automatic translation of phrases through Google.
 - [x] Automatic search for translations in templates.
+- [x] Multilingual tabs in resource.
 - [x] Unlimited translation languages.
+
+![Multilingual tabs](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.png)
 
 ## Install by artisan package installer
 
