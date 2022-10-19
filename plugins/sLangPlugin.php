@@ -5,6 +5,8 @@
 
 use EvolutionCMS\Facades\UrlProcessor;
 use EvolutionCMS\Models\SiteContent;
+use EvolutionCMS\Models\SiteTmplvar;
+use EvolutionCMS\Models\SiteTmplvarContentvalue;
 use Seiger\sLang\Controllers\sLangController;
 use Seiger\sLang\Facades\sLang;
 
@@ -179,7 +181,7 @@ Event::listen('evolution.OnBeforeDocFormSave', function($params) {
 });
 
 /**
- * Alias generation
+ * Alias generation and Menu areas
  */
 Event::listen('evolution.OnDocFormSave', function($params) {
     if (isset($params['id']) && !empty($params['id'])) {
@@ -215,6 +217,52 @@ Event::listen('evolution.OnDocFormSave', function($params) {
         if (!empty($data)) {
             unset($data['seotitle'], $data['seodescription']);
             evo()->db->update($data, evo()->getDatabase()->getFullTableName('site_content'), 'id=' . $params['id']);
+        }
+
+        if (request()->has('menu_main')) {
+            $tv = SiteTmplvar::whereName('menu_main')->first();
+            if (!$tv) {
+                $tv = new SiteTmplvar();
+                $tv->type = 'checkbox';
+                $tv->name = 'menu_main';
+                $tv->caption = 'menu_main';
+                $tv->description = 'menu_main';
+                $tv->editor_type = '0';
+                $tv->category = '1';
+                $tv->locked = '1';
+                $tv->elements = '==1';
+                $tv->default_text = '0';
+                $tv->save();
+            }
+
+            $value = SiteTmplvarContentvalue::where('tmplvarid', $tv->id)->where('contentid', $params['id'])->firstOrNew();
+            $value->tmplvarid = $tv->id;
+            $value->contentid = $params['id'];
+            $value->value = (int)request()->menu_main;
+            $value->save();
+        }
+
+        if (request()->has('menu_footer')) {
+            $tv = SiteTmplvar::whereName('menu_footer')->first();
+            if (!$tv) {
+                $tv = new SiteTmplvar();
+                $tv->type = 'checkbox';
+                $tv->name = 'menu_footer';
+                $tv->caption = 'menu_footer';
+                $tv->description = 'menu_footer';
+                $tv->editor_type = '0';
+                $tv->category = '1';
+                $tv->locked = '1';
+                $tv->elements = '==1';
+                $tv->default_text = '0';
+                $tv->save();
+            }
+
+            $value = SiteTmplvarContentvalue::where('tmplvarid', $tv->id)->where('contentid', $params['id'])->firstOrNew();
+            $value->tmplvarid = $tv->id;
+            $value->contentid = $params['id'];
+            $value->value = (int)request()->menu_footer;
+            $value->save();
         }
     }
 });

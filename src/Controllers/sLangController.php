@@ -3,6 +3,7 @@
 use EvolutionCMS\ManagerTheme;
 use EvolutionCMS\Models\SiteContent;
 use EvolutionCMS\Models\SiteTmplvar;
+use EvolutionCMS\Models\SiteTmplvarContentvalue;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Validator;
@@ -338,7 +339,21 @@ class sLangController
             }
         }
 
-        return array_merge($content, $contentLang);
+        $contentMenu['menu_main'] = 0;
+        $tv = SiteTmplvar::whereName('menu_main')->first();
+        if ($tv) {
+            $value = SiteTmplvarContentvalue::where('tmplvarid', $tv->id)->where('contentid', ($content['id'] ?? 0))->first();
+            $contentMenu['menu_main'] = $value->value ?? 0;
+        }
+
+        $contentMenu['menu_footer'] = 0;
+        $tv = SiteTmplvar::whereName('menu_footer')->first();
+        if ($tv) {
+            $value = SiteTmplvarContentvalue::where('tmplvarid', $tv->id)->where('contentid', ($content['id'] ?? 0))->first();
+            $contentMenu['menu_footer'] = $value->value ?? 0;
+        }
+
+        return array_merge($content, $contentLang, $contentMenu);
     }
 
     /**

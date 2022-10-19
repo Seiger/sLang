@@ -13,6 +13,17 @@
 @endforeach
 
 <style>
+    input[type=checkbox], input[type=radio] {padding:0.5em;}
+    form#mutate input[name="menuindex"] {padding:0.5em;text-align:left;}
+    .form-row .row-col {display:flex; flex-wrap:wrap; flex-direction:row; align-content:start; padding-right:0.75rem;}
+    .form-row .row-col > .row:not(.col):not(.col-sm):not(.col-md):not(.col-lg):not(.col-xl) {-ms-flex:0 0 100%;flex:0 0 100%;max-width:100%;}
+    .form-row-checkbox {align-items:center;}
+    .form-row .col-title-6{width:6rem;}
+    .form-row .col-title-7{width:7rem;}
+    .form-row .col-title{width:8rem;}
+    .form-row .col-title-9{width:9rem;}
+    .form-row .col-auto {padding-left:0;}
+    .warning + [data-tooltip].fa-question-circle {margin:0.3rem 0.5rem 0;}
     .badge.bg-seigerit{background-color:#0057b8 !important;color:#ffd700;font-size:85%;}
 </style>
 
