@@ -1,53 +1,77 @@
-## Welcome to sLang
-
-![slang](https://user-images.githubusercontent.com/12029039/167660172-9596574a-47ae-4304-a389-814bfa4c9e87.png)
-[![GitHub version](https://img.shields.io/badge/version-v.1.1.1-blue)](https://github.com/Seiger/seigerlang/releases)
+# sLang for Evolution CMS 3
+![sLang](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.jpg)
+[![Latest Stable Version](https://img.shields.io/packagist/v/seiger/slang?label=version)](https://packagist.org/packages/seiger/slang)
 [![CMS Evolution](https://img.shields.io/badge/CMS-Evolution-brightgreen.svg)](https://github.com/evolution-cms/evolution)
-![PHP version](https://img.shields.io/badge/PHP->=v7.4-red.svg?php=7.4)
+![PHP version](https://img.shields.io/packagist/php-v/seiger/slang)
+[![License](https://img.shields.io/packagist/l/seiger/slang)](https://packagist.org/packages/seiger/slang)
+[![Issues](https://img.shields.io/github/issues/Seiger/slang)](https://github.com/Seiger/slang/issues)
+[![Stars](https://img.shields.io/packagist/stars/Seiger/slang)](https://packagist.org/packages/seiger/slang)
+[![Total Downloads](https://img.shields.io/packagist/dt/seiger/slang)](https://packagist.org/packages/seiger/slang)
 
-Seiger Lang multi language Management Module for Evolution CMS admin panel.
+**sLang** Seiger Lang multi language Management Module for Evolution CMS admin panel.
 
 The work of the module is based on the use of the standard Laravel functionality for multilingualism.
 
 ## Features
-- [x] Based on **templatesEdit3** plugin.
-- [x] Automatic translation of phrases through Google
-- [x] Automatic search for translations in templates
-- [x] Unlimited translation languages
 
-## Requirements
-Before installing the module, make sure you have the templatesEdit3 plugin installed.
+- [x] Automatic translation of phrases through Google.
+- [x] Automatic search for translations in templates.
+- [x] Multilingual tabs in resource.
+- [x] Unlimited translation languages.
 
-## Use in controllers
-For using this module on front pages your need add few includes to base controller
-```php
-require_once MODX_BASE_PATH . 'assets/modules/seigerlang/sLang.class.php';
+![Multilingual tabs](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.png)
+
+## Install by artisan package installer
+
+Go to You /core/ folder:
+
+```console
+cd core
 ```
 
-## Use in templates
+Run php artisan command
+
+```console
+php artisan package:installrequire seiger/slang "*"
+```
+
+```console
+php artisan vendor:publish --provider="Seiger\sLang\sLangServiceProvider"
+```
+
+Run make DB structure with command:
+
+```console
+php artisan migrate
+```
+
+## Usage in blade
 Current language:
 ```php
 [(lang)]
-```
-
-Translation of phrases:
-```php
-@lang('phrase')
+or
+{{evo()->getConfig('lang')}}
+or
+{{evo()->getLocale()}}
 ```
 
 Default language:
 ```php
 [(s_lang_default)]
+or
+{{evo()->getConfig('s_lang_default')}}
 ```
 
 List of frontend languages by comma:
 ```php
 [(s_lang_front)]
+or
+{{evo()->getConfig('s_lang_default')}}
 ```
 
-Multilingual link:
+Translation of phrases:
 ```php
-[~~[(catalog_root)]~~]
+@lang('phrase')
 ```
 
 Localized versions of your page for Google hreflang
@@ -60,9 +84,31 @@ Localized versions of your page for Google hreflang
 
 Implementing a Language Switcher
 ```php
-@foreach($sLang->langSwitcher() as $lang => $link)
-    <a href="{{$link}}">{{Str::ucfirst($lang)}}</a>
+@foreach(sLang::langSwitcher() as $lang)
+    <a href="{{$lang['link']}}">{{Str::upper($lang['ISO 639-1'])}}</a>
 @endforeach
+```
+
+Example returns langSwitcher
+```php
+^ array:2 [▼
+  "uk" => array:6 [▼
+    "name" => "Українська"
+    "short" => "Укр"
+    "ISO 639-1" => "uk"
+    "ISO 639-3" => "ukr"
+    "country" => "Ukraine"
+    "link" => "https://example.com/"
+  ]
+  "en" => array:6 [▼
+    "name" => "English"
+    "short" => "Eng"
+    "ISO 639-1" => "en"
+    "ISO 639-3" => "eng"
+    "country" => "English"
+    "link" => "https://example.com/en/"
+  ]
+]
 ```
 
 Get resources with translations for the current language.
@@ -81,61 +127,6 @@ $mainMenu = sLangContent::langAndTvs(evo()->getConfig('lang'), ['tv_image'])
     ->whereTv('tv_main_menu', 1)
     ->orderBy('menuindex')
     ->get();
-```
-
-## Setting
-This module uses the **templatesEdit3** plugin to display multilingual content fields in the site's admin area.
-
-If, after setting up the module, the multilingual fields are not displayed on the resource editing tab, then you need to check the file *MODX_BASE_PATH.'assets/plugins/templatesedit/configs/custom_fields.php'*
-```php
-<?php global $_lang, $modx; 
-return [
-	'en_pagetitle' => [
-		'title' => $_lang['resource_title'].' (EN)',
-		'help' => $_lang['resource_title_help'],
-		'default' => '',
-		'save' => '',
-	],
-	'en_longtitle' => [
-		'title' => $_lang['long_title'].' (EN)',
-		'help' => $_lang['resource_long_title_help'],
-		'default' => '',
-		'save' => '',
-	],
-	'en_description' => [
-		'title' => $_lang['resource_description'].' (EN)',
-		'help' => $_lang['resource_description_help'],
-		'default' => '',
-		'save' => '',
-	],
-	'en_introtext' => [
-		'title' => $_lang['resource_summary'].' (EN)',
-		'help' => $_lang['resource_summary_help'],
-		'default' => '',
-		'save' => '',
-	],
-	'en_content' => [
-		'title' => $_lang['resource_content'].' (EN)',
-		'default' => '',
-		'save' => '',
-	],
-	'en_menutitle' => [
-		'title' => $_lang['resource_opt_menu_title'].' (EN)',
-		'help' => $_lang['resource_opt_menu_title_help'],
-		'default' => '',
-		'save' => '',
-	],
-	'en_seotitle' => [
-		'title' => $_lang['resource_title'].' SEO (EN)',
-		'default' => '',
-		'save' => '',
-	],
-	'en_seodescription' => [
-		'title' => $_lang['resource_description'].' SEO (EN)',
-		'default' => '',
-		'save' => '',
-	],
-];
 ```
 
 To enable a text editor for a content field, you must select ***Type: Rich Text*** for the field when setting the template fields in templatesEdit3.

@@ -49,21 +49,29 @@ php artisan migrate
 Current language:
 ```php
 [(lang)]
-```
-
-Translation of phrases:
-```php
-@lang('phrase')
+or
+{{evo()->getConfig('lang')}}
+or
+{{evo()->getLocale()}}
 ```
 
 Default language:
 ```php
 [(s_lang_default)]
+or
+{{evo()->getConfig('s_lang_default')}}
 ```
 
 List of frontend languages by comma:
 ```php
 [(s_lang_front)]
+or
+{{evo()->getConfig('s_lang_default')}}
+```
+
+Translation of phrases:
+```php
+@lang('phrase')
 ```
 
 Localized versions of your page for Google hreflang
@@ -72,4 +80,13 @@ Localized versions of your page for Google hreflang
 {!!$sLang->hrefLang()!!}
 ```
 
-[See documentation here](https://seiger.github.io/seigerlang/)
+## Content management
+
+Implementing a Language Switcher
+```php
+@foreach(sLang::langSwitcher() as $lang)
+    <a href="{{$lang['link']}}">{{Str::upper($lang['ISO 639-1'])}}</a>
+@endforeach
+```
+
+[See full documentation here](https://seiger.github.io/slang/)
