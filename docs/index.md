@@ -50,13 +50,9 @@ Current language:
 ```php
 [(lang)]
 or
-{% raw %}
-{{evo()->getLocale()}}
-{% endraw %}
+{% raw %}{{evo()->getLocale()}}{% endraw %}
 or
-{% raw %}
-{{evo()->getConfig('lang')}}
-{% endraw %}
+{% raw %}{{evo()->getConfig('lang')}}{% endraw %}
 ```
 
 Default language:
