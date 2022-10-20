@@ -80,9 +80,9 @@ Localized versions of your page for Google hreflang
 {!!$sLang->hrefLang()!!}
 ```
 
-## Content management
+## Language Switcher
 
-Implementing a Language Switcher
+Implementing a Language Switcher in Blade template
 ```php
 @foreach(sLang::langSwitcher() as $lang)
     <a href="{% raw %}{{$lang['link']}}{% endraw %}">{% raw %}{{Str::upper($lang['ISO 639-1'])}}{% endraw %}</a>
@@ -111,20 +111,68 @@ Example returns langSwitcher
 ]
 ```
 
-Get resources with translations for the current language.
+## Menu list
+
+By default, sLang offers 2 menu areas. This is the **Main Menu** and the **Footer Menu**. These areas are built on TV **menu_main** and **menu_footer** parameters and displayed in the resource settings tab.
+
+Data preparation in BaseController.php
 ```php
-@foreach(\sLang\Models\sLangContent::langAndTvs(evo()->getConfig('lang'))->whereParent(11)->get() as $content)
-    <li class="brands__item">
-        <a class="text__mini" href="@makeUrl($content->id)">{% raw %}{{$content->menutitle}}{% endraw %}</a>
-    </li>
-@endforeach
+use Seiger\sLang\Models\sLangContent;
+
+... 
+
+public function globalElements()
+{
+    $this->data['menu_main'] = sLangContent::langAndTvs(evo()->getConfig('lang', 'uk'))
+        ->whereTv('menu_main', 1)
+        ->where('hidemenu', 0)
+        ->orderBy('menuindex')
+        ->active()
+        ->get();
+
+    $this->data['menu_footer'] = sLangContent::langAndTvs(evo()->getConfig('lang', 'uk'))
+        ->whereTv('menu_footer', 1)
+        ->where('hidemenu', 0)
+        ->orderBy('menuindex')
+        ->active()
+        ->get();
+}
 ```
 
-Get resources with TV parameters and filtering by TV parameter.
+Output in the Blade template
 ```php
-$mainMenu = sLangContent::langAndTvs(evo()->getConfig('lang'), ['tv_image'])
-    ->active()
-    ->whereTv('tv_main_menu', 1)
-    ->orderBy('menuindex')
-    ->get();
+@if($menu_main)
+    <ul>
+        @foreach($menu_main as $menu)
+            @if($menu->id == evo()->documentObject['id'])
+            <li class="active">
+                <a>{% raw %}{{$menu->menutitle}}{% endraw %}</a>
+            </li>
+            @else
+                <li>
+                    <a href="@makeUrl($menu->id)">{% raw %}{{$menu->menutitle}}{% endraw %}</a>
+                </li>
+            @endif
+        @endforeach
+    </ul>
+@endif
+```
+
+## TV variables
+
+The ```langAndTvs()``` method makes it quite easy to get TV parameters associated with a resource. For example, the **tv_image** parameter
+
+Get in the controller.
+```php
+$resource = sLangContent::langAndTvs(evo()->getConfig('lang'), ['tv_image'])->active()->first();
+```
+
+Display in the template.
+```php
+{% raw %}{{$resource->tv_image}}{% endraw %}
+```
+
+The ```whereTv()``` method allows you to use a filter based on the value of the TV parameter if necessary.
+```php
+$resource = sLangContent::langAndTvs(evo()->getConfig('lang'), ['tv_image'])->whereTv('tv_image', '!=', '')->get();
 ```
