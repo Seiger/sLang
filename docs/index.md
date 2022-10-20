@@ -59,14 +59,14 @@ Default language:
 ```php
 [(s_lang_default)]
 or
-{{evo()->getConfig('s_lang_default')}}
+{% raw %}{{evo()->getConfig('s_lang_default')}}{% endraw %}
 ```
 
 List of frontend languages by comma:
 ```php
 [(s_lang_front)]
 or
-{{evo()->getConfig('s_lang_default')}}
+{% raw %}{{evo()->getConfig('s_lang_default')}}{% endraw %}
 ```
 
 Translation of phrases:
@@ -85,7 +85,7 @@ Localized versions of your page for Google hreflang
 Implementing a Language Switcher
 ```php
 @foreach(sLang::langSwitcher() as $lang)
-    <a href="{{$lang['link']}}">{{Str::upper($lang['ISO 639-1'])}}</a>
+    <a href="{% raw %}{{$lang['link']}}{% endraw %}">{% raw %}{{Str::upper($lang['ISO 639-1'])}}{% endraw %}</a>
 @endforeach
 ```
 
@@ -115,7 +115,7 @@ Get resources with translations for the current language.
 ```php
 @foreach(\sLang\Models\sLangContent::langAndTvs(evo()->getConfig('lang'))->whereParent(11)->get() as $content)
     <li class="brands__item">
-        <a class="text__mini" href="@makeUrl($content->id)">{{$content->menutitle}}</a>
+        <a class="text__mini" href="@makeUrl($content->id)">{% raw %}{{$content->menutitle}}{% endraw %}</a>
     </li>
 @endforeach
 ```
