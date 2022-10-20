@@ -47,7 +47,7 @@ php artisan migrate
 
 ## Usage in blade
 Current language:
-```php
+```blade
 [(lang)]
 or
 {{evo()->getConfig('lang')}}
@@ -128,5 +128,3 @@ $mainMenu = sLangContent::langAndTvs(evo()->getConfig('lang'), ['tv_image'])
     ->orderBy('menuindex')
     ->get();
 ```
-
-To enable a text editor for a content field, you must select ***Type: Rich Text*** for the field when setting the template fields in templatesEdit3.
