@@ -1,7 +1,7 @@
 @if ($paginator->hasPages())
     {{-- Full link generate --}}
     @php
-        $fullUrl = sOffers::moduleUrl() . (request()->has('search') ? '&search=' . request()->search : '');
+        $fullUrl = sLang::moduleUrl() . (request()->has('search') ? '&search=' . request()->search : '');
         $paginator->withPath($fullUrl);
     @endphp
     <style>.dark #translatePagination a {color: #444}</style>
