@@ -47,12 +47,16 @@ php artisan migrate
 
 ## Usage in blade
 Current language:
-```blade
+```php
 [(lang)]
 or
-{{evo()->getConfig('lang')}}
-or
+{% raw %}
 {{evo()->getLocale()}}
+{% endraw %}
+or
+{% raw %}
+{{evo()->getConfig('lang')}}
+{% endraw %}
 ```
 
 Default language:
