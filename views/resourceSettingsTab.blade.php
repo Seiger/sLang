@@ -79,7 +79,7 @@
                             @php($content['parent'] = 0)
                         @endif
                         @if($parentlookup !== false && is_numeric($parentlookup))
-                            @php($parentname = SiteContent::withTrashed()->select('pagetitle')->find($parentlookup)->pagetitle)
+                            @php($parentname = \EvolutionCMS\Models\SiteContent::withTrashed()->select('pagetitle')->find($parentlookup)->pagetitle)
                             @if(!$parentname)
                                 @php(evo()->webAlertAndQuit($_lang["error_no_parent"]))
                             @endif
