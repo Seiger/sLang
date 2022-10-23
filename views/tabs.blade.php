@@ -1,7 +1,7 @@
 @php global $content, $richtexteditorIds, $richtexteditorOptions; @endphp
 
 @include('sLang::resourceGeneralTab')
-
+@include('sLang::resourceTemplateVariablesTab')
 @include('sLang::resourceSettingsTab')
 
 @foreach (sLang::siteContentFields() as $siteContentField)

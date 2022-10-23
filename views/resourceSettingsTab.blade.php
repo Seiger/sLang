@@ -2,7 +2,6 @@
 <div class="tab-page" id="tabSettings">
     <h2 class="tab">@lang('global.settings_page_settings')</h2>
     <script type="text/javascript">tpSettings.addTabPage(document.getElementById("tabSettings"));</script>
-
     <div class="row form-row">
         @php($mx_can_pub = evo()->hasPermission('publish_document') ? '' : 'disabled="disabled" ')
         <div class="row-col col-lg-6 col-md-6 col-12">
@@ -127,7 +126,7 @@
             </div>
             {{-- Menu --}}
             <div class="row form-row form-row-checkbox">
-                <div class="col-auto col-title-10">
+                <div class="col-auto col-title-auto">
                     <label for="alias_visiblecheck" class="warning">@lang('global.resource_opt_alvisibled')</label>
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_alvisibled_help')"></i>
                 </div>
@@ -137,7 +136,7 @@
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
-                <div class="col-auto col-title-10">
+                <div class="col-auto col-title-auto">
                     <label for="searchablecheck" class="warning">@lang('global.page_data_searchable')</label>
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.page_data_searchable_help')"></i>
                 </div>
@@ -147,7 +146,7 @@
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
-                <div class="col-auto col-title-10">
+                <div class="col-auto col-title-auto">
                     <label for="richtextcheck" class="warning">@lang('global.resource_opt_richtext')</label>
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_richtext_help')"></i>
                 </div>
@@ -157,7 +156,7 @@
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
-                <div class="col-auto col-title-10">
+                <div class="col-auto col-title-auto">
                     <label for="isfoldercheck" class="warning">@lang('global.resource_opt_folder')</label>
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_folder_help')"></i>
                 </div>
@@ -167,7 +166,7 @@
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
-                <div class="col-auto col-title-10">
+                <div class="col-auto col-title-auto">
                     <label for="hide_from_treecheck" class="warning">@lang('global.track_visitors_title')</label>
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_trackvisit_help')"></i>
                 </div>
@@ -208,7 +207,7 @@
                 </div>
             </div>
             <div class="row form-row">
-                <div class="col-auto col-title-10">
+                <div class="col-auto col-title-auto">
                     <label for="link_attributes" class="warning">@lang('global.link_attributes')</label>
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.link_attributes_help')"></i>
                 </div>
@@ -217,7 +216,7 @@
                 </div>
             </div>
             <div class="row form-row">
-                <div class="col-auto col-title-10">
+                <div class="col-auto col-title-auto">
                     <label for="menuindex" class="warning">@lang('global.resource_opt_menu_index')</label>
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_menu_index_help')"></i>
                 </div>
@@ -230,7 +229,7 @@
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
-                <div class="col-auto col-title-10">
+                <div class="col-auto col-title-auto">
                     <label for="hidemenucheck" class="warning">@lang('global.resource_opt_show_menu')</label>
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_show_menu_help')"></i>
                 </div>
@@ -240,7 +239,7 @@
                 </div>
             </div>
             <div class="row form-row form-row-date">
-                <div class="col-auto col-title-10">
+                <div class="col-auto col-title-auto">
                     <label for="pub_date" class="warning">@lang('global.page_data_publishdate')</label>
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.page_data_publishdate_help')"></i>
                 </div>
@@ -254,7 +253,7 @@
                 </div>
             </div>
             <div class="row form-row form-row-date">
-                <div class="col-auto col-title-10">
+                <div class="col-auto col-title-auto">
                     <label for="unpub_date" class="warning">@lang('global.page_data_unpublishdate')</label>
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.page_data_unpublishdate_help')"></i>
                 </div>
@@ -296,7 +295,7 @@
                     </div>
                 </div>
                 <div class="row form-row">
-                    <div class="col-auto col-title-10">
+                    <div class="col-auto col-title-auto">
                         <label for="content_dispo" class="warning">@lang('global.resource_opt_contentdispo')</label>
                         <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_contentdispo_help')"></i>
                     </div>

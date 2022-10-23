@@ -3,7 +3,6 @@
 @section('content')
     <div class="notifier"><div class="notifier-txt"></div></div>
     <h1><i class="@lang('sLang::global.slang_icon')" data-tooltip="@lang('sLang::global.description')"></i> @lang('sLang::global.slang_desc') <i class="fa fa-question-circle" data-tooltip="@lang('sLang::global.example_usage')"></i></h1>
-
     <div class="sectionBody">
         <div class="tab-pane" id="resourcesPane">
             <script>tpResources = new WebFXTabPane(document.getElementById('resourcesPane'), false);</script>
