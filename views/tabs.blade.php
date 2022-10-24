@@ -36,8 +36,12 @@
 
             let source = '{{sLang::langDefault()}}';
             let target = this.getAttribute('data-lang');
-            let element = this.closest('td').querySelector('[name^="'+target+'_"]').getAttribute('name').replace(target, '');
-            let _text = document.querySelector('[name^="'+source+element+'"]').value;
+            let element = this.closest('.col').querySelector('[name^="'+target+'_"]');
+            if (element.type == 'textarea') {
+                tinymce.remove();
+            }
+            elementName = element.getAttribute('name').replace(target, '');
+            let _text = document.querySelector('[name^="'+source+elementName+'"]').value;
 
             fetch('{!!sLang::moduleUrl()!!}&get=translates&action=translate-only', {
                 body: new URLSearchParams({'text':_text, 'source':source, 'target':target}),
@@ -49,7 +53,10 @@
             }).then((response) => {
                 return response.text();
             }).then((data) => {
-                document.querySelector('[name="'+target+element+'"]').value = data;
+                document.querySelector('[name="'+target+elementName+'"]').value = data;
+                if (element.type == 'textarea') {
+                    tinymce.init({{evo()->getConfig('tinymce5_theme') ?? 'custom'}});
+                }
                 this.disabled = false;
                 window.parent.document.getElementById('mainloader').classList.remove('show');
             }).catch(function(error) {

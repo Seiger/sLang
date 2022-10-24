@@ -239,7 +239,7 @@ class sLang
                 $out .= isset($s['trans']) ? $s['trans'] : '';
             }
         } else {
-            $out = 'No result';
+            $out = '';
         }
 
         if (preg_match('%^\p{Lu}%u', $text) && !preg_match('%^\p{Lu}%u', $out)) { // Если оригинал с заглавной буквы то делаем и певерод с заглавной

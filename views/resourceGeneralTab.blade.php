@@ -116,7 +116,7 @@
         @if($content['type'] == 'document' || evo()->getManagerApi()->action == '4')
             <table>
                 <tr>
-                    <td colspan="2">
+                    <td colspan="2" class="col">
                         <hr> <!-- Content -->
                         <div class="clearfix">
                             <span id="content_header">@lang('global.resource_content')</span>
