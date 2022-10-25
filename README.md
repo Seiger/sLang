@@ -76,8 +76,7 @@ Translation of phrases:
 
 Localized versions of your page for Google hreflang
 ```php
-@php($sLang = new sLang())
-{!!$sLang->hrefLang()!!}
+{!!sLang::hreflang()!!}
 ```
 
 ## Content management
