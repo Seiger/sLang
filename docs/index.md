@@ -66,12 +66,16 @@ List of frontend languages by comma:
 ```php
 [(s_lang_front)]
 or
-{% raw %}{{evo()->getConfig('s_lang_default')}}{% endraw %}
+{% raw %}{{evo()->getConfig('s_lang_front')}}{% endraw %}
 ```
 
 Translation of phrases:
 ```php
+In Blade:
 @lang('phrase')
+
+In Controller:
+__('phrase')
 ```
 
 Localized versions of your page for Google hreflang
@@ -159,7 +163,7 @@ Output in the Blade template
 
 ## TV variables
 
-The ```langAndTvs()``` method makes it quite easy to get TV parameters associated with a resource. For example, the **tv_image** parameter
+The ```langAndTvs()``` method makes it quite easy to get TV parameters associated with a resource. For example, the **tv_image** parameter.
 
 Get in the controller.
 ```php
