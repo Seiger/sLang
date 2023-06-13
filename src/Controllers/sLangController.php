@@ -242,7 +242,7 @@ class sLangController
      */
     public function setModifyTables()
     {
-        $tbl = $this->tblLang = evo()->getDatabase()->getFullTableName('s_lang_translates');
+        $tbl = evo()->getDatabase()->getFullTableName('s_lang_translates');
         $langConfig = sLang::langConfig();
 
         /**
