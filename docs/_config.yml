@@ -1,4 +1,4 @@
 title: sLang Docs
-remote_theme: pages-themes/cayman@v0.2.0
+remote_theme: tomjoht/documentation-theme-jekyll
 plugins:
   - jekyll-remote-theme
