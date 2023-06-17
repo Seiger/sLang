@@ -2,7 +2,7 @@
     <div class="input-group">
         <input type="text" class="form-control" name="search" value="{{request()->search ?? ''}}" />
         <span class="input-group-btn">
-            <button class="btn btn-light js_search" type="button" title="Search" style="padding:0 5px;color:#0275d8;">
+            <button class="btn btn-light js_search" type="button" title="Search" style="padding:0 5px;color:#0057b8;">
                 <i class="fa fa-search" style="font-size:large;margin:5px;"></i>
             </button>
         </span>
@@ -30,7 +30,7 @@
                                 <div class="input-group">
                                     <input type="text" class="form-control" name="sLang[{{$dictionary['tid']}}][{{$langConfig}}]" value="{{$dictionary[$langConfig]}}" />
                                     <span class="input-group-btn">
-                                        <button class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($langConfig)}}" style="padding:0 5px;color:#0275d8;">
+                                        <button class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($langConfig)}}" style="padding:0 5px;color:#0057b8;">
                                             <i class="fa fa-language" style="font-size:xx-large;"></i>
                                         </button>
                                     </span>
@@ -61,7 +61,7 @@
                             <input type="text" name="translate[{{$langConfig}}]" class="form-control" value="">
                             @if(sLang::langDefault() != $langConfig)
                                 <span class="input-group-btn">
-                                    <button data-lang="{{$langConfig}}" class="btn btn-light js_translate_only" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($langConfig)}}" style="padding:0 5px;color:#0275d8;">
+                                    <button data-lang="{{$langConfig}}" class="btn btn-light js_translate_only" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($langConfig)}}" style="padding:0 5px;color:#0057b8;">
                                         <i class="fa fa-language" style="font-size: xx-large;"></i>
                                     </button>
                                 </span>

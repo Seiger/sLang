@@ -48,8 +48,6 @@ php artisan migrate
 ## Usage in blade
 Current language:
 ```php
-[(lang)]
-or
 {{evo()->getConfig('lang')}}
 or
 {{evo()->getLocale()}}
@@ -57,15 +55,11 @@ or
 
 Default language:
 ```php
-[(s_lang_default)]
-or
 {{evo()->getConfig('s_lang_default')}}
 ```
 
 List of frontend languages by comma:
 ```php
-[(s_lang_front)]
-or
 {{evo()->getConfig('s_lang_default')}}
 ```
 
@@ -81,6 +75,11 @@ Localized versions of your page for Google hreflang
 
 ## Content management
 
+Show current language anywhere with name or shortname
+```php
+{{Str::upper(sLang::langSwitcher()[evo()->getConfig('lang')]['short'])}}
+```
+
 Implementing a Language Switcher
 ```php
 @foreach(sLang::langSwitcher() as $lang)
@@ -88,4 +87,4 @@ Implementing a Language Switcher
 @endforeach
 ```
 
-[See full documentation here](https://seiger.github.io/slang/)
+[See full documentation here](https://seiger.github.io/sLang/)

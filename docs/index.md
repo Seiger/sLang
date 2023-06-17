@@ -48,8 +48,6 @@ php artisan migrate
 ## Usage in blade
 Current language:
 ```php
-[(lang)]
-or
 {% raw %}{{evo()->getLocale()}}{% endraw %}
 or
 {% raw %}{{evo()->getConfig('lang')}}{% endraw %}
@@ -57,15 +55,11 @@ or
 
 Default language:
 ```php
-[(s_lang_default)]
-or
 {% raw %}{{evo()->getConfig('s_lang_default')}}{% endraw %}
 ```
 
 List of frontend languages by comma:
 ```php
-[(s_lang_front)]
-or
 {% raw %}{{evo()->getConfig('s_lang_front')}}{% endraw %}
 ```
 
@@ -85,10 +79,15 @@ Localized versions of your page for Google hreflang
 
 ## Language Switcher
 
+Show current language anywhere with name or shortname
+```php
+{% raw %}{{Str::upper(sLang::langSwitcher()[evo()->getConfig('lang')]['short'])}}{% endraw %}
+```
+
 Implementing a Language Switcher in Blade template
 ```php
 @foreach(sLang::langSwitcher() as $lang)
-    <a href="{% raw %}{{$lang['link']}}{% endraw %}">{% raw %}{{Str::upper($lang['ISO 639-1'])}}{% endraw %}</a>
+    <a href="{% raw %}{{$lang['link']}}{% endraw %}">{% raw %}{{Str::upper($lang['short'])}}{% endraw %}</a>
 @endforeach
 ```
 
