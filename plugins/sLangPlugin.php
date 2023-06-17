@@ -115,6 +115,29 @@ Event::listen('evolution.OnPageNotFound', function($params) {
 /**
  * Make Lang Config
  */
+Event::listen('evolution.OnLoadSettings', function($params) {
+    if (isset($params['lang'])) {
+        $langDefault = $params['lang'];
+    } else {
+        $langDefault = sLang::langDefault();
+
+        if (isset($_SERVER['REQUEST_URI'])) {
+            $url = explode('/', ltrim($_SERVER['REQUEST_URI'], '/'), 2);
+
+            if (trim($url[0])) {
+                if (in_array($url[0], sLang::langFront())) {
+                    $langDefault = $url[0];
+                }
+            }
+        }
+    }
+
+    evo()->setLocale($langDefault);
+    evo()->setConfig('lang', $langDefault);
+});
+/**
+ * @deprecated
+ */
 Event::listen('evolution.OnWebPageInit', function($params) {
     if (isset($params['lang'])) {
         $langDefault = $params['lang'];
