@@ -6,7 +6,7 @@
 
 @foreach (sLang::siteContentFields() as $siteContentField)
     @if($siteContentField == 'content')
-        <input name="ta" type="hidden" value="{!!$content[sLang::langDefault() . '_' . $siteContentField]!!}">
+        <input name="ta" type="hidden" value="{{$content[sLang::langDefault() . '_' . $siteContentField]}}">
     @else
         <input name="{{$siteContentField}}" type="hidden" value="{!!$content[sLang::langDefault() . '_' . $siteContentField]!!}">
     @endif
