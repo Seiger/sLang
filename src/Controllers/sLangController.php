@@ -6,6 +6,7 @@ use EvolutionCMS\Models\SiteTmplvar;
 use EvolutionCMS\Models\SiteTmplvarContentvalue;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -244,7 +245,7 @@ class sLangController
      */
     public function setModifyTables()
     {
-        $tbl = evo()->getDatabase()->getFullTableName('s_lang_translates');
+        $tbl = $this->tblLang = evo()->getDatabase()->getFullTableName('s_lang_translates');
         $langConfig = sLang::langConfig();
 
         /**
@@ -299,16 +300,18 @@ class sLangController
         $list = [];
         $langDefault = sLang::langDefault();
         if (is_dir(MODX_BASE_PATH . 'views')) {
-            $views = array_merge(glob(MODX_BASE_PATH . 'views/*.blade.php'), glob(MODX_BASE_PATH . 'views/*/*.blade.php'));
+            $views = Storage::disk('public')->allFiles('views');
 
             if (is_array($views) && count($views)) {
                 foreach ($views as $view) {
-                    $data = file_get_contents($view);
-                    preg_match_all("/@lang\('\K.+?(?='\))/", $data, $match);
+                    if (Str::of($view)->contains('.blade.')) {
+                        $data = file_get_contents(MODX_BASE_PATH . $view);
+                        preg_match_all("/@lang\('\K.+?(?='\))/", $data, $match);
 
-                    if (is_array($match) && is_array($match[0]) && count($match[0])) {
-                        foreach ($match[0] as $item) {
-                            $list[] = str_replace(["@lang('", "')"], '', $item);
+                        if (is_array($match) && is_array($match[0]) && count($match[0])) {
+                            foreach ($match[0] as $item) {
+                                $list[] = str_replace(["@lang('", "')"], '', $item);
+                            }
                         }
                     }
                 }
@@ -434,7 +437,7 @@ class sLangController
         }
 
         $html = '<tr><td>'.$data->key.'</td>';
-        foreach(sLang::langConfig() as $langConfig) {
+        foreach($this->langConfig() as $langConfig) {
             $html .= '<td data-tid="'.$data->tid.'" data-lang="'.$langConfig.'">';
             if ($langConfig == $this->langDefault()) {
                 $html .= '<input type="text" class="form-control" name="sLang['.$data->tid.']['.$langConfig.']" value="'.$data->{$langConfig}.'" />';
@@ -442,7 +445,7 @@ class sLangController
                 $html .= '<div class="input-group">';
                 $html .= '<input type="text" class="form-control" name="sLang['.$data->tid.']['.$langConfig.']" value="'.$data->{$langConfig}.'" />';
                 $html .= '<span class="input-group-btn">';
-                $html .= '<button class="btn btn-light js_translate" type="button" title="'.$_lang['slang_auto_translate'].' '.strtoupper($this->langDefault()).' => '.strtoupper($langConfig).'" style="padding:0 5px;color:#0057b8;">';
+                $html .= '<button class="btn btn-light js_translate" type="button" title="'.$_lang['slang_auto_translate'].' '.strtoupper($this->langDefault()).' => '.strtoupper($langConfig).'" style="padding:0 5px;color:#0275d8;">';
                 $html .= '<i class="fa fa-language" style="font-size:xx-large;"></i>';
                 $html .= '</button></span></div>';
             }
