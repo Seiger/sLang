@@ -15,6 +15,8 @@ use Seiger\sLang\Models\sLangTranslate;
 
 class sLangController
 {
+    public $tblLang = '';
+
     /**
      * Show tabs module
      *
