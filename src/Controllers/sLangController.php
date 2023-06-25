@@ -310,8 +310,10 @@ class sLangController
 
                         if (is_array($match) && is_array($match[0]) && count($match[0])) {
                             foreach ($match[0] as $item) {
-                                if (!Str::of($item)->contains('::') && str_starts_with('global.', $item)) {
-                                    $list[] = str_replace(["@lang('", "')"], '', $item);
+                                if (!Str::of($item)->contains('::')) {
+                                    if (!str_starts_with($item, 'global.')) {
+                                        $list[] = str_replace(["@lang('", "')"], '', $item);
+                                    }
                                 }
                             }
                         }
