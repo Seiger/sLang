@@ -157,6 +157,16 @@ class sLang
     }
 
     /**
+     * Path where files root this module
+     *
+     * @return mixed|string
+     */
+    public function basePath()
+    {
+        return $this->basePath;
+    }
+
+    /**
      * Module url
      *
      * @return string

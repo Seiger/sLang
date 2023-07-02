@@ -19,6 +19,16 @@ Event::listen('evolution.OnParseDocument', function($params) {
     // parse id as number
     evo()->documentOutput = str_replace('[*id*]', (evo()->documentObject['id'] ?? evo()->getConfig('site_start', 1)), evo()->documentOutput);
 
+    preg_match_all("/@lang\(['|\"](.*?)['|\"]\)/", evo()->documentOutput, $match);
+
+    if (is_file($file = MODX_BASE_PATH . 'core/lang/' . evo()->getLocale() . '.json')) {
+        $translates = json_decode(file_get_contents($file), true);
+
+        foreach ($match[0] as $key => $value) {
+            evo()->documentOutput = str_replace($value, $translates[$match[1][$key]], evo()->documentOutput);
+        }
+    }
+
     // parse language urls
     preg_match_all('/\[~~(\d+)~~\]/', evo()->documentOutput, $match);
     if ($match[0]) {

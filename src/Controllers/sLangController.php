@@ -436,20 +436,20 @@ class sLangController
     protected function getElementRow($data)
     {
         global $_lang;
-        if (is_file($this->basePath . 'lang/' . evo()->getConfig('manager_language', 'uk') . '.php')) {
-            require_once $this->basePath . 'lang/' . evo()->getConfig('manager_language', 'uk') . '.php';
+        if (is_file(sLang::basePath() . 'lang/' . evo()->getConfig('manager_language', 'uk') . '.php')) {
+            require_once sLang::basePath() . 'lang/' . evo()->getConfig('manager_language', 'uk') . '.php';
         }
 
         $html = '<tr><td>'.$data->key.'</td>';
-        foreach($this->langConfig() as $langConfig) {
+        foreach(sLang::langConfig() as $langConfig) {
             $html .= '<td data-tid="'.$data->tid.'" data-lang="'.$langConfig.'">';
-            if ($langConfig == $this->langDefault()) {
+            if ($langConfig == sLang::langDefault()) {
                 $html .= '<input type="text" class="form-control" name="sLang['.$data->tid.']['.$langConfig.']" value="'.$data->{$langConfig}.'" />';
             } else {
                 $html .= '<div class="input-group">';
                 $html .= '<input type="text" class="form-control" name="sLang['.$data->tid.']['.$langConfig.']" value="'.$data->{$langConfig}.'" />';
                 $html .= '<span class="input-group-btn">';
-                $html .= '<button class="btn btn-light js_translate" type="button" title="'.$_lang['slang_auto_translate'].' '.strtoupper($this->langDefault()).' => '.strtoupper($langConfig).'" style="padding:0 5px;color:#0275d8;">';
+                $html .= '<button class="btn btn-light js_translate" type="button" title="'.$_lang['slang_auto_translate'].' '.strtoupper(sLang::langDefault()).' => '.strtoupper($langConfig).'" style="padding:0 5px;color:#0275d8;">';
                 $html .= '<i class="fa fa-language" style="font-size:xx-large;"></i>';
                 $html .= '</button></span></div>';
             }
