@@ -449,7 +449,7 @@ class sLangController
                 $html .= '<div class="input-group">';
                 $html .= '<input type="text" class="form-control" name="sLang['.$data->tid.']['.$langConfig.']" value="'.$data->{$langConfig}.'" />';
                 $html .= '<span class="input-group-btn">';
-                $html .= '<button class="btn btn-light js_translate" type="button" title="'.$_lang['slang_auto_translate'].' '.strtoupper(sLang::langDefault()).' => '.strtoupper($langConfig).'" style="padding:0 5px;color:#0275d8;">';
+                $html .= '<button class="btn btn-light js_translate" type="button" title="'.__('auto_translate').' '.strtoupper(sLang::langDefault()).' => '.strtoupper($langConfig).'" style="padding:0 5px;color:#0057b8;">';
                 $html .= '<i class="fa fa-language" style="font-size:xx-large;"></i>';
                 $html .= '</button></span></div>';
             }
