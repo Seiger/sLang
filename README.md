@@ -18,6 +18,7 @@ The work of the module is based on the use of the standard Laravel functionality
 - [x] Automatic search for translations in templates.
 - [x] Multilingual tabs in resource.
 - [x] Unlimited translation languages.
+- [x] Managing the display of resource fields.
 
 ![Multilingual tabs](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.png)
 
