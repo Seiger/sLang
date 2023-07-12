@@ -178,3 +178,20 @@ The ```whereTv()``` method allows you to use a filter based on the value of the 
 ```php
 $resource = sLangContent::langAndTvs(evo()->getConfig('lang'), ['tv_image'])->whereTv('tv_image', '!=', '')->get();
 ```
+
+## Admin panel
+
+### Resource fields
+
+You can control the display of resource fields on general tabs through an event ```sLangDocFormFieldRender```.
+
+Usage example from your plugin:
+```php
+Event::listen('evolution.sLangDocFormFieldRender', function($params) {
+    if ($params['content']['template'] == 7) {
+        if ($params['name'] == 'introtext') {
+            return view('slang.introtext', $params)->render();
+        }
+    }
+});
+```
