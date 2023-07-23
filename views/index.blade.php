@@ -121,5 +121,5 @@
         .modal-backdrop {background-color:rgba(0, 0, 0, 0.5);}
         .modal-header{margin-top: 1rem;}
     </style>
-    <div id="copyright"><a href="https://seigerit.com/" target="_blank"><img src="/assets/site/seirgerit-yellow.svg"/></a></div>
+    <div id="copyright"><a href="https://seigerit.com/" target="_blank"><img src="{{evo()->getConfig('site_url', '/')}}assets/site/seigerit-yellow.svg"/></a></div>
 @endpush
