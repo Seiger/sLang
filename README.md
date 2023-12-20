@@ -10,6 +10,8 @@
 
 **sLang** Seiger Lang multi language Management Module for Evolution CMS admin panel.
 
+If you're looking to create a multilingual site powered by Evolution CMS, then the sLang module is just what you need.
+
 The work of the module is based on the use of the standard Laravel functionality for multilingualism.
 
 ## Features

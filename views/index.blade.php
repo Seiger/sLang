@@ -108,8 +108,8 @@
     </script>
     <style>
         .badge.bg-seigerit{background-color:#0057b8;color:#ffd700;font-size:85%;}
-        #copyright{position:fixed;bottom:0;right:0;background-color:#0057b8;padding:3px 7px;border-radius:5px;}
-        #copyright img{width:9em;}
+        #copyright{position:fixed;bottom:0;right:0;}
+        #copyright img{width:35px;}
         .notifier{position:fixed;display:none;top:0;left:0;width:100%;height:100vh;overflow-y:auto;z-index:9999;background:rgba(255,255,255,0.8);}
         .notifier-txt{position:absolute;width:100%;text-align:center;top:50%;left:50%;background:#fff;padding:30px;font-size:18px;-webkit-transform:translateY(-50%) translateX(-50%);-moz-transform:translateY(-50%) translateX(-50%);-ms-transform:translateY(-50%) translateX(-50%);-o-transform:translateY(-50%) translateX(-50%);transform:translateY(-50%) translateX(-50%);}
         .notifier-error{color:red;}
@@ -121,5 +121,5 @@
         .modal-backdrop {background-color:rgba(0, 0, 0, 0.5);}
         .modal-header{margin-top: 1rem;}
     </style>
-    <div id="copyright"><a href="https://seigerit.com/" target="_blank"><img src="{{evo()->getConfig('site_url', '/')}}assets/site/seigerit-yellow.svg"/></a></div>
+    <div id="copyright"><a href="https://seigerit.com/" target="_blank"><img src="{{evo()->getConfig('site_url', '/')}}assets/site/seigerit-blue.svg"/></a></div>
 @endpush

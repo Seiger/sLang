@@ -29,7 +29,7 @@ class sLangServiceProvider extends ServiceProvider
             // For use config
             $this->publishes([
                 dirname(__DIR__) . '/config/sLangAlias.php' => config_path('app/aliases/sLang.php', true),
-                dirname(__DIR__) . '/images/seirgerit-yellow.svg' => public_path('assets/site/seirgerit-yellow.svg'),
+                dirname(__DIR__) . '/images/seigerit-blue.svg' => public_path('assets/site/seigerit-blue.svg'),
             ]);
         }
 
