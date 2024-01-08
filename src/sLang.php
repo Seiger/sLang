@@ -28,7 +28,7 @@ class sLang
     }
 
     /**
-     * List of frontend document languages
+     * Returns an array of alternative site languages for the language switcher
      *
      * @return array
      */
@@ -57,9 +57,12 @@ class sLang
     }
 
     /**
-     * List of alternative site languages
+     * Generates the HTML code for the hreflang tags.
      *
-     * @return string
+     * This method generates the HTML code for the hreflang tags based on the
+     * configuration settings and language switcher options.
+     *
+     * @return string The HTML code for the hreflang tags.
      */
     public function hrefLang(): string
     {
@@ -77,9 +80,12 @@ class sLang
     }
 
     /**
-     * List of languages
+     * Retrieves the list of languages.
      *
-     * @return array
+     * This method retrieves the list of languages from the "lang-list.php" configuration file
+     * and returns it as an array.
+     *
+     * @return array The list of languages.
      */
     public function langList(): array
     {
@@ -91,9 +97,13 @@ class sLang
     }
 
     /**
-     * Default language
+     * Returns the default language code.
      *
-     * @return string
+     * This method retrieves the default language code from the configuration
+     * settings. If the default language code is not set in the configuration, it
+     * will default to 'uk'.
+     *
+     * @return string The default language code.
      */
     public function langDefault(): string
     {
@@ -101,9 +111,12 @@ class sLang
     }
 
     /**
-     * List of site languages
+     * Retrieves the language configuration.
      *
-     * @return array
+     * This method retrieves the language configuration from the system settings
+     * or the custom configuration stored in the "s_lang_config" setting.
+     *
+     * @return array The array containing the language configuration.
      */
     public function langConfig(): array
     {
@@ -116,9 +129,13 @@ class sLang
     }
 
     /**
-     * List of frontend languages
+     * Retrieves the languages used for the frontend.
      *
-     * @return array
+     * This method retrieves the languages used for the frontend based on the configuration
+     * settings and the additional language options specified in "s_lang_front" configuration
+     * variable. The languages are returned as an array.
+     *
+     * @return array The languages used for the frontend.
      */
     public function langFront(): array
     {
@@ -131,11 +148,17 @@ class sLang
     }
 
     /**
-     * Getting a translation of a resource
+     * Retrieves the language content for a specific resource in a given language.
      *
-     * @param int $resourceId
-     * @param string $langKey
-     * @return array
+     * This method retrieves the language content for a specific resource identified
+     * by the `$resourceId` and the language specified by the `$langKey`. It queries
+     * the `sLangContent` table and returns the result as an associative array.
+     * If no matching record is found, an empty array is returned.
+     *
+     * @param int $resourceId The ID of the resource.
+     * @param string $langKey The language key.
+     * @return array The language content as an associative array. If no matching record
+     *   is found, an empty array is returned.
      */
     public function getLangContent(int $resourceId, string $langKey): array
     {
@@ -144,12 +167,17 @@ class sLang
     }
 
     /**
-     * Get automatic translation
+     * Translates a given text automatically using the Google Translate API.
      *
-     * @param $text
-     * @param $source
-     * @param $target
-     * @return string
+     * This method translates the provided text from the specified source language
+     * to the target language using the Google Translate API. The translation is performed
+     * automatically without any additional processing.
+     *
+     * @param string $text The text to be translated.
+     * @param string $source The source language code.
+     * @param string $target The target language code.
+     *
+     * @return string The translated text.
      */
     public function getAutomaticTranslate($text, $source, $target)
     {
@@ -159,7 +187,9 @@ class sLang
     /**
      * Path where files root this module
      *
-     * @return mixed|string
+     * This method returns the base path of the module.
+     *
+     * @return string The base path of the module.
      */
     public function basePath()
     {
@@ -167,9 +197,11 @@ class sLang
     }
 
     /**
-     * Module url
+     * Generates the URL for the module.
      *
-     * @return string
+     * This method generates the URL for the module by appending the necessary query parameters.
+     *
+     * @return string The URL for the module.
      */
     public function moduleUrl(): string
     {
@@ -177,9 +209,12 @@ class sLang
     }
 
     /**
-     * Fields list on content
+     * Retrieves the site content fields.
      *
-     * @return array
+     * This method returns the site content fields as an array. The site content fields
+     * contain the list of fields that are used for storing content related to the site.
+     *
+     * @return array The site content fields array.
      */
     public function siteContentFields(): array
     {
@@ -187,11 +222,15 @@ class sLang
     }
 
     /**
-     * Display render
+     * Renders a view template with the given data.
      *
-     * @param $tpl
-     * @param array $data
-     * @return bool
+     * This method renders a view template using the Laravel View class. It allows passing
+     * additional data to the view in the form of an associative array. The view file name or path
+     * is provided as the first parameter, and the data array is optional.
+     *
+     * @param string $tpl The view template file name or path.
+     * @param array $data An optional associative array of data to be passed to the view.
+     * @return bool Returns true upon successful rendering of the view.
      */
     public function view($tpl, $data = [])
     {
@@ -211,12 +250,17 @@ class sLang
     }
 
     /**
-     * Get Google Translations
+     * Translates the given text using Google Translate.
      *
-     * @param $text
-     * @param string $source
-     * @param string $target
-     * @return string
+     * This method sends a request to the Google Translate API and retrieves
+     * the translated text for the given input text. The source and target
+     * languages can be specified. If the source and target languages are the
+     * same, the method returns the input text as is.
+     *
+     * @param string $text The text to be translated.
+     * @param string $source The source (input) language. Default is 'uk'.
+     * @param string $target The target (output) language. Default is 'en'.
+     * @return string The translated text.
      */
     protected function googleTranslate($text, $source = 'uk', $target = 'en')
     {
@@ -262,8 +306,10 @@ class sLang
     /**
      * Get system setting value bypassing cache
      *
-     * @param $name string
-     * @return string
+     * This method retrieves the value of the configuration setting with the given name.
+     *
+     * @param string $name The name of the configuration setting.
+     * @return string The value of the configuration setting, or an empty string if the setting does not exist.
      */
     protected function getConfigValue($name): string
     {

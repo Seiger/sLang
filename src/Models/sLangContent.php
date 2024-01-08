@@ -11,12 +11,12 @@ class sLangContent extends Eloquent\Model
     protected $fillable = ['resource', 'lang', 'pagetitle', 'longtitle', 'description', 'introtext', 'content', 'menutitle', 'seotitle', 'seodescription'];
 
     /**
-     * Get the content item with lang and original fields
+     * Add the language and template variable fields to the query
      *
-     * @param Builder $query
-     * @param string $locale
-     * @param array $tvNames
-     * @return Builder
+     * @param Builder $query The query builder instance
+     * @param string $locale The language locale
+     * @param array $tvNames The array of template variable names
+     * @return Builder The modified query builder instance
      */
     public function scopeLangAndTvs($query, $locale, $tvNames = [])
     {
@@ -24,7 +24,24 @@ class sLangContent extends Eloquent\Model
         $query->addSelect('s_lang_content.longtitle as longtitle', 's_lang_content.description as description');
         $query->addSelect('s_lang_content.introtext as introtext', 's_lang_content.content as content');
         $query->addSelect('s_lang_content.menutitle as menutitle');
+        $query->selectTvs($tvNames);
 
+        return $query->addSelect('site_content.pagetitle as pagetitle_orig', 'site_content.longtitle as longtitle_orig')
+            ->addSelect('site_content.description as description_orig', 'site_content.introtext as introtext_orig')
+            ->addSelect('site_content.content as content_orig', 'site_content.menutitle as menutitle_orig')
+            ->leftJoin('site_content', 's_lang_content.resource', '=', 'site_content.id')
+            ->where('lang', '=', $locale);
+    }
+
+    /**
+     * Adds TV selections to the query based on the given TV names.
+     *
+     * @param \Illuminate\Database\Query\Builder $query The database query builder instance
+     * @param array $tvNames The array of TV names to select
+     * @return \Illuminate\Database\Query\Builder The modified query builder instance
+     */
+    public function scopeSelectTvs($query, $tvNames = [])
+    {
         if (count($tvNames)) {
             foreach ($tvNames as $tvName) {
                 $query->addSelect(
@@ -39,19 +56,14 @@ class sLangContent extends Eloquent\Model
                 );
             }
         }
-
-        return $query->addSelect('site_content.pagetitle as pagetitle_orig', 'site_content.longtitle as longtitle_orig')
-            ->addSelect('site_content.description as description_orig', 'site_content.introtext as introtext_orig')
-            ->addSelect('site_content.content as content_orig', 'site_content.menutitle as menutitle_orig')
-            ->leftJoin('site_content', 's_lang_content.resource', '=', 'site_content.id')
-            ->where('lang', '=', $locale);
+        return $query;
     }
 
     /**
-     * Only active resources
+     * Adds conditions to the query to filter for active items.
      *
-     * @param Builder $query
-     * @return Builder
+     * @param \Illuminate\Database\Query\Builder $query The database query builder instance
+     * @return \Illuminate\Database\Query\Builder The modified query builder instance
      */
     public function scopeActive($query)
     {
@@ -59,9 +71,9 @@ class sLangContent extends Eloquent\Model
     }
 
     /**
-     * Filter search
+     * Performs a search on the query based on the search term.
      *
-     * @return mixed
+     * @return \Illuminate\Database\Query\Builder|null The modified query builder instance or null if no search term is provided
      */
     public function scopeSearch()
     {
@@ -86,12 +98,12 @@ class sLangContent extends Eloquent\Model
     }
 
     /**
-     * Filtering documents by TV parameter
+     * Adds a WHERE clause to the query that filters results based on the given TV and value.
      *
-     * @param Builder $query
-     * @param string $name
-     * @param string|int $value
-     * @return Builder
+     * @param \Illuminate\Database\Query\Builder $query The database query builder instance
+     * @param string $name The name of the TV to filter by
+     * @param mixed $value The value to filter by
+     * @return \Illuminate\Database\Query\Builder The modified query builder instance
      */
     public function scopeWhereTv($query, $name, $value)
     {
@@ -102,9 +114,16 @@ class sLangContent extends Eloquent\Model
     }
 
     /**
-     * Get the menutitle attribute
+     * Retrieves the menu title attribute.
      *
-     * @return mixed
+     * This method returns the value of the menu title attribute for the current instance.
+     * If the menu title attribute is empty, it falls back to the original menu title value (menutitle_orig).
+     * If both the menu title attribute and the original menu title value are empty, it falls back to the
+     * current page title attribute (pagetitle), or the original page title value (pagetitle_orig) if empty.
+     * If both the menu title attribute, original menu title value, and the page title attribute are empty, it
+     * returns an empty string.
+     *
+     * @return string The menu title attribute value
      */
     public function getMenutitleAttribute()
     {
@@ -116,9 +135,9 @@ class sLangContent extends Eloquent\Model
     }
 
     /**
-     * Get the resource full link
+     * Get the full link attribute for the resource.
      *
-     * @return string full_link
+     * @return string The full link attribute
      */
     public function getFullLinkAttribute()
     {

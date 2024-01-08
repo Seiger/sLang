@@ -29,9 +29,10 @@ class sLangController
     }
 
     /**
-     * Show tabs resource
+     * Render tabs resource
      *
-     * @return View
+     * @param array $params Additional parameters for rendering the tabs view
+     * @return View The rendered tabs view
      */
     public function tabs($params = []): View
     {
@@ -54,10 +55,10 @@ class sLangController
     }
 
     /**
-     * Preparing Resource Fields
+     * Prepare fields for content
      *
-     * @param $content array
-     * @return array
+     * @param array $content Array containing the content data
+     * @return array Prepared array containing the content data with language-specific fields and menu values
      */
     public function prepareFields(array $content): array
     {
@@ -107,11 +108,11 @@ class sLangController
     }
 
     /**
-     * Recording resource translations
+     * Set language content for a resource
      *
-     * @param int $resourceId
-     * @param string $langKey
-     * @param array $fields
+     * @param int $resourceId The ID of the resource
+     * @param string $langKey The language key
+     * @param array $fields An associative array of fields and their values to update or create
      * @return void
      */
     public function setLangContent(int $resourceId, string $langKey, array $fields): void
@@ -120,9 +121,13 @@ class sLangController
     }
 
     /**
-     * List of DB translations
+     * Retrieve translations from the database
      *
-     * @return array
+     * Returns a paginated collection of translations based on the provided search keyword, if present.
+     * If no search keyword is provided, all translations are retrieved.
+     * Translations are ordered by descending `tid` (translation ID).
+     *
+     * @return \Illuminate\Contracts\Pagination\Paginator
      */
     public function dictionary()
     {
@@ -142,10 +147,10 @@ class sLangController
     }
 
     /**
-     * Set default language
+     * Set the default language
      *
-     * @param $value string
-     * @return mixed
+     * @param string $value The value to set as the default language.
+     * @return bool Returns true if the default language was successfully set; otherwise, returns false.
      */
     public function setLangDefault($value)
     {
@@ -159,10 +164,10 @@ class sLangController
     }
 
     /**
-     * Set default language visibility
+     * Set the default language show value
      *
-     * @param $value string
-     * @return mixed
+     * @param int $value The new value for the default language show
+     * @return bool Returns true if the update of the table setting is successful, false otherwise
      */
     public function setLangDefaultShow($value)
     {
@@ -172,10 +177,10 @@ class sLangController
     }
 
     /**
-     * Set site language list
+     * Set the language configuration
      *
-     * @param $value array
-     * @return mixed
+     * @param mixed $value The value to set for the language configuration
+     * @return bool Returns true if the language configuration was successfully set, otherwise false
      */
     public function setLangConfig($value)
     {
@@ -200,10 +205,10 @@ class sLangController
     }
 
     /**
-     * Set list of languages for frontend
+     * Set the frontend languages in the system configuration
      *
-     * @param $value array
-     * @return mixed
+     * @param mixed $value An array of language codes or a single language code
+     * @return bool True if the frontend languages were successfully updated, false otherwise
      */
     public function setLangFront($value)
     {
@@ -228,10 +233,10 @@ class sLangController
     }
 
     /**
-     * Set on/off language module
+     * Set the status of the language module
      *
-     * @param $value string
-     * @return mixed
+     * @param int $value The value indicating the status of the language module (0 for off, 1 for on)
+     * @return bool Whether the update to the "s_lang_enable" field was successful
      */
     public function setOnOffLangModule($value)
     {
@@ -241,7 +246,13 @@ class sLangController
     }
 
     /**
-     * Modifying table fields
+     * Modify translation tables and files
+     *
+     * This method modifies the translation tables and files based on the language configuration.
+     * It adds missing language columns to the translation table and creates empty JSON files for missing languages.
+     * After making the necessary modifications, it clears the cache.
+     *
+     * @return bool True if the tables and files were successfully modified, false otherwise.
      */
     public function setModifyTables()
     {
@@ -291,9 +302,9 @@ class sLangController
     }
 
     /**
-     * Parsing Translations in Blade Templates
+     * Parse blade views to extract translations and add them to the database if necessary
      *
-     * @return bool
+     * @return void
      */
     public function parseBlade(): void
     {
@@ -342,11 +353,11 @@ class sLangController
     }
 
     /**
-     * Get automatic translation
+     * Set automatic translation for a phrase
      *
-     * @param $source
-     * @param $target
-     * @return string
+     * @param string $source The source phrase to translate
+     * @param string $target The target language to translate into
+     * @return string The translated phrase
      */
     public function setAutomaticTranslate($source, $target): string
     {
@@ -370,12 +381,13 @@ class sLangController
     }
 
     /**
-     * Update translation field
+     * Updates the translation for a specific phrase.
      *
-     * @param $source
-     * @param $target
-     * @param $value
-     * @return bool
+     * @param string $source The source phrase to update.
+     * @param string $target The translation field to update.
+     * @param string $value The new translation value.
+     *
+     * @return bool True if the translation was successfully updated, false otherwise.
      */
     public function updateTranslate($source, $target, $value): bool
     {
@@ -395,10 +407,21 @@ class sLangController
     }
 
     /**
-     * Save new translate and return HTML
+     * Saves the translation for a specific phrase.
      *
-     * @param array $data
-     * @return string|void
+     * @param array $data An array containing the translation data.
+     *                    The array structure should be as follows:
+     *                    [
+     *                        'translate' => [
+     *                            'key' => 'the phrase key',
+     *                            'field1' => 'the translation value for field1',
+     *                            'field2' => 'the translation value for field2',
+     *                            ...
+     *                        ]
+     *                    ]
+     *
+     * @return array|null The updated element row if the translation was successfully saved,
+     *                   null otherwise.
      */
     public function saveTranslate(array $data)
     {
@@ -416,11 +439,12 @@ class sLangController
     }
 
     /**
-     * Display render
+     * Renders a view with optional data.
      *
-     * @param string $tpl
-     * @param array $data
-     * @return bool
+     * @param string $tpl The name of the template to render.
+     * @param array $data Optional data to pass to the template.
+     *
+     * @return Illuminate\View\View The rendered view.
      */
     public function view(string $tpl, array $data = [])
     {
@@ -428,10 +452,11 @@ class sLangController
     }
 
     /**
-     * Get html element for row table
+     * Generates the HTML table row for a data element.
      *
-     * @param $data
-     * @return string
+     * @param object $data The data element to generate the row for.
+     *
+     * @return string The HTML table row.
      */
     protected function getElementRow($data)
     {
@@ -461,7 +486,11 @@ class sLangController
     }
 
     /**
-     * Get html element for TV parameters for Resource in adminpanel
+     * Retrieves the HTML output of the template variables for a specific content.
+     *
+     * @param array $params The parameters for retrieving the template variables.
+     *
+     * @return string The HTML output of the template variables.
      */
     protected function getTvsHtml($params)
     {
@@ -755,11 +784,12 @@ class sLangController
     }
 
     /**
-     * Update data in system settings table
+     * Updates the value of a specific setting in the database table 'system_settings'.
      *
-     * @param $name string
-     * @param $value string
-     * @return mixed
+     * @param string $name The name of the setting to update.
+     * @param string $value The new value to be set for the setting.
+     *
+     * @return bool True if the setting was successfully updated, false otherwise.
      */
     protected function updateTblSetting($name, $value)
     {
@@ -769,7 +799,9 @@ class sLangController
     }
 
     /**
-     * Update translation files
+     * Updates the language files based on the current translations.
+     *
+     * @return void
      */
     protected function updateLangFiles(): void
     {
