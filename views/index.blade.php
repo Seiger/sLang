@@ -107,8 +107,8 @@
         }
     </script>
     <style>
-        #copyright{position:fixed;bottom:0;right:0;background-color:#0057b8;padding:3px 7px;border-radius:5px;}
-        #copyright img{width:9em;}
+        #copyright{position:fixed;bottom:0;right:0;}
+        #copyright img{width:35px;}
         #main-logo{color:#0B78FF;}
         .badge.bg-seigerit{background-color:#0057b8;color:#ffd700;font-size:85%;}
         .fade:not(.show){opacity:initial;}
