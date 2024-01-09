@@ -8,19 +8,28 @@
 [![Stars](https://img.shields.io/packagist/stars/Seiger/slang)](https://packagist.org/packages/seiger/slang)
 [![Total Downloads](https://img.shields.io/packagist/dt/seiger/slang)](https://packagist.org/packages/seiger/slang)
 
-**sLang** Seiger Lang multi language Management Module for Evolution CMS admin panel.
+sLang is a robust multilingual Management Module meticulously crafted for the Evolution CMS
+admin panel. This dynamic package empowers users to seamlessly implement and manage
+multilingual tools within the Evolution CMS environment. By utilizing Evolution CMS
+as its platform, sLang offers a streamlined solution for users seeking efficient and
+intuitive ways to handle diverse language content, making it an indispensable asset
+for administrators and developers navigating the intricacies of multilingual website
+management.
 
-If you're looking to create a multilingual site powered by Evolution CMS, then the sLang module is just what you need.
-
-The work of the module is based on the use of the standard Laravel functionality for multilingualism.
+The work of the module is based on the use of the standard Laravel functionality for
+multilingualism. This foundation ensures a reliable and well-established framework for
+managing multilingual aspects, enhancing the module's performance and aligning it with
+industry best practices. With its focus on simplicity and integration, sLang emerges as
+an essential companion for those aiming to enhance the linguistic versatility of their
+Evolution CMS-powered websites.
 
 ## Features
 
-- [x] Automatic translation of phrases through Google.
+- [x] Automatic Phrase Translation through Google or Custom.
 - [x] Automatic search for translations in templates.
 - [x] Multilingual tabs in resource.
-- [x] Unlimited translation languages.
-- [x] Managing the display of resource fields.
+- [x] Unlimited Translation Language Support.
+- [x] Multilingual SEO Support.
 
 ![Multilingual tabs](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.png)
 
