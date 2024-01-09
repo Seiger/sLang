@@ -16,19 +16,19 @@
 
 # See more https://vsoch.github.io/tw-jekyll/
 
-title: sCommerce
+title: sLang
 email: info@seigerit.com
 author: Serhii Korneliuk
-description: sCommerce is a set of e-commerce tools for Evolution CMS.
+description: sLang is a Seiger Lang multi language Management Module for Evolution CMS admin panel.
 
 # Add your baseurl here (your repository) but DO NOT CHANGE THE LINE NUMBER without editing .circleci/circle_urls.sh
-baseurl: "/sCommerce" # the subpath of your site, e.g. /blog
+baseurl: "/sLang" # the subpath of your site, e.g. /blog
 
 # This is mostly for testing
 url: "https://seiger.github.io" # the base hostname & protocol for your site
 
 # Keywords (space separated)
-keywords: "documentation sCommerce"
+keywords: "documentation sLang"
 
 # Add colorful permalinks to headers
 # change colors in _includes/permalinks.html
@@ -37,8 +37,8 @@ add_permalinks: true
 # Optional
 #twitter: vsoch
 linkedin: seiger-kor
-support: https://github.com/Seiger/sCommerce/issues
-repo: https://github.com/Seiger/sCommerce
+support: https://github.com/Seiger/sLang/issues
+repo: https://github.com/Seiger/sLang
 github_user: seiger
 github_repo: sCommerce
 # discord: https://community.discord.com
