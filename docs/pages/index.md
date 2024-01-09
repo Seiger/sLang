@@ -15,7 +15,7 @@ permalink: /
 
 ## Welcome to sLang!
 
-sLang is a robust multilingual Management Module meticulously crafted for the Evolution CMS
+**sLang** is a robust multilingual Management Module meticulously crafted for the Evolution CMS
 admin panel. This dynamic package empowers users to seamlessly implement and manage
 multilingual tools within the Evolution CMS environment. By utilizing Evolution CMS
 as its platform, sLang offers a streamlined solution for users seeking efficient and
