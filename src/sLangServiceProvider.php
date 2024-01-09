@@ -33,6 +33,10 @@ class sLangServiceProvider extends ServiceProvider
             ]);
         }
 
+        // Check sLang
+        $this->mergeConfigFrom(dirname(__DIR__) . '/config/sLangCheck.php', 'cms.settings');
+
+        // Class alias
         $this->app->singleton(sLang::class);
         $this->app->alias(sLang::class, 'sLang');
     }

@@ -68,7 +68,7 @@
     'settings' => 'Settings',
     'slang_desc' => 'Managing site language settings',
     'slang_icon' => 'fa fa-globe-europe',
-    'slang' => 'Multilanguage',
+    'slang' => 'Multilingual',
     'synchronize_help' => 'Synchronize translations of templates and site database',
     'synchronize' => 'Synchronize',
     'use_url' => 'Use in URL',

@@ -1,69 +1,29 @@
-# sLang for Evolution CMS 3
-![sLang](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.jpg)
-[![Latest Stable Version](https://img.shields.io/packagist/v/seiger/slang?label=version)](https://packagist.org/packages/seiger/slang)
-[![CMS Evolution](https://img.shields.io/badge/CMS-Evolution-brightgreen.svg)](https://github.com/evolution-cms/evolution)
-![PHP version](https://img.shields.io/packagist/php-v/seiger/slang)
-[![License](https://img.shields.io/packagist/l/seiger/slang)](https://packagist.org/packages/seiger/slang)
-[![Issues](https://img.shields.io/github/issues/Seiger/slang)](https://github.com/Seiger/slang/issues)
-[![Stars](https://img.shields.io/packagist/stars/Seiger/slang)](https://packagist.org/packages/seiger/slang)
-[![Total Downloads](https://img.shields.io/packagist/dt/seiger/slang)](https://packagist.org/packages/seiger/slang)
+---
+layout: page
+title: Use in Blade
+description: Use sLang code in Blade layouts
+permalink: /use-in-blade/
+---
 
-**sLang** Seiger Lang multi language Management Module for Evolution CMS admin panel.
+## Current language:
 
-The work of the module is based on the use of the standard Laravel functionality for multilingualism.
-
-## Features
-
-- [x] Automatic translation of phrases through Google.
-- [x] Automatic search for translations in templates.
-- [x] Multilingual tabs in resource.
-- [x] Unlimited translation languages.
-
-![Multilingual tabs](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.png)
-
-## Install by artisan package installer
-
-Go to You /core/ folder:
-
-```console
-cd core
-```
-
-Run php artisan command
-
-```console
-php artisan package:installrequire seiger/slang "*"
-```
-
-```console
-php artisan vendor:publish --provider="Seiger\sLang\sLangServiceProvider"
-```
-
-Run make DB structure with command:
-
-```console
-php artisan migrate
-```
-
-## Usage in blade
-Current language:
 ```php
 {% raw %}{{evo()->getLocale()}}{% endraw %}
 or
 {% raw %}{{evo()->getConfig('lang')}}{% endraw %}
 ```
 
-Default language:
+## Default language:
 ```php
 {% raw %}{{evo()->getConfig('s_lang_default')}}{% endraw %}
 ```
 
-List of frontend languages by comma:
+## List of frontend languages by comma:
 ```php
 {% raw %}{{evo()->getConfig('s_lang_front')}}{% endraw %}
 ```
 
-Translation of phrases:
+## Translation of phrases:
 ```php
 In Blade:
 @lang('phrase')
@@ -72,7 +32,7 @@ In Controller:
 __('phrase')
 ```
 
-Localized versions of your page for Google hreflang
+## Localized versions of your page for Google hreflang
 ```php
 {!!sLang::hreflang()!!}
 ```
@@ -179,9 +139,7 @@ The ```whereTv()``` method allows you to use a filter based on the value of the 
 $resource = sLangContent::langAndTvs(evo()->getConfig('lang'), ['tv_image'])->whereTv('tv_image', '!=', '')->get();
 ```
 
-## Admin panel
-
-### Resource fields
+## Resource fields in Admin panel
 
 You can control the display of resource fields on general tabs through an event ```sLangDocFormFieldRender```.
 

@@ -1,0 +1,9 @@
+- title: Documentation
+  url:
+  links:
+    - title: "Getting Started"
+      url: "getting-started"
+    - title: "Management tabs"
+      url: "management"
+    - title: "Use in Blade"
+      url: "use-in-blade"
