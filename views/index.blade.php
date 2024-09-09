@@ -37,7 +37,8 @@
     <script src="media/script/jquery.quicksearch.js"></script>
     <script src="media/script/jquery.nucontextmenu.js"></script>
     <script src="media/script/bootstrap/js/bootstrap.min.js"></script>
-    <script src="actions/resources/functions.js"></script>
+   <!-- <script src="actions/resources/functions.js"></script> 404-->
+    <script src="media/script/resources-functions.js"></script>
     <script>
         $(document).ready(function() {
             $('.select2').select2();
