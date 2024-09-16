@@ -4,12 +4,14 @@
  */
 
 use EvolutionCMS\Models\SiteModule;
+use EvolutionCMS\Models\SiteTmplvar;
 use EvolutionCMS\Models\SystemSetting;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Seiger\sLang\Models\sLangContent;
-use Seiger\sLang\Models\sLangTranslate;
+use Seiger\sLang\Models\sLangTmplvarContentvalue;
 
 class sLang
 {
@@ -129,6 +131,30 @@ class sLang
     }
 
     /**
+     * Retrieves the template variables.
+     *
+     * This method queries the database to retrieve all template variables.
+     *
+     * @return \Illuminate\Support\Collection A collection of template variables.
+     */
+    public function templateVariables()
+    {
+        return SiteTmplvar::query()->get();
+    }
+
+    /**
+     * Gets an array of template variable IDs.
+     *
+     * This method retrieves an array of template variable IDs from the SiteTmplvar table.
+     *
+     * @return array The array of template variable IDs.
+     */
+    public function templateVariablesId()
+    {
+        return SiteTmplvar::query()->pluck('id');
+    }
+
+    /**
      * Retrieves the languages used for the frontend.
      *
      * This method retrieves the languages used for the frontend based on the configuration
@@ -148,6 +174,40 @@ class sLang
     }
 
     /**
+     * Retrieves the language TVs.
+     *
+     * This method retrieves the language TVs from the configuration settings and
+     * returns them as an array.
+     *
+     * @return array The language TVs.
+     */
+    public function langTvs(): array
+    {
+        $langTvs = $this->getConfigValue('s_lang_tvs');
+        if (trim($langTvs)) {
+            $langTvs = explode(',', $langTvs);
+        } else {
+            $langTvs = [];
+        }
+        return $langTvs;
+    }
+
+    /**
+     * Checks if a given TV ID is a multilingual TV.
+     *
+     * This method checks if the given TV ID is present in the array of multilingual TVs
+     * returned by the `langTvs()` method. If the ID is found in the array, the method returns
+     * `true`, otherwise it returns `false`.
+     *
+     * @param int $id The ID of the TV to check.
+     * @return bool Whether the TV is a multilingual TV or not.
+     */
+    public function isMultilangTv($id): bool
+    {
+        return (in_array($id, $this->langTvs())) ? true : false;
+    }
+
+    /**
      * Retrieves the language content for a specific resource in a given language.
      *
      * This method retrieves the language content for a specific resource identified
@@ -164,6 +224,34 @@ class sLang
     {
         $sLangContent = sLangContent::whereResource($resourceId)->whereLang($langKey)->first();
         return $sLangContent ? $sLangContent->toArray() : [];
+    }
+
+    /**
+     * Retrieves the language-specific template content values for a given resource.
+     *
+     * This method queries the database for the language-specific template content values
+     * of the specified resource and language key. It returns an array of the retrieved
+     * values, keyed by the name of the template variable.
+     *
+     * @param int $resourceId The ID of the resource.
+     * @param string $langKey The language key.
+     * @return array An array of language-specific template content values.
+     */
+    public function getLangTemplateContentvalue(int $resourceId, string $langKey): array
+    {
+        $multilang_tvs_id = $this->langTvs();
+        if ($multilang_tvs_id) {
+            $sTemplateContentvalue = sLangTmplvarContentvalue::query()
+                ->select('s_lang_tmplvar_contentvalues.*')
+                ->addSelect('site_tmplvars.name as name')
+                ->leftJoin('site_tmplvars', 's_lang_tmplvar_contentvalues.tmplvarid', '=', 'site_tmplvars.id')
+                ->where('lang', $langKey)
+                ->whereIn('tmplvarid', $multilang_tvs_id)
+                ->where('contentid', $resourceId)
+                ->get()
+                ->keyBy('name');
+        }
+        return $sTemplateContentvalue ? $sTemplateContentvalue->toArray() : [];
     }
 
     /**

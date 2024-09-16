@@ -72,4 +72,6 @@
     'synchronize_help' => 'Synchronize translations of templates and site database',
     'synchronize' => 'Synchronize',
     'use_url' => 'Use in URL',
+    'multilang_tvs' => 'List of the multilanguage parametrs (TV)',
+    'select_multilang_tvs' => 'Select the parametr',
 ];

@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Seiger\sLang\Facades\sLang;
 use Seiger\sLang\Models\sLangContent;
+use Seiger\sLang\Models\sLangTmplvarContentvalue;
 use Seiger\sLang\Models\sLangTranslate;
 
 class sLangController
@@ -118,6 +119,25 @@ class sLangController
     public function setLangContent(int $resourceId, string $langKey, array $fields): void
     {
         sLangContent::updateOrCreate(['resource' => $resourceId, 'lang' => $langKey], $fields);
+    }
+
+    /**
+     * Sets the content value for multiple template variables in a specific language.
+     *
+     * @param int $resourceId The ID of the resource.
+     * @param string $langKey The language key.
+     * @param array $fields An associative array where the key is the template variable ID and the value is the content value.
+     *
+     * @return void
+     */
+    public function setLangTmplvarContentvalue(int $resourceId, string $langKey, array $fields): void
+    {
+        foreach ($fields as $tmplvarId => $value) {
+            if ($langKey === sLang::langDefault()) {
+                SiteTmplvarContentvalue::updateOrCreate(['tmplvarid' => $tmplvarId, 'contentid' => $resourceId], ['value' => $value]);
+            }
+            sLangTmplvarContentvalue::updateOrCreate(['tmplvarid' => $tmplvarId, 'contentid' => $resourceId, 'lang' => $langKey], ['value' => $value]);
+        }
     }
 
     /**
@@ -230,6 +250,32 @@ class sLangController
         $langFront = implode(',', $langFront);
 
         return $this->updateTblSetting('s_lang_front', $langFront);
+    }
+
+    /**
+     * Sets the language TV values for the current instance.
+     *
+     * @param mixed $value The value(s) to set as language TV(s).
+     *
+     * @return bool True if the language TV values were successfully set, false otherwise.
+     */
+    public function setLangTvs($value)
+    {
+        $templateVariables = sLang::templateVariablesId();
+
+        if ($templateVariables) {
+            $multilangTvs = [];
+            $templateVariables = $templateVariables->toArray();
+            if (is_array($value)) {
+                $multilangTvs = array_filter($value, function ($var) use ($templateVariables) {
+                    return in_array($var, $templateVariables) ? true : false;
+                });
+            }
+            $multilangTvs = implode(',', $multilangTvs);
+
+            return $this->updateTblSetting('s_lang_tvs', $multilangTvs);
+        }
+        return false;
     }
 
     /**
@@ -494,7 +540,7 @@ class sLangController
      */
     protected function getTvsHtml($params)
     {
-        global $_lang, $_style, $content;
+        global $_lang, $_style, $content, $richtexteditorIds, $richtexteditorOptions;;
         $id = (int)$params['id'];
 
         $group_tvs = evo()->getConfig('group_tvs');
@@ -503,6 +549,8 @@ class sLangController
         $templateVariablesTmp = '';
         $templateVariablesLng = [];
         $templateVariablesTab = [];
+        $templateVariablesDefaultValue = [];
+        $templateVariablesRichtextEditor = [];
         $templateVariables = '';
 
         if (($content['type'] == 'document' || evo()->getManagerApi()->action == '4') || ($content['type'] == 'reference' || evo()->getManagerApi()->action == 72)) {
@@ -642,12 +690,10 @@ class sLangController
                     // splitter
                     if ($group_tvs) {
                         if ((! empty($split) && $i) || $ii) {
-                            $templateVariablesTmp .= '
-                                            <tr><td colspan="2"><div class="split"></div></td></tr>' . "\n";
+                            $templateVariablesTmp .= '<tr><td colspan="2"><div class="split"></div></td></tr>' . "\n";
                         }
                     } elseif ($i) {
-                        $templateVariablesTmp .= '
-                                        <tr><td colspan="2"><div class="split"></div></td></tr>' . "\n";
+                        $templateVariablesTmp .= '<tr><td colspan="2"><div class="split"></div></td></tr>' . "\n";
                     }
 
                     // post back value
@@ -672,14 +718,55 @@ class sLangController
                             'content' => $content,
                         ])->render();
                     } else {
-                        $templateVariablesTab[] = $this->view('partials.tvResource', [
-                            '_lang' => $_lang,
-                            '_style' => $_style,
-                            'row' => $row,
-                            'tvPBV' => $tvPBV,
-                            'tvsArray' => $tvsArray,
-                            'content' => $content,
-                        ])->render();
+                        if (sLang::isMultilangTv($row['id'])) {
+                            $tabs = sLang::langConfig();
+                            foreach ($tabs as $tab) {
+                                $temp_row = $row;
+                                $temp_row['id'] = $temp_row['id']."_".$tab;
+                                $tv_lang_value = sLangTmplvarContentvalue::query()
+                                    ->where('lang', $tab)
+                                    ->where('tmplvarid', $row['id'])
+                                    ->where('contentid', $id)
+                                    ->value('value');
+                                if ($tab === sLang::langDefault()) {
+                                    if (!$tv_lang_value && $temp_row['value']) {
+                                        $tv_lang_value = $temp_row['value'];
+                                        $templateVariablesDefaultValue[$row['id']] = $tv_lang_value;
+                                    } else {
+                                        $templateVariablesDefaultValue[$row['id']] = $tv_lang_value;
+                                    }
+                                }
+                                $tvPBV = $tv_lang_value;
+                                $temp_row['value'] = $tvPBV;
+                                if ($row['type'] == 'richtext') {
+                                    // Add richtext editor to the list
+                                    $richtexteditorIds[evo()->getConfig('which_editor')][] = "tv" . $temp_row['id'];
+                                    $richtexteditorOptions[evo()->getConfig('which_editor')]["tv" . $temp_row['id']] = '';
+                                }
+                                $templateVariablesTab[$tab][] = $this->view('partials.tvResource', [
+                                    '_lang' => $_lang,
+                                    '_style' => $_style,
+                                    'row' => $temp_row,
+                                    'tvPBV' => $tvPBV,
+                                    'tvsArray' => $tvsArray,
+                                    'content' => $content,
+                                ])->render();
+                            }
+                        } else {
+                            if ($row['type'] == 'richtext') {
+                                // Add richtext editor to the list
+                                $richtexteditorIds[evo()->getConfig('which_editor')][] = "tv" . $row['id'];
+                                $richtexteditorOptions[evo()->getConfig('which_editor')]["tv" . $row['id']] = '';
+                            }
+                            $templateVariablesTab['default'][] = $this->view('partials.tvResource', [
+                                '_lang' => $_lang,
+                                '_style' => $_style,
+                                'row' => $row,
+                                'tvPBV' => $tvPBV,
+                                'tvsArray' => $tvsArray,
+                                'content' => $content,
+                            ])->render();
+                        }
                     }
 
                     if ($group_tvs && $row['category_id'] == 0) {
@@ -747,23 +834,19 @@ class sLangController
                         }
                     }
                     if ($group_tvs == 1) {
-                        $templateVariables .= '
-                            </div>' . "\n";
+                        $templateVariables .= "</div>\n";
                     } else if ($group_tvs == 2 || $group_tvs == 4) {
-                        $templateVariables .= '
-                            </div>
-                        </div>
-                    </div>' . "\n";
+                        $templateVariables .= "</div></div></div>\n";
                     } else if ($group_tvs == 3) {
-                        $templateVariables .= '
-                            </div>
-                        </div>' . "\n";
+                        $templateVariables .= "</div></div>\n";
                     }
                 }
                 $templateVariables .= '<!-- end Template Variables -->' . "\n";
 
                 if (count($templateVariablesTab)) {
-                    $templateVariablesTab = implode('', $templateVariablesTab);
+                    foreach ($templateVariablesTab as $id => $tab) {
+                        $templateVariablesTab[$id] = implode('', $templateVariablesTab[$id]);
+                    }
                 }
                 if (count($templateVariablesLng)) {
                     foreach ($templateVariablesLng as $lng => $item) {
@@ -779,6 +862,7 @@ class sLangController
             'templateVariablesGeneral' => $templateVariablesGeneral,
             'templateVariablesLng' => $templateVariablesLng,
             'templateVariablesTab' => $templateVariablesTab,
+            'templateVariablesDefaultValue' => $templateVariablesDefaultValue,
             'templateVariables' => $templateVariables
         ];
     }

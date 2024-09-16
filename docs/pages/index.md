@@ -30,7 +30,7 @@ industry best practices. With its focus on simplicity and integration, sLang eme
 an essential companion for those aiming to enhance the linguistic versatility of their
 Evolution CMS-powered websites.
 
-[Getting Started]({{ site.baseurl }}/getting-started/){: .btn .btn-sky}
+[Getting Started]({{site.baseurl}}/getting-started/){: .btn .btn-sky}
 
 ## Features
 
@@ -42,14 +42,10 @@ Evolution CMS-powered websites.
 
 ## Minimum requirements
 
-- Evolution CMS 3.2.0
-- PHP 8.1.0
-- Composer 2.2.0
-- PostgreSQL 10.23.0
-- MySQL 8.0.3
-- MariaDB 10.5.2
-- SQLite 3.25.0
+- Evolution CMS >= 3.2.0
+- PHP >= 8.1.0
+- Composer >= 2.2.0
 
 ## Support
 
-If you need help, please don't hesitate to [open an issue]({{ site.support }}).
+If you need help, please don't hesitate to [open an issue]({{site.support}}).

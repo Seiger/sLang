@@ -50,10 +50,19 @@ Event::listen('evolution.OnParseDocument', function($params) {
  */
 Event::listen('evolution.OnAfterLoadDocumentObject', function($params) {
     $langContentField = sLang::getLangContent($params['documentObject']['id'], evo()->getLocale());
+    $langTemplateContentvalueField = sLang::getLangTemplateContentvalue($params['documentObject']['id'], evo()->getLocale());
 
     if (count($langContentField)) {
         foreach (sLang::siteContentFields() as $siteContentField) {
             $params['documentObject'][$siteContentField] = $langContentField[$siteContentField];
+        }
+    }
+
+    if (count($langTemplateContentvalueField)) {
+        foreach ($langTemplateContentvalueField as $key => $item) {
+            if (isset($params['documentObject'][$key])) {
+                $params['documentObject'][$key][1] = $item['value'];
+            }
         }
     }
 
@@ -203,20 +212,29 @@ Event::listen('evolution.OnBeforeDocFormSave', function($params) {
     }
 
     $sLangController = new sLangController();
-
     foreach (sLang::langConfig() as $langConfig) {
         $fields = [];
+        //$tvs = [];
         foreach (request()->all() as $key => $value) {
+            $matches = [];
             if (str_starts_with($key, $langConfig.'_')) {
                 $keyName = str_replace($langConfig.'_', '', $key);
                 $fields[$keyName] = $value;
                 unset($_REQUEST[$key]);
-            }
+            } /*elseif(preg_match_all('/tv([0-9]*)_'.$langConfig.'$/', $key, $matches)) {
+                $keyName = $matches[1][0];
+                $tvs[$keyName] = $value;
+                unset($_REQUEST[$key]);
+            }*/
         }
 
         if (count($fields)) {
             $sLangController->setLangContent($params['id'], $langConfig, $fields);
         }
+        /*if (count($tvs)) {
+            $sLangController->setLangTmplvarContentvalue($params['id'], $langConfig, $tvs);
+        }*/
+
     }
 });
 
@@ -303,6 +321,21 @@ Event::listen('evolution.OnDocFormSave', function($params) {
             $value->contentid = $params['id'];
             $value->value = (int)request()->menu_footer;
             $value->save();
+        }
+
+        foreach (sLang::langConfig() as $langConfig) {
+            $tvs = [];
+            foreach (request()->all() as $key => $value) {
+                $matches = [];
+                if(preg_match_all('/tv([0-9]*)_'.$langConfig.'$/', $key, $matches)) {
+                    $keyName = $matches[1][0];
+                    $tvs[$keyName] = $value;
+                    unset($_REQUEST[$key]);
+                }
+            }
+            if (count($tvs)) {
+                $sLangController->setLangTmplvarContentvalue($params['id'], $langConfig, $tvs);
+            }
         }
     }
 });

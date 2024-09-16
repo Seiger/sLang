@@ -20,7 +20,7 @@ permalink: /getting-started/
 Go to You /core/ folder:
 
 ```console
-cd core
+cd path/to/your/evolution/cms/core
 ```
 
 Run php artisan command
@@ -48,7 +48,7 @@ The resource includes tabs for each language separately.
 
 ![Multilingual tabs](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.png)
 
-[Management tabs]({{ site.baseurl }}/management/){: .btn .btn-sky}
+[Management tabs]({{site.baseurl}}/management/){: .btn .btn-sky}
 
 ## Extra
 

@@ -7,7 +7,7 @@
                 <select style="width:100%" name="s_lang_default" class="form-control select2" data-placeholder="@lang('sLang::global.select_lang')" data-validate="textNoEmpty">
                     <option value=""></option>
                     @foreach (sLang::langList() as $id => $title)
-                        <option value="{{$id}}"@if ($id == sLang::langDefault()) selected @endif()>{{$title['name']}} (@lang('sLang::global.lang_'.$id))</option>
+                        <option value="{{$id}}" @if ($id == sLang::langDefault()) selected @endif()>{{$title['name']}} (@lang('sLang::global.lang_'.$id))</option>
                     @endforeach()
                 </select>
                 <div class="error-text" style="display:none;">@lang('sLang::global.field') <b>"@lang('sLang::global.lang_def')"</b> @lang('sLang::global.do_not_empty')</div>
@@ -23,7 +23,7 @@
                 <select style="width:100%" name="s_lang_config[]" class="form-control select2" data-placeholder="@lang('sLang::global.select_lang')" multiple data-validate="textMustContainDefault">
                     <option value=""></option>
                     @foreach (sLang::langList() as $id => $title)
-                        <option value="{{$id}}"@if (in_array($id, sLang::langConfig())) selected @endif()>{{$title['name']}} (@lang('sLang::global.lang_'.$id))</option>
+                        <option value="{{$id}}" @if (in_array($id, sLang::langConfig())) selected @endif()>{{$title['name']}} (@lang('sLang::global.lang_'.$id))</option>
                     @endforeach()
                 </select>
                 <div class="error-text" style="display:none;">@lang('sLang::global.field') <b>"@lang('sLang::global.languages')"</b> @lang('sLang::global.do_not_empty') @lang('sLang::global.must_contain')</div>
@@ -35,10 +35,22 @@
                 <select style="width:100%" name="s_lang_front[]" class="form-control select2" data-placeholder="@lang('sLang::global.select_lang')" multiple data-validate="textMustContainSiteLang">
                     <option value=""></option>
                     @foreach (sLang::langList() as $id => $title)
-                        <option value="{{$id}}"@if (in_array($id, sLang::langFront())) selected @endif()>{{$title['name']}} (@lang('sLang::global.lang_'.$id))</option>
+                        <option value="{{$id}}" @if (in_array($id, sLang::langFront())) selected @endif()>{{$title['name']}} (@lang('sLang::global.lang_'.$id))</option>
                     @endforeach()
                 </select>
                 <div class="error-text" style="display:none;">@lang('sLang::global.field') <b>"@lang('sLang::global.lang_front')"</b> @lang('sLang::global.do_not_empty') @lang('sLang::global.must_contain')</div>
+            </td>
+        </tr>
+        <tr>
+            <th><b>@lang('sLang::global.multilang_tvs')</b></th>
+            <td colspan="2">
+                <input type="hidden" name="s_lang_tvs" value=""/>
+                <select style="width:100%" name="s_lang_tvs[]" class="form-control select2" data-placeholder="@lang('sLang::global.select_multilang_tvs')" multiple>
+                    <option value=""></option>
+                    @foreach (sLang::templateVariables() as $var)
+                        <option value="{{$var->id}}" @if (in_array($var->id, sLang::langTvs())) selected @endif()>{{$var->caption}} ({{$var->name}})</option>
+                    @endforeach()
+                </select>
             </td>
         </tr>
         </tbody>

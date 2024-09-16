@@ -41,22 +41,27 @@ switch ($data['get']) {
     case "settings":
         // Default language
         if (request()->has('s_lang_default')) {
-            $sLangController->setLangDefault(request()->s_lang_default);
+            $sLangController->setLangDefault(request()->input('s_lang_default'));
         }
 
         // Default language display
         if (request()->has('s_lang_default_show')) {
-            $sLangController->setLangDefaultShow(request()->s_lang_default_show);
+            $sLangController->setLangDefaultShow(request()->input('s_lang_default_show'));
         }
 
         // List of site languages
         if (request()->has('s_lang_config')) {
-            $sLangController->setLangConfig(request()->s_lang_config);
+            $sLangController->setLangConfig(request()->input('s_lang_config'));
         }
 
         // List of languages for the frontend
         if (request()->has('s_lang_front')) {
-            $sLangController->setLangFront(request()->s_lang_front);
+            $sLangController->setLangFront(request()->input('s_lang_front'));
+        }
+
+        // List of multilang TVs
+        if (request()->has('s_lang_tvs')) {
+            $sLangController->setLangTvs(request()->input('s_lang_tvs'));
         }
 
         if (count($_POST) > 0) {

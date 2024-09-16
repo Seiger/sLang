@@ -188,9 +188,9 @@
         });
     </script>
     <style>
-        .langTable {margin-left: 15%; width: 85%;}
+        .langTable {margin-left: 0; width: 100%;}
         .langTable table {width: {{count(sLang::langConfig())*25+25}}%;}
-        .langTable td:first-child {vertical-align: middle; position: absolute; width: 15%; margin-left: -15%;}
-        .langTable tbody td:first-child {padding-top: 10px;}
+        .langTable td:first-child {vertical-align: middle;position: absolute;width: 20%;}
+        .langTable tbody td:first-child {padding-top: 10px;position: initial;}
     </style>
 @endpush
