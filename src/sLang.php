@@ -251,7 +251,7 @@ class sLang
                 ->get()
                 ->keyBy('name');
         }
-        return $sTemplateContentvalue ? $sTemplateContentvalue->toArray() : [];
+        return ($sTemplateContentvalue ?? false) ? $sTemplateContentvalue->toArray() : [];
     }
 
     /**
