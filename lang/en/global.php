@@ -51,6 +51,7 @@
     'lang_uk' => 'Ukrainian',
     'lang_uz' => 'Uzbek',
     'lang_vi' => 'Vietnamese',
+    'lang_hi' => 'Hindi',
     'lang_zh-hans' => 'Simplified Chinese',
     'lang_zh-hant' => 'Traditional Chinese',
     'languages' => 'List of site languages',
