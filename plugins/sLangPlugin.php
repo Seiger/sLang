@@ -88,7 +88,11 @@ Event::listen('evolution.OnPageNotFound', function($params) {
 
                 if (in_array($url[0], sLang::langFront()) || (evo()->getLoginUserID('mgr') && in_array($url[0], sLang::langConfig()))) {
                     $langDefault = $url[0];
-                    $_SERVER['REQUEST_URI'] = str_replace($url[0] . '/', '', $_SERVER['REQUEST_URI']);
+                    // previous code
+                    //$_SERVER['REQUEST_URI'] = str_replace($url[0] . '/', '', $_SERVER['REQUEST_URI']);
+                    // Use preg_replace with a limit of 1 to ensure only the first occurrence of the language code is removed from the URL.
+                    // This prevents str_replace from incorrectly removing the same language code if it appears later in the page's alias, which would cause a 404 error.
+                    $_SERVER['REQUEST_URI'] = preg_replace('/' . $url[0] . '\//', '', $_SERVER['REQUEST_URI'], 1);
                 }
             }
         }
