@@ -8,11 +8,9 @@
         <div class="row form-row">
             <div class="row-col col-lg-12 col-12">
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'pagetitle', 'content' => $content]))
-                @if(is_array($evtField))
-                    {!! implode('', $evtField) !!}
-                @else
+                @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title">
+                        <div class="col-auto col-title-10">
                             <label for="{{$lang}}_pagetitle" class="warning">@lang('global.resource_title')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_title_help')"></i>
                         </div>
@@ -32,11 +30,9 @@
                     </div>
                 @endif
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'longtitle', 'content' => $content]))
-                @if(is_array($evtField))
-                    {!! implode('', $evtField) !!}
-                @else
+                @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title-auto">
+                        <div class="col-auto col-title-10">
                             <label for="{{$lang}}_longtitle" class="warning">@lang('global.long_title')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_long_title_help')"></i>
                         </div>
@@ -55,11 +51,9 @@
                     </div>
                 @endif
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'description', 'content' => $content]))
-                @if(is_array($evtField))
-                    {!! implode('', $evtField) !!}
-                @else
+                @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title">
+                        <div class="col-auto col-title-10">
                             <label for="{{$lang}}_description" class="warning">@lang('global.resource_description')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_description_help')"></i>
                         </div>
@@ -79,11 +73,9 @@
                 @endif
                 @if($content['type'] == 'reference' || evo()->getManagerApi()->action == '72') {{-- Web Link specific --}}
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'ta', 'content' => $content]))
-                @if(is_array($evtField))
-                    {!! implode('', $evtField) !!}
-                @else
+                @if(is_array($evtField)){!! implode('', $evtField) !!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title">
+                        <div class="col-auto col-title-10">
                             <label for="ta" class="warning">@lang('global.weblink')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_weblink_help')"></i>
                         </div>
@@ -96,11 +88,9 @@
                 @endif
                 @endif
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'introtext', 'content' => $content]))
-                @if(is_array($evtField))
-                    {!! implode('', $evtField) !!}
-                @else
+                @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title-auto">
+                        <div class="col-auto col-title-10">
                             <label for="{{$lang}}_introtext" class="warning">@lang('global.resource_summary')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_summary_help')"></i>
                         </div>
@@ -119,11 +109,9 @@
                     </div>
                 @endif
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'menutitle', 'content' => $content]))
-                @if(is_array($evtField))
-                    {!! implode('', $evtField) !!}
-                @else
+                @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title">
+                        <div class="col-auto col-title-10">
                             <label for="{{$lang}}_menutitle" class="warning">@lang('global.resource_opt_menu_title')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_menu_title_help')"></i>
                         </div>
@@ -145,9 +133,7 @@
         </div>
         @if($content['type'] == 'document' || evo()->getManagerApi()->action == '4')
             @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'content', 'content' => $content]))
-            @if(is_array($evtField))
-                {!! implode('', $evtField) !!}
-            @else
+            @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                 <table>
                     <tr>
                         <td colspan="2" class="col">
@@ -195,13 +181,11 @@
             @endif
         @endif
         @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'seotitle', 'content' => $content]))
-        @if(is_array($evtField))
-            {!! implode('', $evtField) !!}
-        @else
+        @if(is_array($evtField)){!!implode('', $evtField)!!}@else
             <div class="row form-row">
                 <div class="row-col col-lg-12 col-12">
                     <div class="row form-row">
-                        <div class="col-auto col-title-auto">
+                        <div class="col-auto col-title-10">
                             <label for="{{$lang}}_seotitle" class="warning">@lang('sLang::global.seotitle')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('sLang::global.seotitle_help')"></i>
                         </div>
@@ -222,13 +206,11 @@
             </div>
         @endif
         @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'seodescription', 'content' => $content]))
-        @if(is_array($evtField))
-            {!! implode('', $evtField) !!}
-        @else
+        @if(is_array($evtField)){!!implode('', $evtField)!!}@else
             <div class="row form-row">
                 <div class="row-col col-lg-12 col-12">
                     <div class="row form-row">
-                        <div class="col-auto col-title-auto">
+                        <div class="col-auto col-title-10">
                             <label for="{{$lang}}_seodescription" class="warning">@lang('sLang::global.seodescription')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('sLang::global.seodescription_help')"></i>
                         </div>
@@ -250,9 +232,7 @@
         @endif<!-- end .sectionBody -->
         <div class="split my-2"></div>
         {{-- Template Variables --}}
-        @if($group_tvs < 3 && isset($templateVariablesLng[$lang]))
-            {!! $templateVariablesLng[$lang] !!}
-        @endif
+        @if($group_tvs < 3 && isset($templateVariablesLng[$lang])){!!$templateVariablesLng[$lang]!!}@endif
     </div>
     <!-- end #tabGeneral -->
 @endforeach

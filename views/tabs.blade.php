@@ -22,9 +22,11 @@
     .form-row .col-title-7{width:7rem;}
     .form-row .col-title{width:8rem;}
     .form-row .col-title-9{width:9rem;}
+    .form-row .col-title-10{width:10rem;}
+    .form-row .col-title-11{width:11rem;}
     .form-row .col-auto {padding-left:0;}
     .warning + [data-tooltip].fa-question-circle {margin:0.3rem 0.5rem 0;}
-    .badge.bg-seigerit{background-color:#0057b8 !important;color:#ffd700;font-size:85%;}
+    .badge.bg-seigerit{background-color:#0057b8!important;color:#ffd700;border-radius:0;padding:0.25rem;font-size:83%;}
 </style>
 
 <script>

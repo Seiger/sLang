@@ -72,7 +72,7 @@ Default language:
 
 List of frontend languages by comma:
 ```php
-{{evo()->getConfig('s_lang_default')}}
+{{evo()->getConfig('s_lang_front')}}
 ```
 
 Translation of phrases:
