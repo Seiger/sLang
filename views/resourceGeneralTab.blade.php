@@ -10,7 +10,7 @@
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'pagetitle', 'content' => $content]))
                 @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title-10">
+                        <div class="col-auto col-title-11">
                             <label for="{{$lang}}_pagetitle" class="warning">@lang('global.resource_title')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_title_help')"></i>
                         </div>
@@ -32,7 +32,7 @@
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'longtitle', 'content' => $content]))
                 @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title-10">
+                        <div class="col-auto col-title-11">
                             <label for="{{$lang}}_longtitle" class="warning">@lang('global.long_title')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_long_title_help')"></i>
                         </div>
@@ -53,7 +53,7 @@
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'description', 'content' => $content]))
                 @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title-10">
+                        <div class="col-auto col-title-11">
                             <label for="{{$lang}}_description" class="warning">@lang('global.resource_description')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_description_help')"></i>
                         </div>
@@ -75,7 +75,7 @@
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'ta', 'content' => $content]))
                 @if(is_array($evtField)){!! implode('', $evtField) !!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title-10">
+                        <div class="col-auto col-title-11">
                             <label for="ta" class="warning">@lang('global.weblink')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_weblink_help')"></i>
                         </div>
@@ -90,7 +90,7 @@
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'introtext', 'content' => $content]))
                 @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title-10">
+                        <div class="col-auto col-title-11">
                             <label for="{{$lang}}_introtext" class="warning">@lang('global.resource_summary')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_summary_help')"></i>
                         </div>
@@ -111,7 +111,7 @@
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'menutitle', 'content' => $content]))
                 @if(is_array($evtField)){!!implode('', $evtField)!!}@else
                     <div class="row form-row">
-                        <div class="col-auto col-title-10">
+                        <div class="col-auto col-title-11">
                             <label for="{{$lang}}_menutitle" class="warning">@lang('global.resource_opt_menu_title')</label>
                             <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_menu_title_help')"></i>
                         </div>
@@ -180,55 +180,61 @@
                 </table>
             @endif
         @endif
-        @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'seotitle', 'content' => $content]))
-        @if(is_array($evtField)){!!implode('', $evtField)!!}@else
-            <div class="row form-row">
-                <div class="row-col col-lg-12 col-12">
-                    <div class="row form-row">
-                        <div class="col-auto col-title-10">
-                            <label for="{{$lang}}_seotitle" class="warning">@lang('sLang::global.seotitle')</label>
-                            <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('sLang::global.seotitle_help')"></i>
-                        </div>
-                        <div class="col">
-                            @if($lang == sLang::langDefault())
-                                <input name="{{$lang}}_seotitle" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_seotitle', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" />
-                            @else
-                                <div class="input-group">
-                                    <input name="{{$lang}}_seotitle" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_seotitle', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" style="width: calc(100% - 52px);" />
-                                    <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
-                                        <i class="fa fa-language" style="font-size:xx-large;"></i>
-                                    </button>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-        @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'seodescription', 'content' => $content]))
-        @if(is_array($evtField)){!!implode('', $evtField)!!}@else
-            <div class="row form-row">
-                <div class="row-col col-lg-12 col-12">
-                    <div class="row form-row">
-                        <div class="col-auto col-title-10">
-                            <label for="{{$lang}}_seodescription" class="warning">@lang('sLang::global.seodescription')</label>
-                            <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('sLang::global.seodescription_help')"></i>
-                        </div>
-                        <div class="col">
-                            @if($lang == sLang::langDefault())
-                                <input name="{{$lang}}_seodescription" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_seodescription', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" />
-                            @else
-                                <div class="input-group">
-                                    <input name="{{$lang}}_seodescription" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_seodescription', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" style="width: calc(100% - 52px);" />
-                                    <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
-                                        <i class="fa fa-language" style="font-size:xx-large;"></i>
-                                    </button>
-                                </div>
-                            @endif
+        <div class="split my-3"></div>
+        @php($seoFields = evo()->invokeEvent('OnRenderSeoFields', ['type' => 'document', 'lang' => $lang, 'id' => $content['id']]))
+        @if(is_array($seoFields)){!!implode('', $seoFields)!!}@endif
+        {{-- @deprecated --}}
+        @if(!evo()->getConfig('check_sSeo', false))
+            @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'seotitle', 'content' => $content]))
+            @if(is_array($evtField)){!!implode('', $evtField)!!}@else
+                <div class="row form-row">
+                    <div class="row-col col-lg-12 col-12">
+                        <div class="row form-row">
+                            <div class="col-auto col-title-11">
+                                <label for="{{$lang}}_seotitle" class="warning">@lang('sLang::global.seotitle')</label>
+                                <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('sLang::global.seotitle_help')"></i>
+                            </div>
+                            <div class="col">
+                                @if($lang == sLang::langDefault())
+                                    <input name="{{$lang}}_seotitle" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_seotitle', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" />
+                                @else
+                                    <div class="input-group">
+                                        <input name="{{$lang}}_seotitle" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_seotitle', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" style="width: calc(100% - 52px);" />
+                                        <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
+                                            <i class="fa fa-language" style="font-size:xx-large;"></i>
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            @endif
+            @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'seodescription', 'content' => $content]))
+            @if(is_array($evtField)){!!implode('', $evtField)!!}@else
+                <div class="row form-row">
+                    <div class="row-col col-lg-12 col-12">
+                        <div class="row form-row">
+                            <div class="col-auto col-title-11">
+                                <label for="{{$lang}}_seodescription" class="warning">@lang('sLang::global.seodescription')</label>
+                                <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('sLang::global.seodescription_help')"></i>
+                            </div>
+                            <div class="col">
+                                @if($lang == sLang::langDefault())
+                                    <input name="{{$lang}}_seodescription" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_seodescription', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" />
+                                @else
+                                    <div class="input-group">
+                                        <input name="{{$lang}}_seodescription" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_seodescription', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" style="width: calc(100% - 52px);" />
+                                        <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
+                                            <i class="fa fa-language" style="font-size:xx-large;"></i>
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
         @endif<!-- end .sectionBody -->
         <div class="split my-2"></div>
         {{-- Template Variables --}}
