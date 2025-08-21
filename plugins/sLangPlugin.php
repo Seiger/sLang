@@ -88,10 +88,6 @@ Event::listen('evolution.OnPageNotFound', function($params) {
 
                 if (in_array($url[0], sLang::langFront()) || (evo()->getLoginUserID('mgr') && in_array($url[0], sLang::langConfig()))) {
                     $langDefault = $url[0];
-                    // previous code
-                    //$_SERVER['REQUEST_URI'] = str_replace($url[0] . '/', '', $_SERVER['REQUEST_URI']);
-                    // Use preg_replace with a limit of 1 to ensure only the first occurrence of the language code is removed from the URL.
-                    // This prevents str_replace from incorrectly removing the same language code if it appears later in the page's alias, which would cause a 404 error.
                     $_SERVER['REQUEST_URI'] = preg_replace('/' . $url[0] . '\//', '', $_SERVER['REQUEST_URI'], 1);
                 }
             }
@@ -129,7 +125,6 @@ Event::listen('evolution.OnPageNotFound', function($params) {
             }
         }
 
-        //Event::until('evolution.OnWebPageInit', [['lang' => $langDefault]]);
         evo()->sendForward($identifier);
         exit();
     }
@@ -158,29 +153,6 @@ Event::listen('evolution.OnLoadSettings', function($params) {
     evo()->setLocale($langDefault);
     evo()->setConfig('lang', $langDefault);
 });
-/**
- * @deprecated
- */
-/*Event::listen('evolution.OnWebPageInit', function($params) {
-    if (isset($params['lang'])) {
-        $langDefault = $params['lang'];
-    } else {
-        $langDefault = sLang::langDefault();
-
-        if (isset($_SERVER['REQUEST_URI'])) {
-            $url = explode('/', ltrim($_SERVER['REQUEST_URI'], '/'), 2);
-
-            if (trim($url[0])) {
-                if (in_array($url[0], sLang::langFront())) {
-                    $langDefault = $url[0];
-                }
-            }
-        }
-    }
-
-    evo()->setLocale($langDefault);
-    evo()->setConfig('lang', $langDefault);
-});*/
 
 /**
  * Make page cache ID
