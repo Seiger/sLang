@@ -129,7 +129,7 @@ Event::listen('evolution.OnPageNotFound', function($params) {
             }
         }
 
-        Event::until('evolution.OnWebPageInit', [['lang' => $langDefault]]);
+        //Event::until('evolution.OnWebPageInit', [['lang' => $langDefault]]);
         evo()->sendForward($identifier);
         exit();
     }
@@ -161,7 +161,7 @@ Event::listen('evolution.OnLoadSettings', function($params) {
 /**
  * @deprecated
  */
-Event::listen('evolution.OnWebPageInit', function($params) {
+/*Event::listen('evolution.OnWebPageInit', function($params) {
     if (isset($params['lang'])) {
         $langDefault = $params['lang'];
     } else {
@@ -180,7 +180,7 @@ Event::listen('evolution.OnWebPageInit', function($params) {
 
     evo()->setLocale($langDefault);
     evo()->setConfig('lang', $langDefault);
-});
+});*/
 
 /**
  * Make page cache ID
