@@ -181,7 +181,7 @@
             @endif
         @endif
         <div class="split my-3"></div>
-        @php($seoFields = evo()->invokeEvent('OnRenderSeoFields', ['type' => 'document', 'lang' => $lang, 'id' => $content['id']]))
+        @php($seoFields = evo()->invokeEvent('OnRenderSeoFields', ['type' => 'document', 'lang' => $lang, 'id' => ($content['id'] ?? 0)]))
         @if(is_array($seoFields)){!!implode('', $seoFields)!!}@endif
         {{-- @deprecated --}}
         @if(!evo()->getConfig('check_sSeo', false))
