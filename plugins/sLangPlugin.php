@@ -105,7 +105,8 @@ Event::listen('evolution.OnPageNotFound', function($params) {
         } else {
             $q = trim($_SERVER['REQUEST_URI'], '/');
             $path = explode('?', $q);
-            $path = trim($path[0], '/');
+            $path = trim($path[0], evo()->getConfig('friendly_url_suffix', ''));
+            $path = trim($path, '/');
             if (array_key_exists($path, UrlProcessor::getFacadeRoot()->documentListing)) {
                 $identifier = UrlProcessor::getFacadeRoot()->documentListing[$path];
             }
