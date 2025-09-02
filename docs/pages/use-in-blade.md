@@ -85,14 +85,14 @@ use Seiger\sLang\Models\sLangContent;
 
 public function globalElements()
 {
-    $this->data['menu_main'] = sLangContent::langAndTvs(evo()->getConfig('lang', 'uk'))
+    $this->data['mainMenu'] = sLangContent::langAndTvs(evo()->getConfig('lang', 'uk'))
         ->whereTv('menu_main', 1)
         ->where('hidemenu', 0)
         ->orderBy('menuindex')
         ->active()
         ->get();
 
-    $this->data['menu_footer'] = sLangContent::langAndTvs(evo()->getConfig('lang', 'uk'))
+    $this->data['footerMenu'] = sLangContent::langAndTvs(evo()->getConfig('lang', 'uk'))
         ->whereTv('menu_footer', 1)
         ->where('hidemenu', 0)
         ->orderBy('menuindex')
@@ -103,9 +103,9 @@ public function globalElements()
 
 Output in the Blade template
 ```php
-@if($menu_main)
+@if($mainMenu)
     <ul>
-        @foreach($menu_main as $menu)
+        @foreach($mainMenu as $menu)
             @if($menu->id == evo()->documentObject['id'])
             <li class="active">
                 <a>{% raw %}{{$menu->menutitle}}{% endraw %}</a>

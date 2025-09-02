@@ -180,9 +180,6 @@
                 </table>
             @endif
         @endif
-        <div class="split my-3"></div>
-        @php($seoFields = evo()->invokeEvent('OnRenderSeoFields', ['type' => 'document', 'lang' => $lang, 'id' => ($content['id'] ?? 0)]))
-        @if(is_array($seoFields)){!!implode('', $seoFields)!!}@endif
         {{-- @deprecated --}}
         @if(!evo()->getConfig('check_sSeo', false))
             @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'seotitle', 'content' => $content]))
@@ -236,9 +233,11 @@
                 </div>
             @endif
         @endif<!-- end .sectionBody -->
-        <div class="split my-2"></div>
         {{-- Template Variables --}}
-        @if($group_tvs < 3 && isset($templateVariablesLng[$lang])){!!$templateVariablesLng[$lang]!!}@endif
+        @if($group_tvs < 3 && isset($templateVariablesLng[$lang])){!!$templateVariablesLng[$lang]!!}<div class="split my-3"></div>@endif
+        {{-- Seo Fields --}}
+        @php($seoFields = evo()->invokeEvent('OnRenderSeoFields', ['type' => 'document', 'lang' => $lang, 'id' => ($content['id'] ?? 0)]))
+        @if(is_array($seoFields)){!!implode('', $seoFields)!!}<div class="split my-3"></div>@endif
     </div>
     <!-- end #tabGeneral -->
 @endforeach
