@@ -72,20 +72,20 @@
                     </div>
                 @endif
                 @if($content['type'] == 'reference' || evo()->getManagerApi()->action == '72') {{-- Web Link specific --}}
-                @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'ta', 'content' => $content]))
-                @if(is_array($evtField)){!! implode('', $evtField) !!}@else
-                    <div class="row form-row">
-                        <div class="col-auto col-title-11">
-                            <label for="ta" class="warning">@lang('global.weblink')</label>
-                            <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_weblink_help')"></i>
+                    @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'ta', 'content' => $content]))
+                    @if(is_array($evtField)){!! implode('', $evtField) !!}@else
+                        <div class="row form-row">
+                            <div class="col-auto col-title-11">
+                                <label for="ta" class="warning">@lang('global.weblink')</label>
+                                <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_weblink_help')"></i>
+                            </div>
+                            <div class="col">
+                                <i id="llock" class="{{$_style["icon_chain"]}}" onclick="enableLinkSelection(!allowLinkSelection);"></i>
+                                <input name="ta" id="ta" type="text" maxlength="255" value="{{(!empty($content['content']) ? entities(stripslashes($content['content']), evo()->getConfig('modx_charset')) : 'http://')}}" class="form-control" onchange="documentDirty=true;" />
+                                <input type="button" value="@lang('global.insert')" onclick="BrowseFileServer('ta')" />
+                            </div>
                         </div>
-                        <div class="col">
-                            <i id="llock" class="{{$_style["icon_chain"]}}" onclick="enableLinkSelection(!allowLinkSelection);"></i>
-                            <input name="ta" id="ta" type="text" maxlength="255" value="{{(!empty($content['content']) ? entities(stripslashes($content['content']), evo()->getConfig('modx_charset')) : 'http://')}}" class="form-control" onchange="documentDirty=true;" />
-                            <input type="button" value="@lang('global.insert')" onclick="BrowseFileServer('ta')" />
-                        </div>
-                    </div>
-                @endif
+                    @endif
                 @endif
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'introtext', 'content' => $content]))
                 @if(is_array($evtField)){!!implode('', $evtField)!!}@else

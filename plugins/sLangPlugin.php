@@ -73,7 +73,7 @@ Event::listen('evolution.OnAfterLoadDocumentObject', function($params) {
  * Parameterization of the current language
  */
 Event::listen('evolution.OnPageNotFound', function($params) {
-    if (!isset($params['isRedirected'])) {
+    if (!isset($params['isOnPageNotFoundLangRedirected'])) {
         $identifier = evo()->getConfig('error_page', 1);
         $langDefault = sLang::langDefault();
 
@@ -122,7 +122,7 @@ Event::listen('evolution.OnPageNotFound', function($params) {
                 header('HTTP/1.0 404 Not Found');
                 die(json_encode($response));
             } else {
-                Event::until('evolution.OnPageNotFound', [['isRedirected' => true]]);
+                Event::until('evolution.OnPageNotFound', [['isOnPageNotFoundLangRedirected' => true]]);
             }
         }
 
