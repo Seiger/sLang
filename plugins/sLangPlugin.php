@@ -67,6 +67,7 @@ Event::listen('evolution.OnAfterLoadDocumentObject', function($params) {
     }
 
     evo()->documentObject = $params['documentObject'];
+    return $params['documentObject'];
 });
 
 /**
