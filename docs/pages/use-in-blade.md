@@ -85,14 +85,14 @@ use Seiger\sLang\Models\sLangContent;
 
 public function globalElements()
 {
-    $this->data['mainMenu'] = sLangContent::langAndTvs(evo()->getConfig('lang', 'uk'))
+    $this->data['mainMenu'] = sLangContent::withTVs(['menu_main'])
         ->whereTv('menu_main', 1)
         ->where('hidemenu', 0)
         ->orderBy('menuindex')
         ->active()
         ->get();
 
-    $this->data['footerMenu'] = sLangContent::langAndTvs(evo()->getConfig('lang', 'uk'))
+    $this->data['footerMenu'] = sLangContent::withTVs(['menu_footer'])
         ->whereTv('menu_footer', 1)
         ->where('hidemenu', 0)
         ->orderBy('menuindex')
@@ -122,11 +122,11 @@ Output in the Blade template
 
 ## TV variables
 
-The ```langAndTvs()``` method makes it quite easy to get TV parameters associated with a resource. For example, the **tv_image** parameter.
+The `withTVs()` scope makes it easy to retrieve TV parameters associated with a resource. For example, the **tv_image** parameter.
 
 Get in the controller.
 ```php
-$resource = sLangContent::langAndTvs(evo()->getConfig('lang'), ['tv_image'])->active()->first();
+$resource = sLangContent::withTVs(['tv_image'])->active()->first();
 ```
 
 Display in the template.
@@ -134,10 +134,12 @@ Display in the template.
 {% raw %}{{$resource->tv_image}}{% endraw %}
 ```
 
-The ```whereTv()``` method allows you to use a filter based on the value of the TV parameter if necessary.
+The `whereTv()` method allows you to use a filter based on the value of the TV parameter if necessary.
 ```php
-$resource = sLangContent::langAndTvs(evo()->getConfig('lang'), ['tv_image'])->whereTv('tv_image', '!=', '')->get();
+$resource = sLangContent::withTVs(['tv_image'])->whereTv('tv_image', '!=', '')->get();
 ```
+
+> **Deprecated:** The `langAndTvs()` helper is deprecated since `1.0.8` and will be removed in `v1.2`. Replace it with the `lang()` and `withTVs()` scopes.
 
 ## Resource fields in Admin panel
 

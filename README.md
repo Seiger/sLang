@@ -33,6 +33,13 @@ Evolution CMS-powered websites.
 
 ![Multilingual tabs](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.png)
 
+### Requirements
+
+- Evolution CMS **3.3+**
+- PHP **8.3+**
+- Composer **2.2+**
+- One of: **MySQL 8.0+** / **MariaDB 10.5+** / **PostgreSQL 10+** / **SQLite 3.25+**
+
 ## Install by artisan package installer
 
 Go to You /core/ folder:
@@ -98,5 +105,37 @@ Implementing a Language Switcher
     <a href="{{$lang['link']}}">{{Str::upper($lang['ISO 639-1'])}}</a>
 @endforeach
 ```
+
+## Working with localized content (Eloquent)
+
+The `Seiger\sLang\Models\sLangContent` model now applies the current locale automatically.
+
+- Fetch translated rows for the active locale:
+  ```php
+  use Seiger\sLang\Models\sLangContent;
+
+  $items = sLangContent::active()->get(); // locale resolved via evo()->getLocale()
+  ```
+- Select a specific locale explicitly:
+  ```php
+  $items = sLangContent::lang('en')->get();
+  ```
+- Include template variables while keeping the locale filtering:
+  ```php
+  $items = sLangContent::withTVs(['color', 'price'])->get();
+  ```
+- Combine multiple helpers:
+  ```php
+  $items = sLangContent::lang('uk')
+      ->withTVs(['color', 'price'])
+      ->whereParent($parentId)
+      ->active()
+      ->get();
+  ```
+- Legacy helper is preserved for backward compatibility:
+  ```php
+  $items = sLangContent::langAndTvs('en', ['color', 'price'])->get();
+  ```
+  > **Deprecated:** `langAndTvs()` is deprecated since `1.0.8` and is scheduled for removal in `v1.2`. Use `lang()->withTVs()` instead.
 
 [See full documentation here](https://seiger.github.io/sLang/)

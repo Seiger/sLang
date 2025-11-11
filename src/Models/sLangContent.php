@@ -11,26 +11,40 @@ class sLangContent extends Eloquent\Model
     protected $fillable = ['resource', 'lang', 'pagetitle', 'longtitle', 'description', 'introtext', 'content', 'menutitle', 'seotitle', 'seodescription'];
 
     /**
-     * Add the language and template variable fields to the query
+     * Add the language and template variable fields to the query.
      *
      * @param Builder $query The query builder instance
      * @param string $locale The language locale
      * @param array $tvNames The array of template variable names
      * @return Builder The modified query builder instance
+     *
+     * @deprecated since 1.0.8
+     * TODO: REMOVE IN v1.2
      */
     public function scopeLangAndTvs($query, $locale, $tvNames = [])
     {
-        $query->select('*', 's_lang_content.resource as id', 's_lang_content.pagetitle as pagetitle');
-        $query->addSelect('s_lang_content.longtitle as longtitle', 's_lang_content.description as description');
-        $query->addSelect('s_lang_content.introtext as introtext', 's_lang_content.content as content');
-        $query->addSelect('s_lang_content.menutitle as menutitle');
-        $query->selectTvs($tvNames);
+        $query = $this->scopeLang($query, $locale);
+        return $query->withTVs($tvNames);
+    }
 
-        return $query->addSelect('site_content.pagetitle as pagetitle_orig', 'site_content.longtitle as longtitle_orig')
-            ->addSelect('site_content.description as description_orig', 'site_content.introtext as introtext_orig')
-            ->addSelect('site_content.content as content_orig', 'site_content.menutitle as menutitle_orig')
-            ->leftJoin('site_content', 's_lang_content.resource', '=', 'site_content.id')
-            ->where('lang', '=', $locale);
+    /**
+     * Limit the query to a specific language. Falls back to evo()->getLocale() when locale is not provided.
+     */
+    public function scopeLang($query, ?string $locale = null)
+    {
+        $query = $query->withoutGlobalScope('language');
+        $locale = static::resolveLocale($locale);
+        $this->applyContentSelects($query);
+        return $query->where('lang', '=', $locale);
+    }
+
+    /**
+     * Append template variable fields while preserving base selects.
+     */
+    public function scopeWithTVs($query, array $tvNames = [])
+    {
+        $this->applyContentSelects($query);
+        return $this->scopeSelectTvs($query, $tvNames);
     }
 
     /**
@@ -143,8 +157,94 @@ class sLangContent extends Eloquent\Model
     {
         $base_url = UrlProcessor::makeUrl($this->resource);
         if (str_starts_with($base_url, '/')) {
-            $base_url = MODX_SITE_URL . ltrim($base_url, '/');
+            $base_url = EVO_SITE_URL . ltrim($base_url, '/');
         }
         return $base_url;
+    }
+
+    /**
+     * Applies base selects and joins required for language-aware scopes.
+     */
+    protected function applyContentSelects(Builder $query): Builder
+    {
+        $eloquentQuery = $query->getQuery();
+
+        if (empty($eloquentQuery->columns)) {
+            $query->select('s_lang_content.*');
+        }
+
+        $query->addSelect(
+            's_lang_content.resource as id',
+            's_lang_content.pagetitle as pagetitle',
+            's_lang_content.longtitle as longtitle',
+            's_lang_content.description as description',
+            's_lang_content.introtext as introtext',
+            's_lang_content.content as content',
+            's_lang_content.menutitle as menutitle'
+        );
+
+        if (!$this->hasSiteContentJoin($eloquentQuery->joins ?? [])) {
+            $query->leftJoin('site_content', 's_lang_content.resource', '=', 'site_content.id');
+        }
+
+        return $query->addSelect(
+            'site_content.pagetitle as pagetitle_orig',
+            'site_content.longtitle as longtitle_orig',
+            'site_content.description as description_orig',
+            'site_content.introtext as introtext_orig',
+            'site_content.content as content_orig',
+            'site_content.menutitle as menutitle_orig'
+        );
+    }
+
+    /**
+     * Detect whether site_content join has already been added.
+     */
+    protected function hasSiteContentJoin(array $joins): bool
+    {
+        foreach ($joins as $join) {
+            if (($join->table ?? null) === 'site_content') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Resolve the locale used by language-aware scopes.
+     */
+    protected static function resolveLocale(?string $locale): string
+    {
+        $locale = $locale ?? (function_exists('evo') ? (string)evo()->getLocale() : '');
+
+        if ($locale === '' && function_exists('evo')) {
+            $locale = (string)evo()->getConfig('lang', 'uk');
+        }
+
+        if ($locale === '') {
+            $locale = 'uk';
+        }
+
+        $underscorePos = strpos($locale, '_');
+        if ($underscorePos !== false) {
+            $locale = substr($locale, 0, $underscorePos);
+        }
+
+        return strtolower($locale);
+    }
+
+    /**
+     * Register the default language scope for the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('language', function (Builder $builder) {
+            /** @var self $model */
+            $model = new static;
+            $locale = static::resolveLocale(null);
+            $model->applyContentSelects($builder);
+            $builder->where($model->getTable() . '.lang', '=', $locale);
+        });
     }
 }

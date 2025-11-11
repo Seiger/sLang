@@ -19,8 +19,8 @@ permalink: /
 admin panel. This dynamic package empowers users to seamlessly implement and manage
 multilingual tools within the Evolution CMS environment. By utilizing Evolution CMS
 as its platform, sLang offers a streamlined solution for users seeking efficient and
-intuitive ways to handle diverse language content, making it an indispensable asset 
-for administrators and developers navigating the intricacies of multilingual website 
+intuitive ways to handle diverse language content, making it an indispensable asset
+for administrators and developers navigating the intricacies of multilingual website
 management.
 
 The work of the module is based on the use of the standard Laravel functionality for
@@ -40,11 +40,18 @@ Evolution CMS-powered websites.
 - [x] Unlimited Translation Language Support.
 - [x] Multilingual SEO Support.
 
-## Minimum requirements
+## Locale-aware content model
 
-- Evolution CMS >= 3.2.0
-- PHP >= 8.1.0
-- Composer >= 2.2.0
+- `Seiger\sLang\Models\sLangContent` now respects the current locale by default (via `evo()->getLocale()`).
+- Explicit locale selection is available through the `lang()` scope, and template variables can be appended with `withTVs()`.
+- `langAndTvs()` remains for backward compatibility but is **deprecated since `1.0.8`** and scheduled for removal in **`v1.2`**.
+
+### Requirements
+
+- Evolution CMS **3.3+**
+- PHP **8.3+**
+- Composer **2.2+**
+- One of: **MySQL 8.0+** / **MariaDB 10.5+** / **PostgreSQL 10+** / **SQLite 3.25+**
 
 ## Support
 
