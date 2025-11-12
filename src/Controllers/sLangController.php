@@ -121,7 +121,8 @@ class sLangController
      */
     public function setLangContent(int $resourceId, string $langKey, array $fields): void
     {
-        sLangContent::updateOrCreate(['resource' => $resourceId, 'lang' => $langKey], $fields);
+        sLangContent::withoutGlobalScope('language')
+            ->updateOrCreate(['resource' => $resourceId, 'lang' => $langKey], $fields);
     }
 
     /**
