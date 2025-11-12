@@ -71,7 +71,10 @@ class sLangController
             }
         }
 
-        $translates = sLangContent::whereResource($content['id'] ?? 0)->get()->toArray();
+        $translates = sLangContent::withoutGlobalScope('language')
+            ->whereResource($content['id'] ?? 0)
+            ->get()
+            ->toArray();
 
         if (is_array($translates) && count($translates)) {
             foreach ($translates as $translate) {

@@ -222,7 +222,10 @@ class sLang
      */
     public function getLangContent(int $resourceId, string $langKey): array
     {
-        $sLangContent = sLangContent::whereResource($resourceId)->whereLang($langKey)->first();
+        $sLangContent = sLangContent::withoutGlobalScope('language')
+            ->whereResource($resourceId)
+            ->whereLang($langKey)
+            ->first();
         return $sLangContent ? $sLangContent->toArray() : [];
     }
 
