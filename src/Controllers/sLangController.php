@@ -581,8 +581,8 @@ class sLangController
                 $tvs = $tvs->orderBy('category_rank', 'ASC');
                 $tvs = $tvs->orderBy('category_id', 'ASC');
             }
-            $tvs = $tvs->orderBy('site_tmplvar_templates.rank', 'ASC');
             $tvs = $tvs->orderBy('site_tmplvars.rank', 'ASC');
+            $tvs = $tvs->orderBy('site_tmplvar_templates.rank', 'ASC');
             $tvs = $tvs->orderBy('site_tmplvars.id', 'ASC');
             $tvs = $tvs->where('site_tmplvar_templates.templateid', $template);
 

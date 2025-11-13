@@ -2,7 +2,7 @@
     <div class="row-col col-lg-12 col-12">
         <div class="row form-row">
             @if(!in_array($row['type'], ['custom_tv:multifields']))
-                <div class="col-auto col-title-auto">
+                <div class="col-auto col-title-11">
                     <label for="{{$row['name']}}">
                         {{$row['caption']}}
                         @if(evo()->hasPermission('edit_template'))<br/><small class="text-muted">[*{{$row['name']}}*]</small>@endif
