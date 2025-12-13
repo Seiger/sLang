@@ -773,7 +773,7 @@ class sLangController
                         }
                     }
 
-                    if ($group_tvs && $row['category_id'] == 0) {
+                    if ($group_tvs == 1 && $row['category_id'] == 0) {
                         $templateVariablesGeneral .= $templateVariablesTmp;
                         $ii++;
                     } else {

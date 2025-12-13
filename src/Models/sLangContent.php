@@ -113,18 +113,24 @@ class sLangContent extends Eloquent\Model
 
     /**
      * Adds a WHERE clause to the query that filters results based on the given TV and value.
+     * If value is an array, uses WHERE IN clause, otherwise uses WHERE = clause.
      *
      * @param \Illuminate\Database\Query\Builder $query The database query builder instance
      * @param string $name The name of the TV to filter by
-     * @param mixed $value The value to filter by
+     * @param mixed $value The value to filter by (can be a single value or an array)
      * @return \Illuminate\Database\Query\Builder The modified query builder instance
      */
     public function scopeWhereTv($query, $name, $value)
     {
-        return $query->leftJoin('site_tmplvar_contentvalues', 'site_tmplvar_contentvalues.contentid', '=', 's_lang_content.resource')
+        $query = $query->leftJoin('site_tmplvar_contentvalues', 'site_tmplvar_contentvalues.contentid', '=', 's_lang_content.resource')
             ->leftJoin('site_tmplvars', 'site_tmplvars.id', '=', 'site_tmplvar_contentvalues.tmplvarid')
-            ->whereName($name)
-            ->whereValue($value);
+            ->where('site_tmplvars.name', '=', $name);
+
+        if (is_array($value)) {
+            return $query->whereIn('site_tmplvar_contentvalues.value', $value);
+        }
+
+        return $query->where('site_tmplvar_contentvalues.value', '=', $value);
     }
 
     /**
