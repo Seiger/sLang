@@ -218,18 +218,53 @@ class sLangContent extends Eloquent\Model
         $eloquentQuery = $query->getQuery();
 
         if (empty($eloquentQuery->columns)) {
-            $query->select('s_lang_content.*');
-        }
+            // Select all columns except id to avoid duplicate when adding resource as id
+            // Use explicit column list with aliases for fields that need to be accessible without table prefix
+            $query->select([
+                's_lang_content.resource as id',
+                's_lang_content.resource',
+                's_lang_content.lang',
+                's_lang_content.pagetitle as pagetitle',
+                's_lang_content.longtitle as longtitle',
+                's_lang_content.description as description',
+                's_lang_content.introtext as introtext',
+                's_lang_content.content as content',
+                's_lang_content.menutitle as menutitle',
+                's_lang_content.seotitle',
+                's_lang_content.seodescription',
+                's_lang_content.created_at',
+                's_lang_content.updated_at'
+            ]);
+        } else {
+            // Check if 'id' alias already exists to avoid duplicate
+            $hasIdAlias = false;
+            foreach ($eloquentQuery->columns as $column) {
+                if (is_string($column) && (str_contains($column, ' as `id`') || str_contains($column, ' as id'))) {
+                    $hasIdAlias = true;
+                    break;
+                }
+            }
 
-        $query->addSelect(
-            's_lang_content.resource as id',
-            's_lang_content.pagetitle as pagetitle',
-            's_lang_content.longtitle as longtitle',
-            's_lang_content.description as description',
-            's_lang_content.introtext as introtext',
-            's_lang_content.content as content',
-            's_lang_content.menutitle as menutitle'
-        );
+            if (!$hasIdAlias) {
+                $query->addSelect('s_lang_content.resource as id');
+            }
+
+            // Add aliases for fields that need to be accessible without table prefix
+            // Only add if they don't already exist with alias
+            $fieldsToAlias = ['pagetitle', 'longtitle', 'description', 'introtext', 'content', 'menutitle'];
+            foreach ($fieldsToAlias as $field) {
+                $hasAlias = false;
+                foreach ($eloquentQuery->columns as $column) {
+                    if (is_string($column) && str_contains($column, $field . ' as ' . $field)) {
+                        $hasAlias = true;
+                        break;
+                    }
+                }
+                if (!$hasAlias) {
+                    $query->addSelect('s_lang_content.' . $field . ' as ' . $field);
+                }
+            }
+        }
 
         if (!$this->hasSiteContentJoin($eloquentQuery->joins ?? [])) {
             $query->leftJoin('site_content', 's_lang_content.resource', '=', 'site_content.id');
