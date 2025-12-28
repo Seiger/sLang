@@ -122,15 +122,22 @@ class sLangContent extends Eloquent\Model
      */
     public function scopeWhereTv($query, $name, $value)
     {
-        $query = $query->leftJoin('site_tmplvar_contentvalues', 'site_tmplvar_contentvalues.contentid', '=', 's_lang_content.resource')
-            ->leftJoin('site_tmplvars', 'site_tmplvars.id', '=', 'site_tmplvar_contentvalues.tmplvarid')
-            ->where('site_tmplvars.name', '=', $name);
+        $tvValuesAlias = 'tv_values_' . $name;
+        $tvVarsAlias = 'tv_vars_' . $name;
+
+        $query = $query->leftJoin('site_tmplvar_contentvalues as ' . $tvValuesAlias, function($join) use ($tvValuesAlias) {
+            $join->on($tvValuesAlias . '.contentid', '=', 's_lang_content.resource');
+        })
+            ->leftJoin('site_tmplvars as ' . $tvVarsAlias, function($join) use ($name, $tvValuesAlias, $tvVarsAlias) {
+                $join->on($tvVarsAlias . '.id', '=', $tvValuesAlias . '.tmplvarid')
+                    ->where($tvVarsAlias . '.name', '=', $name);
+            });
 
         if (is_array($value)) {
-            return $query->whereIn('site_tmplvar_contentvalues.value', $value);
+            return $query->whereIn($tvValuesAlias . '.value', $value);
         }
 
-        return $query->where('site_tmplvar_contentvalues.value', '=', $value);
+        return $query->where($tvValuesAlias . '.value', '=', $value);
     }
 
     /**
