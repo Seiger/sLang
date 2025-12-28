@@ -113,31 +113,66 @@ class sLangContent extends Eloquent\Model
 
     /**
      * Adds a WHERE clause to the query that filters results based on the given TV and value.
-     * If value is an array, uses WHERE IN clause, otherwise uses WHERE = clause.
+     * If value is an array, uses WHERE IN clause, otherwise uses WHERE clause with the specified operator.
      *
      * @param \Illuminate\Database\Query\Builder $query The database query builder instance
      * @param string $name The name of the TV to filter by
      * @param mixed $value The value to filter by (can be a single value or an array)
+     * @param string $operator The comparison operator (=, >, <, >=, <=, !=, <>, like, not like). Default is '='
      * @return \Illuminate\Database\Query\Builder The modified query builder instance
      */
-    public function scopeWhereTv($query, $name, $value)
+    public function scopeWhereTv($query, $name, $value, $operator = '=')
     {
         $tvValuesAlias = 'tv_values_' . $name;
         $tvVarsAlias = 'tv_vars_' . $name;
 
-        $query = $query->leftJoin('site_tmplvar_contentvalues as ' . $tvValuesAlias, function($join) use ($tvValuesAlias) {
-            $join->on($tvValuesAlias . '.contentid', '=', 's_lang_content.resource');
-        })
-            ->leftJoin('site_tmplvars as ' . $tvVarsAlias, function($join) use ($name, $tvValuesAlias, $tvVarsAlias) {
-                $join->on($tvVarsAlias . '.id', '=', $tvValuesAlias . '.tmplvarid')
-                    ->where($tvVarsAlias . '.name', '=', $name);
+        // Check if join already exists to avoid "Not unique table/alias" error
+        $eloquentQuery = $query->getQuery();
+        $hasJoin = $this->hasTvJoin($eloquentQuery->joins ?? [], $tvValuesAlias);
+
+        if (!$hasJoin) {
+            $query = $query->leftJoin('site_tmplvar_contentvalues as ' . $tvValuesAlias, function($join) use ($tvValuesAlias) {
+                $join->on($tvValuesAlias . '.contentid', '=', 's_lang_content.resource');
             });
 
+            // Update query reference and check again for vars join
+            $eloquentQuery = $query->getQuery();
+            $hasVarsJoin = $this->hasTvJoin($eloquentQuery->joins ?? [], $tvVarsAlias);
+            if (!$hasVarsJoin) {
+                $query = $query->leftJoin('site_tmplvars as ' . $tvVarsAlias, function($join) use ($name, $tvValuesAlias, $tvVarsAlias) {
+                    $join->on($tvVarsAlias . '.id', '=', $tvValuesAlias . '.tmplvarid')
+                        ->where($tvVarsAlias . '.name', '=', $name);
+                });
+            }
+        }
+
         if (is_array($value)) {
+            // For arrays, use whereIn regardless of operator (array comparison doesn't make sense with >, <, etc.)
             return $query->whereIn($tvValuesAlias . '.value', $value);
         }
 
-        return $query->where($tvValuesAlias . '.value', '=', $value);
+        // Handle LIKE operators
+        $operator = strtolower($operator);
+        if ($operator === 'like' || $operator === 'not like') {
+            // If value doesn't already contain wildcards, add them for LIKE search
+            $likeValue = $value;
+            if (strpos($value, '%') === false) {
+                $likeValue = '%' . $value . '%';
+            }
+            return $query->where($tvValuesAlias . '.value', $operator, $likeValue);
+        }
+
+        // For numeric comparisons, cast the value to numeric
+        if (in_array($operator, ['>', '<', '>=', '<='])) {
+            // Cast to numeric for comparison operators
+            $prefix = DB::getTablePrefix();
+            $fullAlias = $prefix . $tvValuesAlias;
+            $column = '`' . $fullAlias . '`.`value`';
+            return $query->whereRaw('CAST(' . $column . ' AS DECIMAL(10,2)) ' . $operator . ' ?', [(float)$value]);
+        }
+
+        // For equality operators, use standard where clause
+        return $query->where($tvValuesAlias . '.value', $operator, $value);
     }
 
     /**
@@ -218,6 +253,55 @@ class sLangContent extends Eloquent\Model
         foreach ($joins as $join) {
             if (($join->table ?? null) === 'site_content') {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Detect whether TV join with the given alias has already been added.
+     */
+    protected function hasTvJoin(array $joins, string $alias): bool
+    {
+        foreach ($joins as $join) {
+            $table = $join->table ?? '';
+
+            // Check if table is exactly the alias
+            if ($table === $alias) {
+                return true;
+            }
+
+            // Check for "table as alias" format (with or without backticks and table prefix)
+            // Pattern: table_name as alias or `prefix_table_name` as `alias`
+            if (preg_match('/\s+as\s+`?' . preg_quote($alias, '/') . '`?/i', $table)) {
+                return true;
+            }
+
+            // Check if table ends with the alias (for prefixed tables without backticks)
+            if (str_ends_with($table, ' as ' . $alias) || str_ends_with($table, ' AS ' . $alias)) {
+                return true;
+            }
+
+            // Check the alias property if it exists
+            if (isset($join->alias) && $join->alias === $alias) {
+                return true;
+            }
+
+            // Check if the table string contains the alias (for cases where Laravel stores full SQL)
+            // Look for patterns like: site_tmplvar_contentvalues as tv_values_price
+            $prefix = DB::getTablePrefix();
+            $patterns = [
+                $prefix . 'site_tmplvar_contentvalues as ' . $alias,
+                $prefix . 'site_tmplvars as ' . $alias,
+                'site_tmplvar_contentvalues as ' . $alias,
+                'site_tmplvars as ' . $alias,
+            ];
+
+            foreach ($patterns as $pattern) {
+                if (str_contains($table, $pattern)) {
+                    return true;
+                }
             }
         }
 
