@@ -380,12 +380,13 @@ class sLangContent extends Eloquent\Model
     protected function tvNumericCastExpression(string $column): string
     {
         $driver = DB::connection()->getDriverName();
+        $prefix = DB::getTablePrefix();
 
         return match ($driver) {
-            'pgsql'  => "CAST($column AS NUMERIC(10,2))",
-            'sqlite' => "CAST($column AS REAL)",
-            'mysql', 'mariadb' => "CAST($column AS DECIMAL(10,2))",
-            default => "CAST($column AS DECIMAL(10,2))",
+            'pgsql'  => "CAST($prefix$column AS NUMERIC(10,2))",
+            'sqlite' => "CAST($prefix$column AS REAL)",
+            'mysql', 'mariadb' => "CAST($prefix$column AS DECIMAL(10,2))",
+            default => "CAST($prefix$column AS DECIMAL(10,2))",
         };
     }
 
