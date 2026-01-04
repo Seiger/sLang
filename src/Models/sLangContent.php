@@ -112,67 +112,66 @@ class sLangContent extends Eloquent\Model
     }
 
     /**
-     * Adds a WHERE clause to the query that filters results based on the given TV and value.
-     * If value is an array, uses WHERE IN clause, otherwise uses WHERE clause with the specified operator.
+     * Add a WHERE clause to filter by a Template Variable (TV) value using EXISTS.
      *
-     * @param \Illuminate\Database\Query\Builder $query The database query builder instance
-     * @param string $name The name of the TV to filter by
-     * @param mixed $value The value to filter by (can be a single value or an array)
-     * @param string $operator The comparison operator (=, >, <, >=, <=, !=, <>, like, not like). Default is '='
-     * @return \Illuminate\Database\Query\Builder The modified query builder instance
+     * This approach avoids JOIN-driven row multiplication and therefore does not require GROUP BY
+     * to de-duplicate results. It is compatible with MySQL 8.0+, MariaDB 10.5+, PostgreSQL 10+,
+     * and SQLite 3.25+.
+     *
+     * Supported operators:
+     * - Equality: =, !=, <>
+     * - Pattern: like, not like (auto-wraps value with % if no wildcard is present)
+     * - Numeric: >, <, >=, <= (casts TV value to a numeric type per DB driver)
+     * - Arrays: value as array -> WHERE IN (operator is ignored)
+     *
+     * @param Builder $query The Eloquent query builder instance.
+     * @param string  $name The TV name to filter by.
+     * @param mixed   $value The value to filter by (scalar or array).
+     * @param string  $operator The comparison operator (=, >, <, >=, <=, !=, <>, like, not like).
+     * @return Builder The modified query builder instance.
      */
-    public function scopeWhereTv($query, $name, $value, $operator = '=')
+    public function scopeWhereTv(Builder $query, string $name, $value, string $operator = '='): Builder
     {
-        $tvValuesAlias = 'tv_values_' . $name;
-        $tvVarsAlias = 'tv_vars_' . $name;
+        $op = strtolower(trim($operator));
 
-        // Check if join already exists to avoid "Not unique table/alias" error
-        $eloquentQuery = $query->getQuery();
-        $hasJoin = $this->hasTvJoin($eloquentQuery->joins ?? [], $tvValuesAlias);
+        return $query->whereExists(function ($sub) use ($name, $value, $op) {
+            $sub->select(DB::raw('1'))
+                ->from('site_tmplvar_contentvalues as stvc')
+                ->join('site_tmplvars as stv', 'stv.id', '=', 'stvc.tmplvarid')
+                ->whereColumn('stvc.contentid', 's_lang_content.resource')
+                ->where('stv.name', '=', $name);
 
-        if (!$hasJoin) {
-            $query = $query->leftJoin('site_tmplvar_contentvalues as ' . $tvValuesAlias, function($join) use ($tvValuesAlias) {
-                $join->on($tvValuesAlias . '.contentid', '=', 's_lang_content.resource');
-            });
-
-            // Update query reference and check again for vars join
-            $eloquentQuery = $query->getQuery();
-            $hasVarsJoin = $this->hasTvJoin($eloquentQuery->joins ?? [], $tvVarsAlias);
-            if (!$hasVarsJoin) {
-                $query = $query->leftJoin('site_tmplvars as ' . $tvVarsAlias, function($join) use ($name, $tvValuesAlias, $tvVarsAlias) {
-                    $join->on($tvVarsAlias . '.id', '=', $tvValuesAlias . '.tmplvarid')
-                        ->where($tvVarsAlias . '.name', '=', $name);
-                });
+            // Arrays => IN (operator ignored).
+            if (is_array($value)) {
+                $sub->whereIn('stvc.value', $value);
+                return;
             }
-        }
 
-        if (is_array($value)) {
-            // For arrays, use whereIn regardless of operator (array comparison doesn't make sense with >, <, etc.)
-            return $query->whereIn($tvValuesAlias . '.value', $value);
-        }
-
-        // Handle LIKE operators
-        $operator = strtolower($operator);
-        if ($operator === 'like' || $operator === 'not like') {
-            // If value doesn't already contain wildcards, add them for LIKE search
-            $likeValue = $value;
-            if (strpos($value, '%') === false) {
-                $likeValue = '%' . $value . '%';
+            // LIKE operators.
+            if ($op === 'like' || $op === 'not like') {
+                $likeValue = (string)$value;
+                if (strpos($likeValue, '%') === false) {
+                    $likeValue = '%' . $likeValue . '%';
+                }
+                $sub->where('stvc.value', $op, $likeValue);
+                return;
             }
-            return $query->where($tvValuesAlias . '.value', $operator, $likeValue);
-        }
 
-        // For numeric comparisons, cast the value to numeric
-        if (in_array($operator, ['>', '<', '>=', '<='])) {
-            // Cast to numeric for comparison operators
-            $prefix = DB::getTablePrefix();
-            $fullAlias = $prefix . $tvValuesAlias;
-            $column = '`' . $fullAlias . '`.`value`';
-            return $query->whereRaw('CAST(' . $column . ' AS DECIMAL(10,2)) ' . $operator . ' ?', [(float)$value]);
-        }
+            // Numeric comparisons (cast column to numeric across supported DB drivers).
+            if (in_array($op, ['>', '<', '>=', '<='], true)) {
+                $castExpr = $this->tvNumericCastExpression('stvc.value');
+                $sub->whereRaw($castExpr . ' ' . $op . ' ?', [(float)$value]);
+                return;
+            }
 
-        // For equality operators, use standard where clause
-        return $query->where($tvValuesAlias . '.value', $operator, $value);
+            // Default: equality / inequality and any other supported operator.
+            // Normalize '!=' and '<>' both are fine across DBs, keep as provided (normalized).
+            if ($op === '!=') {
+                $op = '<>';
+            }
+
+            $sub->where('stvc.value', $op, $value);
+        });
     }
 
     /**
@@ -276,7 +275,8 @@ class sLangContent extends Eloquent\Model
             'site_content.description as description_orig',
             'site_content.introtext as introtext_orig',
             'site_content.content as content_orig',
-            'site_content.menutitle as menutitle_orig'
+            'site_content.menutitle as menutitle_orig',
+            'site_content.pub_date as pub_date_orig'
         );
     }
 
@@ -364,6 +364,29 @@ class sLangContent extends Eloquent\Model
         }
 
         return strtolower($locale);
+    }
+
+    /**
+     * Build a cross-database numeric cast expression for a TV value column.
+     *
+     * Note:
+     * - MySQL/MariaDB: DECIMAL is appropriate.
+     * - PostgreSQL: NUMERIC is appropriate.
+     * - SQLite: REAL is the pragmatic choice (SQLite uses dynamic typing / affinity).
+     *
+     * @param string $column Fully qualified column name (e.g., "stvc.value").
+     * @return string SQL expression casting the column to a numeric type.
+     */
+    protected function tvNumericCastExpression(string $column): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        return match ($driver) {
+            'pgsql'  => "CAST($column AS NUMERIC(10,2))",
+            'sqlite' => "CAST($column AS REAL)",
+            'mysql', 'mariadb' => "CAST($column AS DECIMAL(10,2))",
+            default => "CAST($column AS DECIMAL(10,2))",
+        };
     }
 
     /**
