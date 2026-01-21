@@ -34,6 +34,16 @@ class CreateSLangTables extends Migration
             $table->unique(['resource', 'lang'], 'resource_lang');
             $table->timestamps();
         });
+
+        Schema::create('s_lang_tmplvar_contentvalues', function (Blueprint $table) {
+            $table->id();
+            $table->string('lang', 4)->default('base')->index()->comment('Language of content data');
+            $table->unsignedInteger('tmplvarid')->index()->comment('Template variable ID');
+            $table->foreign('tmplvarid')->references('id')->on('site_tmplvars')->cascadeOnDelete();
+            $table->unsignedInteger('contentid')->index()->comment('Site content resource ID');
+            $table->foreign('contentid')->references('id')->on('site_content')->cascadeOnDelete();
+            $table->longText('value')->fulltext('value')->nullable()->comment('Translated value of the template variable');
+        });
     }
 
     /**
@@ -46,6 +56,7 @@ class CreateSLangTables extends Migration
         Schema::table('s_lang_content', function ($table) {
             $table->dropUnique('resource_lang');
         });
+        Schema::dropIfExists('s_lang_tmplvar_contentvalues');
         Schema::dropIfExists('s_lang_content');
         Schema::dropIfExists('s_lang_translates');
     }
