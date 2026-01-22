@@ -4,6 +4,7 @@ use EvolutionCMS\Facades\UrlProcessor;
 use Illuminate\Database\Eloquent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Seiger\sLang\Support\TreeCollection;
 
 class sLangContent extends Eloquent\Model
 {
@@ -87,7 +88,7 @@ class sLangContent extends Eloquent\Model
     /**
      * Performs a search on the query based on the search term.
      *
-     * @return \Illuminate\Database\Query\Builder|null The modified query builder instance or null if no search term is provided
+     * @return \Illuminate\Support\HigherOrderWhenProxy|sLangContent The modified query builder instance or null if no search term is provided
      */
     public function scopeSearch()
     {
@@ -270,6 +271,10 @@ class sLangContent extends Eloquent\Model
         }
 
         return $query->addSelect(
+            'site_content.parent as parent_id',
+            'site_content.menuindex as menuindex',
+            'site_content.hidemenu as hidemenu',
+            'site_content.isfolder as isfolder',
             'site_content.pagetitle as pagetitle_orig',
             'site_content.longtitle as longtitle_orig',
             'site_content.description as description_orig',
@@ -402,5 +407,16 @@ class sLangContent extends Eloquent\Model
             $model->applyContentSelects($builder);
             $builder->where($model->getTable() . '.lang', '=', $locale);
         });
+    }
+
+    /**
+     * Create a new Eloquent Collection instance.
+     *
+     * @param array $models
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function newCollection(array $models = [])
+    {
+        return new TreeCollection($models);
     }
 }

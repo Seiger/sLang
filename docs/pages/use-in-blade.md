@@ -120,6 +120,53 @@ Output in the Blade template
 @endif
 ```
 
+### Multi-level menu (tree)
+
+If you need a nested menu (unlimited levels), get all menu items in one query and then convert the collection to a tree.
+
+Data preparation in BaseController.php
+```php
+use Seiger\sLang\Models\sLangContent;
+
+...
+
+public function globalElements()
+{
+    $this->data['mainMenu'] = sLangContent::withTVs(['menu_main'])
+        ->where('hidemenu', 0)
+        ->whereTv('menu_main', 1)
+        ->orderBy('parent_id')
+        ->orderBy('menuindex')
+        ->active()
+        ->get()
+        ->toTreeParent(0); // return only parent=0 nodes, with nested children
+}
+```
+
+Recursive output in Blade (example with partial)
+
+`views/partials/menu-tree.blade.php`
+```php
+<ul>
+    @foreach($items as $item)
+        <li class="{% raw %}{{$item->id == evo()->documentObject['id'] ? 'active' : ''}}{% endraw %}">
+            <a href="{% raw %}{{$item->full_link}}{% endraw %}">{% raw %}{{$item->menutitle}}{% endraw %}</a>
+
+            @if($item->children && $item->children->isNotEmpty())
+                @include('partials.menu-tree', ['items' => $item->children])
+            @endif
+        </li>
+    @endforeach
+</ul>
+```
+
+Call it from your layout/template:
+```php
+@if($mainMenu && $mainMenu->isNotEmpty())
+    @include('partials.menu-tree', ['items' => $mainMenu])
+@endif
+```
+
 ## TV variables
 
 The `withTVs()` scope makes it easy to retrieve TV parameters associated with a resource. For example, the **tv_image** parameter.
