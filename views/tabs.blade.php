@@ -71,4 +71,34 @@
             });
         });
     }
+
+    const defaultLang = '{{sLang::langDefault()}}';
+    const mutateForm = document.querySelector('form#mutate');
+    const defaultContent = document.querySelector('[name="' + defaultLang + '_content"]');
+    const taProxy = document.querySelector('input[name="ta"][type="hidden"]');
+
+    function syncTaProxy() {
+        if (!defaultContent || !taProxy) {
+            return;
+        }
+
+        if (window.tinymce && typeof window.tinymce.get === 'function') {
+            const editor = window.tinymce.get(defaultLang + '_content');
+            if (editor) {
+                taProxy.value = editor.getContent();
+                return;
+            }
+        }
+
+        taProxy.value = defaultContent.value;
+    }
+
+    if (defaultContent) {
+        defaultContent.addEventListener('input', syncTaProxy);
+        defaultContent.addEventListener('change', syncTaProxy);
+    }
+
+    if (mutateForm) {
+        mutateForm.addEventListener('submit', syncTaProxy);
+    }
 </script>

@@ -85,15 +85,25 @@ use Seiger\sLang\Models\sLangContent;
 
 public function globalElements()
 {
-    $this->data['mainMenu'] = sLangContent::withTVs(['menu_main'])
+    // Tree menu
+    $this->data['mainMenu'] = sLangContent::withTVs(['tv_image'])
+        ->where('hidemenu', 0)
+        ->whereTv('menu_main', 1)
+        ->orderBy('parent_id')
+        ->orderBy('menuindex')
+        ->active()
+        ->get()
+        ->toTreeParent(0);
+            
+    // Simple menu
+    $this->data['mainMenu'] = sLangContent::withTVs(['tv_image'])
         ->whereTv('menu_main', 1)
         ->where('hidemenu', 0)
         ->orderBy('menuindex')
         ->active()
         ->get();
 
-    $this->data['footerMenu'] = sLangContent::withTVs(['menu_footer'])
-        ->whereTv('menu_footer', 1)
+    $this->data['footerMenu'] = sLangContent::whereTv('menu_footer', 1)
         ->where('hidemenu', 0)
         ->orderBy('menuindex')
         ->active()
@@ -106,64 +116,61 @@ Output in the Blade template
 @if($mainMenu)
     <ul>
         @foreach($mainMenu as $menu)
-            @if($menu->id == evo()->documentObject['id'])
-            <li class="active">
-                <a>{% raw %}{{$menu->menutitle}}{% endraw %}</a>
+            <li>
+                @if($menu->id == evo()->documentObject['id'])
+                    <a>{% raw %}{{$menu->menutitle}}{% endraw %}</a>
+                @else
+                    <a href="{% raw %}{{$menu->fullLink}}{% endraw %}" {% raw %}{!! $menu->linkAttributes !!}{% endraw %}>{% raw %}{{$menu->menutitle}}{% endraw %}</a>
+                @endif
+
+                @if($menu->children->count())
+                    <ul>
+                        @foreach($menu->children as $child)
+                            <li>
+                                @if($child->id == evo()->documentObject['id'])
+                                    <a>{% raw %}{{$child->menutitle}}{% endraw %}</a>
+                                @else
+                                    <a href="{% raw %}{{$child->fullLink}}{% endraw %}" {% raw %}{!! $child->linkAttributes !!}{% endraw %}>{% raw %}{{$child->menutitle}}{% endraw %}</a>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
             </li>
-            @else
-                <li>
-                    <a href="@makeUrl($menu->id)">{% raw %}{{$menu->menutitle}}{% endraw %}</a>
-                </li>
-            @endif
         @endforeach
     </ul>
 @endif
 ```
 
-### Multi-level menu (tree)
+For unlimited nesting, move the menu item into a recursive partial.
 
-If you need a nested menu (unlimited levels), get all menu items in one query and then convert the collection to a tree.
-
-Data preparation in BaseController.php
+`views/partials/menu-item.blade.php`
 ```php
-use Seiger\sLang\Models\sLangContent;
+<li>
+    @if($item->id == evo()->documentObject['id'])
+        <a>{% raw %}{{$item->menutitle}}{% endraw %}</a>
+    @else
+        <a href="{% raw %}{{$item->fullLink}}{% endraw %}" {% raw %}{!! $item->linkAttributes !!}{% endraw %}>{% raw %}{{$item->menutitle}}{% endraw %}</a>
+    @endif
 
-...
-
-public function globalElements()
-{
-    $this->data['mainMenu'] = sLangContent::withTVs(['menu_main'])
-        ->where('hidemenu', 0)
-        ->whereTv('menu_main', 1)
-        ->orderBy('parent_id')
-        ->orderBy('menuindex')
-        ->active()
-        ->get()
-        ->toTreeParent(0); // return only parent=0 nodes, with nested children
-}
+    @if($item->children->count())
+        <ul>
+            @foreach($item->children as $child)
+                @include('partials.menu-item', ['item' => $child])
+            @endforeach
+        </ul>
+    @endif
+</li>
 ```
 
-Recursive output in Blade (example with partial)
-
-`views/partials/menu-tree.blade.php`
+Usage:
 ```php
-<ul>
-    @foreach($items as $item)
-        <li class="{% raw %}{{$item->id == evo()->documentObject['id'] ? 'active' : ''}}{% endraw %}">
-            <a href="{% raw %}{{$item->full_link}}{% endraw %}">{% raw %}{{$item->menutitle}}{% endraw %}</a>
-
-            @if($item->children && $item->children->isNotEmpty())
-                @include('partials.menu-tree', ['items' => $item->children])
-            @endif
-        </li>
-    @endforeach
-</ul>
-```
-
-Call it from your layout/template:
-```php
-@if($mainMenu && $mainMenu->isNotEmpty())
-    @include('partials.menu-tree', ['items' => $mainMenu])
+@if($mainMenu)
+    <ul>
+        @foreach($mainMenu as $item)
+            @include('partials.menu-item', ['item' => $item])
+        @endforeach
+    </ul>
 @endif
 ```
 
@@ -183,7 +190,12 @@ Display in the template.
 
 The `whereTv()` method allows you to use a filter based on the value of the TV parameter if necessary.
 ```php
-$resource = sLangContent::withTVs(['tv_image'])->whereTv('tv_image', '!=', '')->get();
+$resources = sLangContent::withTVs(['tv_image'])->whereTv('tv_image', '!=', '')->get();
+```
+
+Combine multiple helpers:
+```php
+$resources = sLangContent::lang('uk')->withTVs(['color', 'price'])->whereParent($parentId)->active()->get();
 ```
 
 > **Deprecated:** The `langAndTvs()` helper is deprecated since `1.0.8` and will be removed in `v1.2`. Replace it with the `lang()` and `withTVs()` scopes.

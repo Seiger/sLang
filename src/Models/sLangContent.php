@@ -203,11 +203,67 @@ class sLangContent extends Eloquent\Model
      */
     public function getFullLinkAttribute()
     {
+        if (($this->type ?? '') === 'reference') {
+            $target = trim((string)($this->content ?: $this->content_orig ?: ''));
+            if ($target !== '') {
+                return $this->normalizeReferenceTarget($target);
+            }
+        }
+
         $base_url = UrlProcessor::makeUrl($this->resource);
         if (str_starts_with($base_url, '/')) {
             $base_url = EVO_SITE_URL . ltrim($base_url, '/');
         }
         return $base_url;
+    }
+
+    /**
+     * Build HTML link attributes for frontend navigation.
+     *
+     * Keeps resource-defined link attributes and appends a safe "_blank" target
+     * for external HTTP(S) URLs when no explicit target is already set.
+     */
+    public function getLinkAttributesAttribute(): string
+    {
+        $attributes = trim((string)($this->attributes['link_attributes'] ?? ''));
+
+        if (!$this->isExternalLink) {
+            return $attributes;
+        }
+
+        if (!preg_match('/\btarget\s*=/i', $attributes)) {
+            $attributes = trim($attributes . ' target="_blank"');
+        }
+
+        if (
+            str_contains($attributes, 'target="_blank"')
+            || str_contains($attributes, "target='_blank'")
+            || preg_match('/\btarget\s*=\s*_blank\b/i', $attributes)
+        ) {
+            if (!preg_match('/\brel\s*=/i', $attributes)) {
+                $attributes = trim($attributes . ' rel="noopener noreferrer"');
+            }
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Determine whether the resolved link points to an external HTTP(S) host.
+     */
+    public function getIsExternalLinkAttribute(): bool
+    {
+        $url = (string)$this->fullLink;
+        $scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return false;
+        }
+
+        $linkHost = strtolower((string)parse_url($url, PHP_URL_HOST));
+        $siteHost = strtolower((string)parse_url(evo()->getConfig('site_url', EVO_SITE_URL), PHP_URL_HOST));
+
+        return $linkHost !== '' && $siteHost !== '' && $linkHost !== $siteHost;
     }
 
     /**
@@ -275,6 +331,8 @@ class sLangContent extends Eloquent\Model
             'site_content.menuindex as menuindex',
             'site_content.hidemenu as hidemenu',
             'site_content.isfolder as isfolder',
+            'site_content.type as type',
+            'site_content.link_attributes as link_attributes',
             'site_content.pagetitle as pagetitle_orig',
             'site_content.longtitle as longtitle_orig',
             'site_content.description as description_orig',
@@ -283,6 +341,36 @@ class sLangContent extends Eloquent\Model
             'site_content.menutitle as menutitle_orig',
             'site_content.pub_date as pub_date_orig'
         );
+    }
+
+    /**
+     * Normalize a reference target into a navigable URL.
+     *
+     * Supports raw document IDs and internal Evo URL tags, preserves absolute
+     * URLs with an explicit scheme, keeps anchor/query-only targets unchanged,
+     * and expands relative paths against the site base URL.
+     */
+    protected function normalizeReferenceTarget(string $target): string
+    {
+        if (preg_match('@^[1-9]\d*$@', $target)) {
+            $target = UrlProcessor::makeUrl((int)$target);
+        } elseif (str_contains($target, '[~')) {
+            $target = UrlProcessor::rewriteUrls($target);
+        }
+
+        if (preg_match('@^[a-z][a-z0-9+\-.]*:@i', $target)) {
+            return $target;
+        }
+
+        if (str_starts_with($target, '/')) {
+            return EVO_SITE_URL . ltrim($target, '/');
+        }
+
+        if (str_starts_with($target, '#') || str_starts_with($target, '?')) {
+            return $target;
+        }
+
+        return rtrim(EVO_SITE_URL, '/') . '/' . ltrim($target, '/');
     }
 
     /**
