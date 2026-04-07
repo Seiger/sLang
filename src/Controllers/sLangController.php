@@ -340,8 +340,8 @@ class sLangController
          * Translation files configuration
          */
         foreach ($langConfig as $lang) {
-            if (!is_file(MODX_BASE_PATH . 'core/lang/' . $lang . '.json')) {
-                file_put_contents(MODX_BASE_PATH . 'core/lang/' . $lang . '.json', '{}');
+            if (!is_file(EVO_BASE_PATH . 'core/lang/' . $lang . '.json')) {
+                file_put_contents(EVO_BASE_PATH . 'core/lang/' . $lang . '.json', '{}');
             }
         }
 
@@ -360,13 +360,13 @@ class sLangController
     {
         $list = [];
         $langDefault = sLang::langDefault();
-        if (is_dir(MODX_BASE_PATH . 'views')) {
+        if (is_dir(EVO_BASE_PATH . 'views')) {
             $views = Storage::disk('public')->allFiles('views');
 
             if (is_array($views) && count($views)) {
                 foreach ($views as $view) {
                     if (Str::of($view)->contains('.blade.')) {
-                        $data = file_get_contents(MODX_BASE_PATH . $view);
+                        $data = file_get_contents(EVO_BASE_PATH . $view);
                         preg_match_all("/@lang\('\K.+?(?='\))/", $data, $match);
 
                         if (is_array($match) && is_array($match[0]) && count($match[0])) {
@@ -895,7 +895,7 @@ class sLangController
     {
         foreach (sLang::langConfig() as &$lang) {
             $json = sLangTranslate::all()->pluck($lang, 'key')->toJson();
-            file_put_contents(MODX_BASE_PATH . 'core/lang/' . $lang . '.json', $json);
+            file_put_contents(EVO_BASE_PATH . 'core/lang/' . $lang . '.json', $json);
         }
     }
 }

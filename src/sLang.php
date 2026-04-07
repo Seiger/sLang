@@ -18,7 +18,7 @@ class sLang
     public $evo;
     public $siteContentFields = ['pagetitle', 'longtitle', 'description', 'introtext', 'content', 'menutitle', 'seotitle', 'seodescription'];
     protected $params;
-    protected $basePath = MODX_BASE_PATH . 'assets/modules/seigerlang/';
+    protected $basePath = EVO_BASE_PATH . 'assets/modules/seigerlang/';
     protected $tblSiteContent = 'site_content';
 
     public function __construct()
@@ -50,9 +50,9 @@ class sLang
         foreach ($langFront as $item) {
             $result[$item] = $langList[$item];
             if ($sLangDefault == $item && $sLangDefaultShow != 1) {
-                $result[$item]['link'] = MODX_SITE_URL . ltrim($baseUrl, '/');
+                $result[$item]['link'] = EVO_SITE_URL . ltrim($baseUrl, '/');
             } else {
-                $result[$item]['link'] = MODX_SITE_URL . $item . $baseUrl;
+                $result[$item]['link'] = EVO_SITE_URL . $item . $baseUrl;
             }
         }
         return $result;
@@ -69,9 +69,9 @@ class sLang
     public function hrefLang(): string
     {
         if (evo()->getConfig('s_lang_default_show', 0) == 1) {
-            $hrefLangs = '<link rel="alternate" href="' . MODX_SITE_URL . $this->langDefault() . '/" hreflang="x-default" />';
+            $hrefLangs = '<link rel="alternate" href="' . EVO_SITE_URL . $this->langDefault() . '/" hreflang="x-default" />';
         } else {
-            $hrefLangs = '<link rel="alternate" href="' . MODX_SITE_URL . '" hreflang="x-default" />';
+            $hrefLangs = '<link rel="alternate" href="' . EVO_SITE_URL . '" hreflang="x-default" />';
         }
         foreach ($this->langSwitcher() as $lang => $item) {
             if ($lang != evo()->getConfig('lang', 'uk')) {
@@ -334,7 +334,7 @@ class sLang
 
         View::getFinder()->setPaths([
             $this->basePath . 'views',
-            MODX_MANAGER_PATH . 'views'
+            EVO_MANAGER_PATH . 'views'
         ]);
         echo View::make($tpl, $data);
         return true;

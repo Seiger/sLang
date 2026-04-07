@@ -150,7 +150,7 @@ For unlimited nesting, move the menu item into a recursive partial.
     @if($item->id == evo()->documentObject['id'])
         <a>{% raw %}{{$item->menutitle}}{% endraw %}</a>
     @else
-        <a href="{% raw %}{{$item->fullLink}}{% endraw %}" {% raw %}{!! $item->linkAttributes !!}{% endraw %}>{% raw %}{{$item->menutitle}}{% endraw %}</a>
+        <a href="{% raw %}{{$item->fullLink}}{% endraw %}" {% raw %}{!!$item->linkAttributes!!}{% endraw %}>{% raw %}{{$item->menutitle}}{% endraw %}</a>
     @endif
 
     @if($item->children->count())

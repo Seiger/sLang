@@ -21,7 +21,7 @@ Event::listen('evolution.OnParseDocument', function($params) {
 
     preg_match_all("/@lang\(['|\"](.*?)['|\"]\)/", evo()->documentOutput, $match);
 
-    if (is_file($file = MODX_BASE_PATH . 'core/lang/' . evo()->getLocale() . '.json')) {
+    if (is_file($file = EVO_BASE_PATH . 'core/lang/' . evo()->getLocale() . '.json')) {
         $translates = json_decode(file_get_contents($file), true);
 
         foreach ($match[0] as $key => $value) {
