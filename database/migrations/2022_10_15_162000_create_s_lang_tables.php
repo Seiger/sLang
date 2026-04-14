@@ -42,7 +42,10 @@ class CreateSLangTables extends Migration
             $table->foreign('tmplvarid')->references('id')->on('site_tmplvars')->cascadeOnDelete();
             $table->unsignedInteger('contentid')->index()->comment('Site content resource ID');
             $table->foreign('contentid')->references('id')->on('site_content')->cascadeOnDelete();
-            $table->longText('value')->fulltext('value')->nullable()->comment('Translated value of the template variable');
+            $table->longText('value')->nullable()->comment('Translated value of the template variable');
+            if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                $table->fulltext('value');
+            }
         });
     }
 
