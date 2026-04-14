@@ -95,19 +95,38 @@ class sLangContent extends Eloquent\Model
         if (request()->has('search')) {
             $fields = collect(['pagetitle', 'longtitle']);
 
-            $search = Str::of(request('search'))
+            $searchTerms = Str::of(request('search'))
                 ->stripTags()
                 ->replaceMatches('/[^\p{L}\p{N}\@\.!#$%&\'*+-\/=?^_`{|}~]/iu', ' ') // allowed symbol in email
                 ->replaceMatches('/(\s){2,}/', '$1') // removing extra spaces
                 ->trim()->explode(' ')
                 ->filter(fn($word) => mb_strlen($word) > 2);
 
-            $select = collect([0]);
+            if ($searchTerms->isEmpty()) {
+                return;
+            }
 
-            $search->map(fn($word) => $fields->map(fn($field) => $select->push("(CASE WHEN `".DB::getTablePrefix()."s_lang_content`.`{$field}` LIKE '%{$word}%' THEN 1 ELSE 0 END)"))); // Generate points source
+            $table = $this->getTable();
+            $selectExpressions = [];
+            $bindings = [];
 
-            return $this->addSelect('*', DB::Raw('(' . $select->implode(' + ') . ') as points'))
-                ->when($search->count(), fn($query) => $query->where(fn($query) => $search->map(fn($word) => $fields->map(fn($field) => $query->orWhere($field, 'like', "%{$word}%")))))
+            foreach ($searchTerms as $word) {
+                foreach ($fields as $field) {
+                    $selectExpressions[] = "(CASE WHEN `{$table}`.`{$field}` LIKE ? THEN 1 ELSE 0 END)";
+                    $bindings[] = "%{$word}%";
+                }
+            }
+
+            $pointsSql = empty($selectExpressions) ? '0' : implode(' + ', $selectExpressions);
+
+            return $this->selectRaw('*, (' . $pointsSql . ') as points', $bindings)
+                ->where(function ($query) use ($searchTerms, $fields) {
+                    foreach ($searchTerms as $word) {
+                        foreach ($fields as $field) {
+                            $query->orWhere($field, 'like', "%{$word}%");
+                        }
+                    }
+                })
                 ->orderByDesc('points');
         }
     }
