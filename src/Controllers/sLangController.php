@@ -13,6 +13,7 @@ use Illuminate\View\View;
 use Seiger\sLang\Facades\sLang;
 use Seiger\sLang\Models\sLangContent;
 use Seiger\sLang\Models\sLangTmplvarContentvalue;
+use Illuminate\Support\Facades\Schema;
 use Seiger\sLang\Models\sLangTranslate;
 
 class sLangController
@@ -156,12 +157,23 @@ class sLangController
     public function dictionary()
     {
         if (request()->has('search')) {
-            $where[] = '`key` LIKE \'%'.request()->search.'%\'';
+            $searchTerm = '%' . request()->search . '%';
+            $where = [];
+            $bindings = [];
+
+            $where[] = '`key` LIKE ?';
+            $bindings[] = $searchTerm;
+
             foreach (sLang::langConfig() as $item) {
-                $where[] = '`'.$item.'` LIKE \'%'.request()->search.'%\'';
+                $where[] = '`' . $item . '` LIKE ?';
+                $bindings[] = $searchTerm;
             }
-            $translates = sLangTranslate::whereRaw(implode(' OR ', $where))->orderByDesc('tid')->paginate(17);
-            $translates->withPath(sLang::moduleUrl().'&search='.request()->search);
+
+            $translates = sLangTranslate::whereRaw(implode(' OR ', $where), $bindings)
+                ->orderByDesc('tid')
+                ->paginate(17);
+
+            $translates->withPath(sLang::moduleUrl() . '&search=' . urlencode(request()->search));
         } else {
             $translates = sLangTranslate::orderByDesc('tid')->paginate(17);
             $translates->withPath(sLang::moduleUrl());
@@ -306,34 +318,23 @@ class sLangController
      */
     public function setModifyTables()
     {
-        $tbl = $this->tblLang = evo()->getDatabase()->getFullTableName('s_lang_translates');
+        $tblName = 's_lang_translates';
+        $fullTblName = evo()->getDatabase()->getFullTableName($tblName);
         $langConfig = sLang::langConfig();
 
         /**
          * Translation table modification
          */
-        $columns = [];
-        $needs = [];
-        $query = evo()->getDatabase()->query("DESCRIBE {$tbl}");
+        $isSqlite = Schema::getConnection()->getDriverName() === 'sqlite';
 
-        if ($query) {
-            $fields = evo()->getDatabase()->makeArray($query);
-
-            foreach ($fields as $field) {
-                $columns[$field['Field']] = $field;
-            }
-
-            foreach ($langConfig as $lang) {
-                if (!isset($columns[$lang])) {
-                    $needs[] = "ADD `{$lang}` text COMMENT '" . strtoupper($lang) . " sLang version'";
+        foreach ($langConfig as $lang) {
+            if (!Schema::hasColumn($tblName, $lang)) {
+                $columnSql = "ADD COLUMN `{$lang}` text";
+                if (!$isSqlite) {
+                    $columnSql .= " COMMENT '" . strtoupper($lang) . " sLang version'";
                 }
+                evo()->getDatabase()->query("ALTER TABLE `{$fullTblName}` {$columnSql}");
             }
-        }
-
-        if (count($needs)) {
-            $need = implode(', ', $needs);
-            $query = "ALTER TABLE `{$tbl}` {$need}";
-            evo()->getDatabase()->query($query);
         }
 
         /**

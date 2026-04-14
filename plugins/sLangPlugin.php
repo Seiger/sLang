@@ -166,13 +166,7 @@ Event::listen('evolution.OnDocFormTemplateRender', function($params) {
  */
 Event::listen('evolution.OnBeforeDocFormSave', function($params) {
     if (empty($params['id'])) {
-        $id = collect(DB::select("
-            SELECT AUTO_INCREMENT
-            FROM `information_schema`.`tables`
-            WHERE `table_name` = '".evo()->getDatabase()->getFullTableName('site_content')."'"))
-            ->pluck('AUTO_INCREMENT')
-            ->first();
-        $params['id'] = $id;
+        $params['id'] = \DB::table('site_content')->max('id') + 1;
     }
 
     $sLangController = new sLangController();
@@ -217,8 +211,9 @@ Event::listen('evolution.OnDocFormSave', function($params) {
             }
         }
 
-        if (request()->has('alias') && !trim(request('alias')) && request()->has('en_pagetitle')) {
-            $alias = strtolower(evo()->stripAlias(trim(request('en_pagetitle'))));
+        $defaultLang = sLang::langDefault();
+        if (request()->has('alias') && !trim(request('alias')) && request()->has($defaultLang . '_pagetitle')) {
+            $alias = strtolower(evo()->stripAlias(trim(request($defaultLang . '_pagetitle'))));
             if (SiteContent::withTrashed()
                     ->where('id', '<>', $params['id'])
                     ->where('alias', $alias)->count() > 0) {
