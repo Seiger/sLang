@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
 use Seiger\sLang\Facades\sLang;
 use Seiger\sLang\Models\sLangContent;
 use Seiger\sLang\Models\sLangTmplvarContentvalue;
-use Illuminate\Support\Facades\Schema;
 use Seiger\sLang\Models\sLangTranslate;
 
 class sLangController
@@ -157,23 +159,12 @@ class sLangController
     public function dictionary()
     {
         if (request()->has('search')) {
-            $searchTerm = '%' . request()->search . '%';
-            $where = [];
-            $bindings = [];
-
-            $where[] = '`key` LIKE ?';
-            $bindings[] = $searchTerm;
-
+            $where[] = '`key` LIKE \'%'.request()->search.'%\'';
             foreach (sLang::langConfig() as $item) {
-                $where[] = '`' . $item . '` LIKE ?';
-                $bindings[] = $searchTerm;
+                $where[] = '`'.$item.'` LIKE \'%'.request()->search.'%\'';
             }
-
-            $translates = sLangTranslate::whereRaw(implode(' OR ', $where), $bindings)
-                ->orderByDesc('tid')
-                ->paginate(17);
-
-            $translates->withPath(sLang::moduleUrl() . '&search=' . urlencode(request()->search));
+            $translates = sLangTranslate::whereRaw(implode(' OR ', $where))->orderByDesc('tid')->paginate(17);
+            $translates->withPath(sLang::moduleUrl().'&search='.request()->search);
         } else {
             $translates = sLangTranslate::orderByDesc('tid')->paginate(17);
             $translates->withPath(sLang::moduleUrl());
@@ -319,21 +310,19 @@ class sLangController
     public function setModifyTables()
     {
         $tblName = 's_lang_translates';
-        $fullTblName = evo()->getDatabase()->getFullTableName($tblName);
+        $tbl = $this->tblLang = evo()->getDatabase()->getFullTableName($tblName);
         $langConfig = sLang::langConfig();
 
         /**
          * Translation table modification
          */
-        $isSqlite = Schema::getConnection()->getDriverName() === 'sqlite';
+        $columns = Schema::getColumnListing($tblName);
 
         foreach ($langConfig as $lang) {
-            if (!Schema::hasColumn($tblName, $lang)) {
-                $columnSql = "ADD COLUMN `{$lang}` text";
-                if (!$isSqlite) {
-                    $columnSql .= " COMMENT '" . strtoupper($lang) . " sLang version'";
-                }
-                evo()->getDatabase()->query("ALTER TABLE `{$fullTblName}` {$columnSql}");
+            if (!in_array($lang, $columns)) {
+                Schema::table($tblName, function (Blueprint $table) use ($lang) {
+                    $table->text($lang)->nullable()->comment(strtoupper($lang) . ' sLang version');
+                });
             }
         }
 
@@ -882,9 +871,10 @@ class sLangController
      */
     protected function updateTblSetting($name, $value)
     {
-        $tbl = evo()->getDatabase()->getFullTableName('system_settings');
-
-        return evo()->getDatabase()->query("REPLACE INTO {$tbl} (`setting_name`, `setting_value`) VALUES ('{$name}', '{$value}')");
+        return DB::table('system_settings')->updateOrInsert(
+            ['setting_name' => $name],
+            ['setting_value' => (string)$value]
+        );
     }
 
     /**
