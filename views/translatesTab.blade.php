@@ -31,7 +31,7 @@
                                     <input type="text" class="form-control" name="sLang[{{$dictionary['tid']}}][{{$langConfig}}]" value="{{$dictionary[$langConfig]}}" />
                                     <span class="input-group-btn">
                                         <button class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($langConfig)}}" style="padding:0 5px;color:#0057b8;">
-                                            <i class="fa fa-language" style="font-size:xx-large;"></i>
+                                            <i class="fa fa-language" style="font-size:x-large;"></i>
                                         </button>
                                     </span>
                                 </div>
@@ -62,7 +62,7 @@
                             @if(sLang::langDefault() != $langConfig)
                                 <span class="input-group-btn">
                                     <button data-lang="{{$langConfig}}" class="btn btn-light js_translate_only" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($langConfig)}}" style="padding:0 5px;color:#0057b8;">
-                                        <i class="fa fa-language" style="font-size: xx-large;"></i>
+                                        <i class="fa fa-language" style="font-size: x-large;"></i>
                                     </button>
                                 </span>
                             @endif

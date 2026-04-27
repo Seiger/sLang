@@ -30,36 +30,34 @@
 </style>
 
 <script>
-    const btn = document.querySelectorAll('.js_translate');
-    for (let i = 0; i < btn.length; i++) {
-        btn[i].addEventListener("click", function(e) {
-            this.disabled = true;
+    const which_editor = '{{evo()->getConfig("which_editor")}}';
+    document.querySelectorAll('.js_translate').forEach( btn => {
+        btn.addEventListener("click", (e) => {
+            let clicked = e.target.closest('button');
+            clicked.disabled = true;
             window.parent.document.getElementById('mainloader').classList.add('show');
 
-            let source = '{{sLang::langDefault()}}';
-            let target = this.getAttribute('data-lang');
-            let element = this.closest('.col').querySelector('[name^="'+target+'_"]');
-            if (element.type == 'textarea') {
-                tinymce.remove();
-            }
-            elementName = element.getAttribute('name').replace(target, '');
-            let _text = document.querySelector('[name^="'+source+elementName+'"]').value;
+            let targetLang = clicked.dataset.lang;
+            let element = clicked.closest('.col').querySelector(`[name^="${targetLang}_"]`);
+            let elementName = element.getAttribute('name').replace(targetLang, '');
+            let sourceField = defaultLang + elementName;
+            let targetField = targetLang + elementName;
+            let _text = (element.type == 'textarea' && which_editor != 'none' && tinymce.get(sourceField)) ? tinymce.get(sourceField).getContent() : document.querySelector(`[name="${sourceField}"]`).value;
 
             fetch('{!!sLang::moduleUrl()!!}&get=translates&action=translate-only', {
-                body: new URLSearchParams({'text':_text, 'source':source, 'target':target}),
+                body: new URLSearchParams({'text': _text, 'source': defaultLang, 'target': targetLang}),
                 method: "post",
                 cache: "no-store",
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                }
+                headers: { "X-Requested-With": "XMLHttpRequest" }
             }).then((response) => {
                 return response.text();
             }).then((data) => {
-                document.querySelector('[name="'+target+elementName+'"]').value = data;
-                if (element.type == 'textarea') {
-                    tinymce.init({{evo()->getConfig('tinymce5_theme') ?? 'custom'}});
+                if (element.type == 'textarea' && which_editor != 'none' && tinymce.get(sourceField)) {
+                    tinymce.get(targetField).setContent(data);
+                } else {
+                    document.querySelector(`[name="${targetField}"]`).value = data;
                 }
-                this.disabled = false;
+                clicked.disabled = false;
                 window.parent.document.getElementById('mainloader').classList.remove('show');
             }).catch(function(error) {
                 if (error == 'SyntaxError: Unexpected token < in JSON at position 0') {
@@ -67,10 +65,10 @@
                 } else {
                     console.error('Request failed', error, '.');
                 }
-                this.disabled = false;
+                clicked.disabled = false;
             });
         });
-    }
+    });
 
     const defaultLang = '{{sLang::langDefault()}}';
     const mutateForm = document.querySelector('form#mutate');

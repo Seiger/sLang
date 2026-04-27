@@ -21,7 +21,7 @@
                                 <div class="input-group">
                                     <input name="{{$lang}}_pagetitle" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_pagetitle', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" style="width: calc(100% - 52px);" />
                                     <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
-                                        <i class="fa fa-language" style="font-size:xx-large;"></i>
+                                        <i class="fa fa-language" style="font-size:x-large;"></i>
                                     </button>
                                 </div>
                             @endif
@@ -43,7 +43,7 @@
                                 <div class="input-group">
                                     <input name="{{$lang}}_longtitle" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_longtitle', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" style="width: calc(100% - 52px);" />
                                     <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
-                                        <i class="fa fa-language" style="font-size:xx-large;"></i>
+                                        <i class="fa fa-language" style="font-size:x-large;"></i>
                                     </button>
                                 </div>
                             @endif
@@ -64,7 +64,7 @@
                                 <div class="input-group">
                                     <input name="{{$lang}}_description" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_description', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" style="width: calc(100% - 52px);" />
                                     <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
-                                        <i class="fa fa-language" style="font-size:xx-large;"></i>
+                                        <i class="fa fa-language" style="font-size:x-large;"></i>
                                     </button>
                                 </div>
                             @endif
@@ -101,7 +101,7 @@
                                 <div class="input-group">
                                     <textarea id="{{$lang}}_introtext" name="{{$lang}}_introtext" class="form-control" rows="3" cols="" onchange="documentDirty=true;" style="width: calc(100% - 52px);">{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_introtext', '', 'is_scalar')))}}</textarea>
                                     <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
-                                        <i class="fa fa-language" style="font-size:xx-large;"></i>
+                                        <i class="fa fa-language" style="font-size:x-large;"></i>
                                     </button>
                                 </div>
                             @endif
@@ -122,7 +122,7 @@
                                 <div class="input-group">
                                     <input name="{{$lang}}_menutitle" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_menutitle', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" style="width: calc(100% - 52px);" />
                                     <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
-                                        <i class="fa fa-language" style="font-size:xx-large;"></i>
+                                        <i class="fa fa-language" style="font-size:x-large;"></i>
                                     </button>
                                 </div>
                             @endif
@@ -198,7 +198,7 @@
                                     <div class="input-group">
                                         <input name="{{$lang}}_seotitle" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_seotitle', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" style="width: calc(100% - 52px);" />
                                         <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
-                                            <i class="fa fa-language" style="font-size:xx-large;"></i>
+                                            <i class="fa fa-language" style="font-size:x-large;"></i>
                                         </button>
                                     </div>
                                 @endif
@@ -223,7 +223,7 @@
                                     <div class="input-group">
                                         <input name="{{$lang}}_seodescription" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_seodescription', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" spellcheck="true" style="width: calc(100% - 52px);" />
                                         <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="padding:0 5px;color:#0275d8;">
-                                            <i class="fa fa-language" style="font-size:xx-large;"></i>
+                                            <i class="fa fa-language" style="font-size:x-large;"></i>
                                         </button>
                                     </div>
                                 @endif
