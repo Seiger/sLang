@@ -68,17 +68,25 @@ class sLang
      */
     public function hrefLang(): string
     {
-        if (evo()->getConfig('s_lang_default_show', 0) == 1) {
-            $hrefLangs = '<link rel="alternate" href="' . EVO_SITE_URL . $this->langDefault() . '/" hreflang="x-default" />';
-        } else {
-            $hrefLangs = '<link rel="alternate" href="' . EVO_SITE_URL . '" hreflang="x-default" />';
-        }
+        $alternates = [];
+        $defaultUrl = evo()->getConfig('s_lang_default_show', 0) == 1 ? EVO_SITE_URL . $this->langDefault() . '/' : EVO_SITE_URL;
+        $alternates['x-default'] = $defaultUrl;
+
         foreach ($this->langSwitcher() as $lang => $item) {
-            if ($lang != evo()->getConfig('lang', 'uk')) {
-                $hrefLangs .= '<link rel="alternate" href="' . $item['link'] . '" hreflang="' . $lang . '" />';
+            $url = trim((string)($item['link'] ?? ''));
+            if ($url === '') {
+                continue;
             }
+
+            $alternates[strtolower((string)$lang)] = $url;
         }
-        return $hrefLangs;
+
+        $lines = [];
+        foreach ($alternates as $lang => $url) {
+            $lines[] = '<link rel="alternate" href="' . htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" hreflang="' . htmlspecialchars($lang, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" />';
+        }
+
+        return implode("\n", $lines);
     }
 
     /**
