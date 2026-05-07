@@ -327,6 +327,40 @@ class sLang
     }
 
     /**
+     * Resolve the current request path for paginator URLs.
+     *
+     * Keeps the active frontend language segment in generated pagination links
+     * instead of falling back to the site root.
+     */
+    public function resolveCurrentPath(): string
+    {
+        $requestUri = (string)($_SERVER['REQUEST_URI'] ?? '/');
+        $path = (string)(parse_url($requestUri, PHP_URL_PATH) ?: '/');
+        $path = '/' . ltrim($path, '/');
+        $path = preg_replace('#/+#', '/', $path);
+
+        if ($path === '') {
+            $path = '/';
+        }
+
+        $siteUrl = (string)evo()->getConfig('site_url', EVO_SITE_URL);
+        $scheme = (string)parse_url($siteUrl, PHP_URL_SCHEME);
+        $host = (string)parse_url($siteUrl, PHP_URL_HOST);
+        $port = parse_url($siteUrl, PHP_URL_PORT);
+
+        if ($scheme === '' || $host === '') {
+            return $path;
+        }
+
+        $origin = $scheme . '://' . $host;
+        if (!is_null($port)) {
+            $origin .= ':' . $port;
+        }
+
+        return $origin . $path;
+    }
+
+    /**
      * Retrieves the language TVs.
      *
      * This method retrieves the language TVs from the configuration settings and
