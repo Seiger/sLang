@@ -107,15 +107,10 @@ Event::listen('evolution.OnPageNotFound', function() {
         evo()->setConfig('base_url', evo()->getConfig('base_url', '/') . $langDefault . '/');
     }
 
-    if (!isset($_SERVER['REQUEST_URI']) || !trim($_SERVER['REQUEST_URI']) || $_SERVER['REQUEST_URI'] == '/') {
-        $identifier = evo()->getConfig('site_start', 1);
-    } else {
-        $q = trim($_SERVER['REQUEST_URI'], '/');
-        $path = explode('?', $q);
-        $path = trim($path[0], evo()->getConfig('friendly_url_suffix', ''));
-        $path = trim($path, '/');
-        if (array_key_exists($path, UrlProcessor::getFacadeRoot()->documentListing)) {
-            $identifier = UrlProcessor::getFacadeRoot()->documentListing[$path];
+    if (isset($_SERVER['REQUEST_URI'])) {
+        $resolvedIdentifier = sLang::resolveLocalizedIdentifier((string)$_SERVER['REQUEST_URI']);
+        if (!is_null($resolvedIdentifier)) {
+            $identifier = $resolvedIdentifier;
         }
     }
 

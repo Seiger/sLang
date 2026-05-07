@@ -3,7 +3,9 @@
  * Class SeigerLang - Seiger Lang Management Module for Evolution CMS admin panel.
  */
 
+use EvolutionCMS\Facades\UrlProcessor;
 use EvolutionCMS\Models\SiteModule;
+use EvolutionCMS\Models\SiteContent;
 use EvolutionCMS\Models\SiteTmplvar;
 use EvolutionCMS\Models\SystemSetting;
 use Illuminate\Database\Eloquent\Builder;
@@ -262,6 +264,66 @@ class sLang
         }
 
         return $localizedPath . $query . $fragment;
+    }
+
+    /**
+     * Resolve a localized request URI to a document identifier.
+     *
+     * Uses Evolution's own friendly URL normalization so custom prefixes,
+     * suffixes, and alias paths are handled consistently.
+     */
+    public function resolveLocalizedIdentifier(string $requestUri): ?int
+    {
+        if ($requestUri === '' || $requestUri === '/') {
+            return (int)evo()->getConfig('site_start', 1);
+        }
+
+        $path = explode('?', trim($requestUri, '/'), 2);
+        $documentMethod = 'alias';
+        $query = UrlProcessor::cleanDocumentIdentifier($path[0], $documentMethod);
+        $prefix = (string)evo()->getConfig('friendly_url_prefix', '');
+        $documentListing = UrlProcessor::getFacadeRoot()->documentListing;
+
+        if ($documentMethod === 'id' && preg_match('/^[1-9]\d*$/', (string)$query)) {
+            return (int)$query;
+        }
+
+        if ($prefix !== '' && str_starts_with((string)$query, $prefix)) {
+            $query = substr((string)$query, strlen($prefix));
+        }
+
+        if (evo()->getConfig('use_alias_path') == 1) {
+            $virtualDir = UrlProcessor::getFacadeRoot()->virtualDir;
+            $alias = ($virtualDir !== '' ? $virtualDir . '/' : '') . $query;
+
+            if (isset($documentListing[$alias])) {
+                return (int)$documentListing[$alias];
+            }
+
+            if (evo()->getConfig('aliaslistingfolder') == 1 || evo()->getConfig('full_aliaslisting') == 1) {
+                $parent = $virtualDir ? UrlProcessor::getIdFromAlias($virtualDir) : 0;
+                $doc = SiteContent::select('id')
+                    ->where('deleted', 0)
+                    ->where('parent', $parent)
+                    ->where('alias', $query)
+                    ->first();
+
+                return is_null($doc) ? null : (int)$doc->getKey();
+            }
+
+            return null;
+        }
+
+        if (isset($documentListing[$query])) {
+            return (int)$documentListing[$query];
+        }
+
+        $doc = SiteContent::select('id')
+            ->where('deleted', 0)
+            ->where('alias', $query)
+            ->first();
+
+        return is_null($doc) ? null : (int)$doc->getKey();
     }
 
     /**
