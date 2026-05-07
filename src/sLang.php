@@ -182,6 +182,89 @@ class sLang
     }
 
     /**
+     * Localize an internally generated Evo URL for the active non-default language.
+     *
+     * Keeps external URLs untouched and avoids duplicating an existing locale prefix.
+     */
+    public function localizeGeneratedUrl(string $url, ?string $locale = null): string
+    {
+        $locale = trim((string)($locale ?? evo()->getConfig('lang', '')));
+        $defaultLocale = trim($this->langDefault());
+
+        if ($url === '' || $locale === '' || $locale === $defaultLocale) {
+            return $url;
+        }
+
+        if (!in_array($locale, $this->langFront(), true) && !in_array($locale, $this->langConfig(), true)) {
+            return $url;
+        }
+
+        if (str_starts_with($url, '#') || str_starts_with($url, '?')) {
+            return $url;
+        }
+
+        $siteUrl = (string)evo()->getConfig('site_url', EVO_SITE_URL);
+        $siteHost = strtolower((string)parse_url($siteUrl, PHP_URL_HOST));
+        $sitePath = '/' . trim((string)parse_url($siteUrl, PHP_URL_PATH), '/');
+        $sitePath = $sitePath === '/' ? '/' : $sitePath . '/';
+
+        $parts = parse_url($url);
+        if ($parts === false) {
+            return $url;
+        }
+
+        $scheme = strtolower((string)($parts['scheme'] ?? ''));
+        if ($scheme !== '' && !in_array($scheme, ['http', 'https'], true)) {
+            return $url;
+        }
+
+        $host = strtolower((string)($parts['host'] ?? ''));
+        if ($host !== '' && $siteHost !== '' && $host !== $siteHost) {
+            return $url;
+        }
+
+        $path = (string)($parts['path'] ?? '');
+        $query = isset($parts['query']) ? '?' . $parts['query'] : '';
+        $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+        if ($path === '') {
+            $localizedPath = $sitePath . $locale . '/';
+        } else {
+            $normalizedPath = preg_replace('#^(?:\./)+#', '', $path);
+            $normalizedPath = '/' . ltrim($normalizedPath, '/');
+
+            if (
+                $normalizedPath === '/' . $locale
+                || str_starts_with($normalizedPath . '/', '/' . $locale . '/')
+                || str_starts_with($normalizedPath . '/', $sitePath . $locale . '/')
+            ) {
+                return $url;
+            }
+
+            $relativePath = $normalizedPath;
+            if ($sitePath !== '/' && str_starts_with($relativePath, $sitePath)) {
+                $relativePath = substr($relativePath, strlen(rtrim($sitePath, '/')));
+                $relativePath = '/' . ltrim($relativePath, '/');
+            }
+
+            $localizedPath = $sitePath . $locale . '/' . ltrim($relativePath, '/');
+        }
+
+        $localizedPath = preg_replace('#/+#', '/', $localizedPath);
+
+        if ($scheme !== '' && $host !== '') {
+            $authority = $host;
+            if (isset($parts['port'])) {
+                $authority .= ':' . $parts['port'];
+            }
+
+            return $scheme . '://' . $authority . $localizedPath . $query . $fragment;
+        }
+
+        return $localizedPath . $query . $fragment;
+    }
+
+    /**
      * Retrieves the language TVs.
      *
      * This method retrieves the language TVs from the configuration settings and
