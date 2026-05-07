@@ -46,6 +46,13 @@ Event::listen('evolution.OnParseDocument', function($params) {
 });
 
 /**
+ * Localize generated internal Evo URLs for non-default frontend languages.
+ */
+Event::listen('evolution.OnMakeDocUrl', function($params) {
+    return sLang::localizeGeneratedUrl((string)($params['url'] ?? ''));
+});
+
+/**
  * Replacing standard fields with multilingual frontend
  */
 Event::listen('evolution.OnAfterLoadDocumentObject', function($params) {
