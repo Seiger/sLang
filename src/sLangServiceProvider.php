@@ -2,6 +2,7 @@
 
 use EvolutionCMS\ServiceProvider;
 use Event;
+use Illuminate\Pagination\Paginator;
 
 class sLangServiceProvider extends ServiceProvider
 {
@@ -39,6 +40,10 @@ class sLangServiceProvider extends ServiceProvider
         // Class alias
         $this->app->singleton(sLang::class);
         $this->app->alias(sLang::class, 'sLang');
+
+        Paginator::currentPathResolver(function () {
+            return $this->app->make(sLang::class)->resolveCurrentPath();
+        });
     }
 
     /**
