@@ -71,7 +71,7 @@ class sLang
     public function hrefLang(): string
     {
         $alternates = [];
-        $defaultUrl = evo()->getConfig('s_lang_default_show', 0) == 1 ? EVO_SITE_URL . $this->langSegment($this->langDefault()) . '/' : EVO_SITE_URL;
+        $defaultUrl = $this->defaultInUrl() ? EVO_SITE_URL . $this->langSegment($this->langDefault()) . '/' : EVO_SITE_URL;
         $alternates['x-default'] = $defaultUrl;
 
         foreach ($this->langSwitcher() as $lang => $item) {
@@ -119,7 +119,9 @@ class sLang
      */
     public function langDefault(): string
     {
-        return evo()->getConfig("s_lang_default", 'uk');
+        $defaultLocale = trim($this->getConfigValue('s_lang_default'));
+
+        return $defaultLocale !== '' ? $defaultLocale : 'uk';
     }
 
     /**
@@ -184,6 +186,14 @@ class sLang
     }
 
     /**
+     * Whether the default frontend language must be present in URLs.
+     */
+    public function defaultInUrl(): bool
+    {
+        return trim($this->getConfigValue('s_lang_default_show')) === '1';
+    }
+
+    /**
      * Returns the configured URL segment map for languages.
      *
      * @return array<string, string>
@@ -229,12 +239,6 @@ class sLang
             }
         }
 
-        foreach ($this->configuredLocales() as $locale) {
-            if ($this->normalizeLanguageSegment($locale) === $segment) {
-                return $locale;
-            }
-        }
-
         return null;
     }
 
@@ -247,7 +251,7 @@ class sLang
     {
         $locale = trim((string)($locale ?? evo()->getConfig('lang', '')));
         $defaultLocale = trim($this->langDefault());
-        $shouldPrefixDefault = $locale === $defaultLocale && (int)evo()->getConfig('s_lang_default_show', 0) === 1;
+        $shouldPrefixDefault = $locale === $defaultLocale && $this->defaultInUrl();
         $segment = $this->langSegment($locale);
 
         if ($url === '' || $locale === '' || ($locale === $defaultLocale && !$shouldPrefixDefault)) {
