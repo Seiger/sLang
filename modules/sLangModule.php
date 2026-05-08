@@ -59,6 +59,11 @@ switch ($data['get']) {
             $sLangController->setLangFront(request()->input('s_lang_front'));
         }
 
+        // Custom frontend folder segments for languages
+        if (request()->has('s_lang_url_map')) {
+            $sLangController->setLangUrlMap(request()->input('s_lang_url_map'));
+        }
+
         // List of multilang TVs
         if (request()->has('s_lang_tvs')) {
             $sLangController->setLangTvs(request()->input('s_lang_tvs'));
