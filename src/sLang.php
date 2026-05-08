@@ -254,11 +254,11 @@ class sLang
         $shouldPrefixDefault = $locale === $defaultLocale && $this->defaultInUrl();
         $segment = $this->langSegment($locale);
 
-        if ($url === '' || $locale === '' || ($locale === $defaultLocale && !$shouldPrefixDefault)) {
+        if ($url === '' || $locale === '') {
             return $url;
         }
 
-        if ($segment === '' || !in_array($locale, $this->configuredLocales(), true)) {
+        if (!in_array($locale, $this->configuredLocales(), true)) {
             return $url;
         }
 
@@ -290,17 +290,19 @@ class sLang
         $query = isset($parts['query']) ? '?' . $parts['query'] : '';
         $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
 
+        $shouldPrefix = $locale !== $defaultLocale || $shouldPrefixDefault;
+
         if ($path === '') {
-            $localizedPath = $sitePath . $segment . '/';
+            $localizedPath = $shouldPrefix ? $sitePath . $segment . '/' : $sitePath;
         } else {
             $normalizedPath = preg_replace('#^(?:\./)+#', '', $path);
             $normalizedPath = '/' . ltrim($normalizedPath, '/');
 
-            if (
+            if ($shouldPrefix && (
                 $normalizedPath === '/' . $segment
                 || str_starts_with($normalizedPath . '/', '/' . $segment . '/')
                 || str_starts_with($normalizedPath . '/', $sitePath . $segment . '/')
-            ) {
+            )) {
                 return $url;
             }
 
@@ -310,7 +312,9 @@ class sLang
                 $relativePath = '/' . ltrim($relativePath, '/');
             }
 
-            $localizedPath = $sitePath . $segment . '/' . ltrim($relativePath, '/');
+            $localizedPath = $shouldPrefix
+                ? $sitePath . $segment . '/' . ltrim($relativePath, '/')
+                : $sitePath . ltrim($relativePath, '/');
         }
 
         $localizedPath = preg_replace('#/+#', '/', $localizedPath);

@@ -14,8 +14,6 @@ use Seiger\sLang\Facades\sLang;
  * Parse custom lang placeholders
  */
 Event::listen('evolution.OnParseDocument', function($params) {
-    $base_url = UrlProcessor::makeUrl(evo()->getConfig('site_start', 1), '', '', 'full');
-
     // parse id as number
     evo()->documentOutput = str_replace('[*id*]', (evo()->documentObject['id'] ?? evo()->getConfig('site_start', 1)), evo()->documentOutput);
 
@@ -33,14 +31,16 @@ Event::listen('evolution.OnParseDocument', function($params) {
     preg_match_all('/\[~~(\d+)~~\]/', evo()->documentOutput, $match);
     if ($match[0]) {
         foreach ($match[0] as $key => $value) {
-            if ($match[1][$key] == evo()->getConfig('site_start', 1)) {
-                evo()->documentOutput = str_replace($value, $base_url, evo()->documentOutput);
-            } else {
-                if (evo()->getConfig('lang') != sLang::langDefault()) {
-                    evo()->setConfig('virtual_dir', sLang::langSegment((string)evo()->getConfig('lang')).'/');
-                }
-                evo()->documentOutput = str_replace($value, UrlProcessor::makeUrl($match[1][$key], '', '', 'full'), evo()->documentOutput);
-            }
+            $documentId = (int)$match[1][$key];
+            $generatedUrl = $documentId === (int)evo()->getConfig('site_start', 1)
+                ? '/'
+                : UrlProcessor::makeUrl($documentId);
+
+            evo()->documentOutput = str_replace(
+                $value,
+                sLang::localizeGeneratedUrl((string)$generatedUrl, (string)evo()->getConfig('lang', sLang::langDefault())),
+                evo()->documentOutput
+            );
         }
     }
 });
