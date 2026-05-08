@@ -148,6 +148,10 @@ Event::listen('evolution.OnLoadSettings', function($params) {
 
     evo()->setLocale($langDefault);
     evo()->setConfig('lang', $langDefault);
+
+    if (sLang::langDefault() != $langDefault || evo()->getConfig('s_lang_default_show', 0) == 1) {
+        evo()->setConfig('base_url', evo()->getConfig('base_url', '/') . sLang::langSegment($langDefault) . '/');
+    }
 });
 
 /**

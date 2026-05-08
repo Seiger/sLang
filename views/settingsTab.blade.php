@@ -46,6 +46,10 @@
             <td colspan="2">
                 <div class="table-responsive">
                     <table class="table table-sm table-bordered mb-0">
+                        <colgroup>
+                            <col style="width: 36%;">
+                            <col style="width: 64%;">
+                        </colgroup>
                         <thead>
                         <tr>
                             <th>@lang('sLang::global.language')</th>
@@ -55,7 +59,7 @@
                         <tbody>
                         @foreach (sLang::langConfig() as $id)
                             <tr>
-                                <td>{{$id}} - {{sLang::langList()[$id]['name'] ?? strtoupper($id)}}</td>
+                                <td class="text-nowrap">{{$id}} - {{sLang::langList()[$id]['name'] ?? strtoupper($id)}}</td>
                                 <td>
                                     <input
                                         type="text"
