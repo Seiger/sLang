@@ -129,6 +129,8 @@ Event::listen('evolution.OnPageNotFound', function() {
  * Make Lang Config
  */
 Event::listen('evolution.OnLoadSettings', function($params) {
+    $resolvedLocale = null;
+
     if (isset($params['lang'])) {
         $langDefault = $params['lang'];
     } else {
@@ -151,6 +153,21 @@ Event::listen('evolution.OnLoadSettings', function($params) {
 
     if (sLang::langDefault() != $langDefault || evo()->getConfig('s_lang_default_show', 0) == 1) {
         evo()->setConfig('base_url', evo()->getConfig('base_url', '/') . sLang::langSegment($langDefault) . '/');
+    }
+
+    if (!is_null($resolvedLocale) && isset($_REQUEST['q'])) {
+        $cleanQuery = trim(sLang::stripLanguageSegmentFromUri('/' . ltrim((string)$_REQUEST['q'], '/'), $resolvedLocale), '/');
+        $_REQUEST['q'] = $cleanQuery;
+
+        if (isset($_GET['q'])) {
+            $_GET['q'] = $cleanQuery;
+        }
+    }
+
+    if (!is_null($resolvedLocale)) {
+        // Evolution's core seostrict canonicalization is not locale-aware and
+        // strips custom language segments from nested frontend routes.
+        evo()->setConfig('seostrict', 0);
     }
 });
 
