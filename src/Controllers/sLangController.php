@@ -269,6 +269,39 @@ class sLangController
     }
 
     /**
+     * Set custom frontend URL segments for configured languages.
+     *
+     * @param mixed $value Associative array locale => segment
+     * @return bool
+     */
+    public function setLangUrlMap($value)
+    {
+        $langConfig = sLang::langConfig();
+        $segments = [];
+
+        if (is_array($value)) {
+            foreach ($langConfig as $locale) {
+                $segment = trim((string)($value[$locale] ?? $locale));
+                $segment = Str::lower($segment);
+                $segment = preg_replace('/[^a-z0-9_-]+/', '-', $segment) ?? '';
+                $segment = trim($segment, '-');
+                if ($segment === '') {
+                    $segment = $locale;
+                }
+                $segments[$locale] = $segment;
+            }
+        }
+
+        if (count($segments) === 0) {
+            foreach ($langConfig as $locale) {
+                $segments[$locale] = $locale;
+            }
+        }
+
+        return $this->updateTblSetting('s_lang_url_map', json_encode($segments, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+
+    /**
      * Sets the language TV values for the current instance.
      *
      * @param mixed $value The value(s) to set as language TV(s).

@@ -46,15 +46,15 @@ class sLang
         if (trim($sLangFront)) {
             $langFront = explode(',', $sLangFront);
         }
-        $baseUrl = Str::replaceFirst(evo()->getConfig('lang', 'uk').'/', '/', request()->getRequestUri());
-        $baseUrl = str_replace(['////', '///', '//'], '/', $baseUrl);
+        $baseUrl = $this->stripLanguageSegmentFromUri((string)request()->getRequestUri(), (string)evo()->getConfig('lang', 'uk'));
         $result = [];
         foreach ($langFront as $item) {
             $result[$item] = $langList[$item];
+            $segment = $this->langSegment($item);
             if ($sLangDefault == $item && $sLangDefaultShow != 1) {
                 $result[$item]['link'] = EVO_SITE_URL . ltrim($baseUrl, '/');
             } else {
-                $result[$item]['link'] = EVO_SITE_URL . $item . $baseUrl;
+                $result[$item]['link'] = EVO_SITE_URL . $segment . '/' . ltrim($baseUrl, '/');
             }
         }
         return $result;
@@ -71,7 +71,7 @@ class sLang
     public function hrefLang(): string
     {
         $alternates = [];
-        $defaultUrl = evo()->getConfig('s_lang_default_show', 0) == 1 ? EVO_SITE_URL . $this->langDefault() . '/' : EVO_SITE_URL;
+        $defaultUrl = evo()->getConfig('s_lang_default_show', 0) == 1 ? EVO_SITE_URL . $this->langSegment($this->langDefault()) . '/' : EVO_SITE_URL;
         $alternates['x-default'] = $defaultUrl;
 
         foreach ($this->langSwitcher() as $lang => $item) {
@@ -184,6 +184,61 @@ class sLang
     }
 
     /**
+     * Returns the configured URL segment map for languages.
+     *
+     * @return array<string, string>
+     */
+    public function langSegments(): array
+    {
+        $segments = [];
+        $stored = trim((string)$this->getConfigValue('s_lang_url_map'));
+        $decoded = $stored !== '' ? json_decode($stored, true) : [];
+
+        foreach ($this->configuredLocales() as $locale) {
+            $segment = is_array($decoded) ? ($decoded[$locale] ?? $locale) : $locale;
+            $segment = $this->normalizeLanguageSegment((string)$segment, $locale);
+            $segments[$locale] = $segment;
+        }
+
+        return $segments;
+    }
+
+    /**
+     * Returns the frontend URL segment for a locale.
+     */
+    public function langSegment(string $locale): string
+    {
+        $segments = $this->langSegments();
+
+        return $segments[$locale] ?? $this->normalizeLanguageSegment($locale, $locale);
+    }
+
+    /**
+     * Resolve a locale from a request URL segment.
+     */
+    public function localeFromSegment(string $segment): ?string
+    {
+        $segment = $this->normalizeLanguageSegment($segment);
+        if ($segment === '') {
+            return null;
+        }
+
+        foreach ($this->langSegments() as $locale => $mappedSegment) {
+            if ($mappedSegment === $segment) {
+                return $locale;
+            }
+        }
+
+        foreach ($this->configuredLocales() as $locale) {
+            if ($this->normalizeLanguageSegment($locale) === $segment) {
+                return $locale;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Localize an internally generated Evo URL for the active non-default language.
      *
      * Keeps external URLs untouched and avoids duplicating an existing locale prefix.
@@ -192,12 +247,14 @@ class sLang
     {
         $locale = trim((string)($locale ?? evo()->getConfig('lang', '')));
         $defaultLocale = trim($this->langDefault());
+        $shouldPrefixDefault = $locale === $defaultLocale && (int)evo()->getConfig('s_lang_default_show', 0) === 1;
+        $segment = $this->langSegment($locale);
 
-        if ($url === '' || $locale === '' || $locale === $defaultLocale) {
+        if ($url === '' || $locale === '' || ($locale === $defaultLocale && !$shouldPrefixDefault)) {
             return $url;
         }
 
-        if (!in_array($locale, $this->langFront(), true) && !in_array($locale, $this->langConfig(), true)) {
+        if ($segment === '' || !in_array($locale, $this->configuredLocales(), true)) {
             return $url;
         }
 
@@ -230,15 +287,15 @@ class sLang
         $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
 
         if ($path === '') {
-            $localizedPath = $sitePath . $locale . '/';
+            $localizedPath = $sitePath . $segment . '/';
         } else {
             $normalizedPath = preg_replace('#^(?:\./)+#', '', $path);
             $normalizedPath = '/' . ltrim($normalizedPath, '/');
 
             if (
-                $normalizedPath === '/' . $locale
-                || str_starts_with($normalizedPath . '/', '/' . $locale . '/')
-                || str_starts_with($normalizedPath . '/', $sitePath . $locale . '/')
+                $normalizedPath === '/' . $segment
+                || str_starts_with($normalizedPath . '/', '/' . $segment . '/')
+                || str_starts_with($normalizedPath . '/', $sitePath . $segment . '/')
             ) {
                 return $url;
             }
@@ -249,7 +306,7 @@ class sLang
                 $relativePath = '/' . ltrim($relativePath, '/');
             }
 
-            $localizedPath = $sitePath . $locale . '/' . ltrim($relativePath, '/');
+            $localizedPath = $sitePath . $segment . '/' . ltrim($relativePath, '/');
         }
 
         $localizedPath = preg_replace('#/+#', '/', $localizedPath);
@@ -361,6 +418,32 @@ class sLang
     }
 
     /**
+     * Remove the active language segment from a request URI.
+     */
+    public function stripLanguageSegmentFromUri(string $uri, ?string $locale = null): string
+    {
+        $locale = trim((string)($locale ?? evo()->getConfig('lang', '')));
+        $segment = $this->langSegment($locale);
+
+        $parts = parse_url($uri);
+        if ($parts === false) {
+            return '/';
+        }
+
+        $path = '/' . ltrim((string)($parts['path'] ?? '/'), '/');
+        if ($segment !== '') {
+            $path = preg_replace('#^/' . preg_quote($segment, '#') . '(?=/|$)#', '', $path, 1) ?? $path;
+        }
+        $path = preg_replace('#/+#', '/', $path);
+        $path = $path === '' ? '/' : $path;
+
+        $query = isset($parts['query']) ? '?' . $parts['query'] : '';
+        $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+        return $path . $query . $fragment;
+    }
+
+    /**
      * Retrieves the language TVs.
      *
      * This method retrieves the language TVs from the configuration settings and
@@ -460,6 +543,48 @@ class sLang
     public function getAutomaticTranslate($text, $source, $target)
     {
         return $this->googleTranslate($text, $source, $target);
+    }
+
+    /**
+     * Normalize a language URL segment and fall back to the locale when empty.
+     */
+    protected function normalizeLanguageSegment(string $segment, ?string $fallback = null): string
+    {
+        $segment = trim(Str::lower($segment), " \t\n\r\0\x0B/");
+        $segment = preg_replace('/[^a-z0-9_-]+/', '-', $segment) ?? '';
+        $segment = trim($segment, '-');
+
+        if ($segment === '' && !is_null($fallback)) {
+            return $this->normalizeLanguageSegment($fallback);
+        }
+
+        return $segment;
+    }
+
+    /**
+     * Returns every locale that can participate in sLang routing.
+     *
+     * Frontend routing should keep working even when the manager-only language
+     * config has not been explicitly saved yet.
+     *
+     * @return array<int, string>
+     */
+    protected function configuredLocales(): array
+    {
+        $locales = array_merge(
+            [(string)evo()->getConfig('manager_language', 'uk')],
+            $this->langConfig(),
+            $this->langFront(),
+            [$this->langDefault()]
+        );
+
+        $locales = array_filter(array_map(function ($locale) {
+            return trim((string)$locale);
+        }, $locales), static function ($locale) {
+            return $locale !== '';
+        });
+
+        return array_values(array_unique($locales));
     }
 
     /**

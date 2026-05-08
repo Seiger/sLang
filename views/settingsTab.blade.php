@@ -42,6 +42,38 @@
             </td>
         </tr>
         <tr>
+            <th><b>@lang('sLang::global.lang_folders')</b></th>
+            <td colspan="2">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead>
+                        <tr>
+                            <th>@lang('sLang::global.language')</th>
+                            <th>@lang('sLang::global.folder_segment')</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (sLang::langConfig() as $id)
+                            <tr>
+                                <td>{{$id}} - {{sLang::langList()[$id]['name'] ?? strtoupper($id)}}</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        name="s_lang_url_map[{{$id}}]"
+                                        value="{{sLang::langSegment($id)}}"
+                                        placeholder="{{$id}}"
+                                        class="form-control"
+                                    >
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <small class="text-muted">@lang('sLang::global.lang_folders_help')</small>
+            </td>
+        </tr>
+        <tr>
             <th><b>@lang('sLang::global.multilang_tvs')</b></th>
             <td colspan="2">
                 <input type="hidden" name="s_lang_tvs" value=""/>
