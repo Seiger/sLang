@@ -6,7 +6,9 @@
 
 @foreach (sLang::siteContentFields() as $siteContentField)
     @if($siteContentField == 'content')
-        <input name="ta" type="hidden" value="{{$content[sLang::langDefault() . '_' . $siteContentField]}}">
+        @if(evo()->getConfig('use_editor') && evo()->getConfig('which_editor') !== 'none')
+            <input name="ta" type="hidden" value="{{$content[sLang::langDefault() . '_' . $siteContentField]}}">
+        @endif
     @else
         <input name="{{$siteContentField}}" type="hidden" value="{!!$content[sLang::langDefault() . '_' . $siteContentField]!!}">
     @endif
@@ -72,23 +74,46 @@
 
     const defaultLang = '{{sLang::langDefault()}}';
     const mutateForm = document.querySelector('form#mutate');
-    const defaultContent = document.querySelector('[name="' + defaultLang + '_content"]');
+    const defaultContent = document.querySelector('[data-slang-default-content="1"]') || document.querySelector('[name="' + defaultLang + '_content"]');
     const taProxy = document.querySelector('input[name="ta"][type="hidden"]');
+    const defaultContentProxy = document.querySelector('[data-slang-default-content-proxy="1"]');
 
     function syncTaProxy() {
-        if (!defaultContent || !taProxy) {
+        if (!defaultContent) {
+            return;
+        }
+
+        if (window.myCodeMirrors && window.myCodeMirrors.ta && typeof window.myCodeMirrors.ta.getValue === 'function') {
+            const codeMirrorContent = window.myCodeMirrors.ta.getValue();
+            if (defaultContent.value !== codeMirrorContent) {
+                defaultContent.value = codeMirrorContent;
+            }
+            if (defaultContentProxy) {
+                defaultContentProxy.value = codeMirrorContent;
+            }
             return;
         }
 
         if (window.tinymce && typeof window.tinymce.get === 'function') {
             const editor = window.tinymce.get(defaultLang + '_content');
             if (editor) {
-                taProxy.value = editor.getContent();
+                const editorContent = editor.getContent();
+                if (taProxy) {
+                    taProxy.value = editorContent;
+                }
+                if (defaultContentProxy) {
+                    defaultContentProxy.value = editorContent;
+                }
                 return;
             }
         }
 
-        taProxy.value = defaultContent.value;
+        if (taProxy) {
+            taProxy.value = defaultContent.value;
+        }
+        if (defaultContentProxy) {
+            defaultContentProxy.value = defaultContent.value;
+        }
     }
 
     if (defaultContent) {
@@ -99,4 +124,69 @@
     if (mutateForm) {
         mutateForm.addEventListener('submit', syncTaProxy);
     }
+
+    if (which_editor === 'none') {
+        const syncAllContentEditors = () => {
+            if (!window.myCodeMirrors) {
+                syncTaProxy();
+                return;
+            }
+
+            Object.entries(window.myCodeMirrors).forEach(([editorKey, editor]) => {
+                if (!editor || typeof editor.getValue !== 'function') {
+                    return;
+                }
+
+                const value = editor.getValue();
+
+                if (editorKey === 'ta') {
+                    if (defaultContent && defaultContent.value !== value) {
+                        defaultContent.value = value;
+                    }
+                    if (defaultContentProxy) {
+                        defaultContentProxy.value = value;
+                    }
+                    return;
+                }
+
+                const sourceTextarea = document.querySelector(`[data-slang-editor-key="${editorKey}"]`);
+                if (sourceTextarea && sourceTextarea.value !== value) {
+                    sourceTextarea.value = value;
+                }
+            });
+        };
+
+        document.addEventListener('click', () => {
+            window.setTimeout(() => {
+                Object.values(window.myCodeMirrors || {}).forEach((editor) => {
+                    if (editor && typeof editor.refresh === 'function') {
+                        editor.refresh();
+                    }
+                });
+                syncAllContentEditors();
+            }, 0);
+        }, true);
+
+        if (mutateForm) {
+            mutateForm.addEventListener('submit', syncAllContentEditors);
+        }
+    }
 </script>
+
+@if(evo()->getConfig('which_editor') === 'none')
+    @php($codeMirrorTargets = [])
+    @foreach(sLang::langConfig() as $lang)
+        @if($lang !== sLang::langDefault())
+            @php($codeMirrorTargets[] = $lang . '_content')
+        @endif
+    @endforeach
+    @php($codeMirrorInit = evo()->invokeEvent('OnRichTextEditorInit', [
+        'editor' => 'Codemirror',
+        'elements' => $codeMirrorTargets,
+        'options' => [],
+        'contentType' => 'text/html',
+    ]))
+    @if(is_array($codeMirrorInit))
+        {!! implode('', $codeMirrorInit) !!}
+    @endif
+@endif

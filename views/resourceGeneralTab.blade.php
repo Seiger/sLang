@@ -1,6 +1,7 @@
 @php global $richtexteditorIds, $richtexteditorOptions; @endphp
 
 @foreach(sLang::langConfig() as $lang)
+    @php($isDefaultLang = $lang == sLang::langDefault())
     <!-- General {{$lang}} -->
     <div class="tab-page" id="tabGeneral_{{$lang}}">
         <h2 class="tab">@lang('global.settings_general') <span class="badge bg-seigerit">{{$lang}}</span></h2>
@@ -139,7 +140,7 @@
                         <td colspan="2" class="col">
                             <hr> <!-- Content -->
                             <div class="clearfix">
-                                <span id="content_header">@lang('global.resource_content')</span>
+                                <span id="{{$isDefaultLang ? 'content_header' : 'content_header_'.$lang}}">@lang('global.resource_content')</span>
                                 @if($lang != sLang::langDefault())
                                     <label class="float-right">
                                         <button data-lang="{{$lang}}" class="btn btn-light js_translate" type="button" title="@lang('sLang::global.auto_translate') {{strtoupper(sLang::langDefault())}} => {{strtoupper($lang)}}" style="height: 25px;padding:0 5px;color:#0275d8;">
@@ -147,22 +148,24 @@
                                         </button>
                                     </label>
                                 @endif
-                                <label class="float-right">@lang('global.which_editor_title')
-                                    <select id="which_editor" class="form-control form-control-sm" size="1" name="which_editor" onchange="changeRTE();">
-                                        <option value="none">@lang('global.none')</option>
-                                        {{-- invoke OnRichTextEditorRegister event --}}
-                                        @php($evtOut = evo()->invokeEvent("OnRichTextEditorRegister"))
-                                        @if(is_array($evtOut))
-                                            @for($i = 0; $i < count($evtOut); $i++)
-                                                @php($editor = $evtOut[$i])
-                                                <option value="{{$editor}}"{!!(evo()->getConfig('which_editor') == $editor ? ' selected="selected"' : '')!!}>{{$editor}}</option>
-                                            @endfor
-                                        @endif
-                                    </select>
-                                </label>
+                                @if($isDefaultLang)
+                                    <label class="float-right">@lang('global.which_editor_title')
+                                        <select id="which_editor" class="form-control form-control-sm" size="1" name="which_editor" onchange="changeRTE();">
+                                            <option value="none">@lang('global.none')</option>
+                                            {{-- invoke OnRichTextEditorRegister event --}}
+                                            @php($evtOut = evo()->invokeEvent("OnRichTextEditorRegister"))
+                                            @if(is_array($evtOut))
+                                                @for($i = 0; $i < count($evtOut); $i++)
+                                                    @php($editor = $evtOut[$i])
+                                                    <option value="{{$editor}}"{!!(evo()->getConfig('which_editor') == $editor ? ' selected="selected"' : '')!!}>{{$editor}}</option>
+                                                @endfor
+                                            @endif
+                                        </select>
+                                    </label>
+                                @endif
                             </div>
-                            <div id="content_body">
-                                @if((!empty($content['richtext']) || evo()->getManagerApi()->action == '4') && evo()->getConfig('use_editor'))
+                            <div id="{{$isDefaultLang ? 'content_body' : 'content_body_'.$lang}}">
+                                @if((!empty($content['richtext']) || evo()->getManagerApi()->action == '4') && evo()->getConfig('use_editor') && evo()->getConfig('which_editor') !== 'none')
                                     @php($htmlContent = get_by_key($content, $lang.'_content', '', 'is_scalar'))
                                     <div class="section-editor clearfix">
                                         <textarea id="{{$lang}}_content" name="{{$lang}}_content" onchange="documentDirty=true;">{!!evo()->getPhpCompat()->htmlspecialchars($htmlContent)!!}</textarea>
@@ -171,7 +174,31 @@
                                     @php($richtexteditorIds[evo()->getConfig('which_editor')][] = $lang.'_content')
                                     @php($richtexteditorOptions[evo()->getConfig('which_editor')][] = [$lang.'_content' => ''])
                                 @else
-                                    <div><textarea class="phptextarea" id="{{$lang}}_content" name="{{$lang}}_content" rows="20" wrap="soft" onchange="documentDirty=true;">{!!evo()->getPhpCompat()->htmlspecialchars(get_by_key($content, $lang.'_content', ''))!!}</textarea></div>
+                                    @php($plainContent = get_by_key($content, $lang.'_content', ''))
+                                    @if($isDefaultLang)
+                                        <div>
+                                            <textarea
+                                                class="phptextarea"
+                                                id="ta"
+                                                name="ta"
+                                                rows="20"
+                                                wrap="soft"
+                                                onchange="documentDirty=true;"
+                                                data-slang-default-content="1"
+                                                data-slang-codemirror-target="1"
+                                                data-slang-editor-key="ta"
+                                            >{!!evo()->getPhpCompat()->htmlspecialchars($plainContent)!!}</textarea>
+                                            <input
+                                                type="hidden"
+                                                id="{{$lang}}_content_proxy"
+                                                name="{{$lang}}_content"
+                                                value="{!!evo()->getPhpCompat()->htmlspecialchars($plainContent)!!}"
+                                                data-slang-default-content-proxy="1"
+                                            />
+                                        </div>
+                                    @else
+                                        <div><textarea class="phptextarea" id="{{$lang}}_content" name="{{$lang}}_content" rows="20" wrap="soft" onchange="documentDirty=true;" data-slang-codemirror-target="1" data-slang-editor-key="{{$lang}}_content">{!!evo()->getPhpCompat()->htmlspecialchars($plainContent)!!}</textarea></div>
+                                    @endif
                                 @endif
                             </div>
                         </td>
