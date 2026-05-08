@@ -6,7 +6,9 @@
 
 @foreach (sLang::siteContentFields() as $siteContentField)
     @if($siteContentField == 'content')
-        <input name="ta" type="hidden" value="{{$content[sLang::langDefault() . '_' . $siteContentField]}}">
+        @if(evo()->getConfig('use_editor'))
+            <input name="ta" type="hidden" value="{{$content[sLang::langDefault() . '_' . $siteContentField]}}">
+        @endif
     @else
         <input name="{{$siteContentField}}" type="hidden" value="{!!$content[sLang::langDefault() . '_' . $siteContentField]!!}">
     @endif
@@ -72,23 +74,35 @@
 
     const defaultLang = '{{sLang::langDefault()}}';
     const mutateForm = document.querySelector('form#mutate');
-    const defaultContent = document.querySelector('[name="' + defaultLang + '_content"]');
+    const defaultContent = document.querySelector('[data-slang-default-content="1"]') || document.querySelector('[name="' + defaultLang + '_content"]');
     const taProxy = document.querySelector('input[name="ta"][type="hidden"]');
+    const defaultContentProxy = document.querySelector('[data-slang-default-content-proxy="1"]');
 
     function syncTaProxy() {
-        if (!defaultContent || !taProxy) {
+        if (!defaultContent) {
             return;
         }
 
         if (window.tinymce && typeof window.tinymce.get === 'function') {
             const editor = window.tinymce.get(defaultLang + '_content');
             if (editor) {
-                taProxy.value = editor.getContent();
+                const editorContent = editor.getContent();
+                if (taProxy) {
+                    taProxy.value = editorContent;
+                }
+                if (defaultContentProxy) {
+                    defaultContentProxy.value = editorContent;
+                }
                 return;
             }
         }
 
-        taProxy.value = defaultContent.value;
+        if (taProxy) {
+            taProxy.value = defaultContent.value;
+        }
+        if (defaultContentProxy) {
+            defaultContentProxy.value = defaultContent.value;
+        }
     }
 
     if (defaultContent) {
