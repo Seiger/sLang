@@ -9,7 +9,6 @@ use EvolutionCMS\Models\SiteContent;
 use EvolutionCMS\Models\SiteTmplvar;
 use EvolutionCMS\Models\SystemSetting;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Seiger\sLang\Models\sLangContent;
@@ -27,8 +26,6 @@ class sLang
     {
         $this->params = evo()->event->params ?? [];
         $this->tblSiteContent = evo()->getDatabase()->getFullTableName($this->tblSiteContent);
-
-        Paginator::defaultView('sLang::partials.pagination');
     }
 
     /**

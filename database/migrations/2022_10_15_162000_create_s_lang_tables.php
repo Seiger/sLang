@@ -47,6 +47,30 @@ class CreateSLangTables extends Migration
                 $table->fulltext('value');
             }
         });
+
+        if (DB::getDriverName() === 'sqlite') {
+            $prefix = DB::getTablePrefix();
+            $tableName = $prefix . 's_lang_tmplvar_contentvalues';
+            $ftsTableName = $tableName . '_fts';
+
+            DB::statement("CREATE VIRTUAL TABLE \"{$ftsTableName}\" USING fts5(value, content='{$tableName}', content_rowid='id')");
+            DB::statement("INSERT INTO \"{$ftsTableName}\"(rowid, value) SELECT id, value FROM \"{$tableName}\"");
+
+            DB::statement("CREATE TRIGGER \"{$ftsTableName}_ai\" AFTER INSERT ON \"{$tableName}\" BEGIN
+                INSERT INTO \"{$ftsTableName}\"(rowid, value) VALUES (new.id, new.value);
+            END");
+            DB::statement("CREATE TRIGGER \"{$ftsTableName}_ad\" AFTER DELETE ON \"{$tableName}\" BEGIN
+                INSERT INTO \"{$ftsTableName}\"(\"{$ftsTableName}\", rowid, value) VALUES('delete', old.id, old.value);
+            END");
+            DB::statement("CREATE TRIGGER \"{$ftsTableName}_au\" AFTER UPDATE ON \"{$tableName}\" BEGIN
+                INSERT INTO \"{$ftsTableName}\"(\"{$ftsTableName}\", rowid, value) VALUES('delete', old.id, old.value);
+                INSERT INTO \"{$ftsTableName}\"(rowid, value) VALUES(new.id, new.value);
+            END");
+        } else {
+            Schema::table('s_lang_tmplvar_contentvalues', function (Blueprint $table) {
+                $table->fullText('value');
+            });
+        }
     }
 
     /**
@@ -56,6 +80,17 @@ class CreateSLangTables extends Migration
      */
     public function down()
     {
+        if (DB::getDriverName() === 'sqlite') {
+            $prefix = DB::getTablePrefix();
+            $tableName = $prefix . 's_lang_tmplvar_contentvalues';
+            $ftsTableName = $tableName . '_fts';
+
+            DB::statement("DROP TRIGGER IF EXISTS \"{$ftsTableName}_ai\"");
+            DB::statement("DROP TRIGGER IF EXISTS \"{$ftsTableName}_ad\"");
+            DB::statement("DROP TRIGGER IF EXISTS \"{$ftsTableName}_au\"");
+            DB::statement("DROP TABLE IF EXISTS \"{$ftsTableName}\"");
+        }
+
         Schema::table('s_lang_content', function ($table) {
             $table->dropUnique('resource_lang');
         });

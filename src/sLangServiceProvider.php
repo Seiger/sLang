@@ -3,6 +3,7 @@
 use EvolutionCMS\ServiceProvider;
 use Event;
 use Illuminate\Pagination\Paginator;
+use Livewire\Livewire;
 
 class sLangServiceProvider extends ServiceProvider
 {
@@ -26,6 +27,10 @@ class sLangServiceProvider extends ServiceProvider
 
             // MultiLang
             $this->loadTranslationsFrom(dirname(__DIR__) . '/lang', 'sLang');
+
+            $this->mergeConfigFrom(dirname(__DIR__) . '/config/translates/table.php', 'slang.translates.table');
+            Livewire::component('slang.module-panel', \Seiger\sLang\Livewire\ModulePanel::class);
+            Livewire::component('slang.settings-panel', \Seiger\sLang\Livewire\SettingsPanel::class);
 
             // For use config
             $this->publishes([
@@ -72,7 +77,11 @@ class sLangServiceProvider extends ServiceProvider
                 }
             }
             $lang = include_once dirname(__DIR__) . '/lang/' . $lang . '/global.php';
-            $this->app->registerModule($lang['slang'], dirname(__DIR__) . '/modules/sLangModule.php', $lang['slang_icon']);
+            $this->app->registerModule(
+                $lang['module_title'] ?? $lang['slang'],
+                dirname(__DIR__) . '/modules/sLangModule.php',
+                $lang['module_icon'] ?? $lang['slang_icon']
+            );
         }
     }
 }

@@ -1,5 +1,5 @@
 <!-- Settings -->
-<div class="tab-page" id="tabSettings">
+<div class="tab-page slang-resource-tab-page" id="tabSettings">
     <h2 class="tab">@lang('global.settings_page_settings')</h2>
     <script type="text/javascript">tpSettings.addTabPage(document.getElementById("tabSettings"));</script>
     <div class="row form-row">
@@ -11,7 +11,7 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.page_data_template_help')"></i>
                 </div>
                 <div class="col">
-                    <select id="template" name="template" class="form-control" onchange="templateWarning();">
+                    <select id="template" name="template" class="form-control" data-slang-resource-action="template-warning">
                         <option value="0">(blank)</option>
                         @php($templates = \EvolutionCMS\Models\SiteTemplate::query()
                             ->select('site_templates.templatename', 'site_templates.selectable', 'site_templates.category', 'site_templates.id', 'categories.category AS category_name')
@@ -83,9 +83,11 @@
                                 @php(evo()->webAlertAndQuit($_lang["error_no_parent"]))
                             @endif
                         @endif
-                        <i id="plock" class="{{$_style["icon_folder"]}}" onclick="enableParentSelection(!allowParentSelection);"></i>
+                        <button type="button" id="plock" class="evo-ui-btn evo-ui-btn--icon" data-slang-resource-action="select-parent" title="@lang('global.resource_parent_help')" aria-label="@lang('global.resource_parent_help')">
+                            <i class="{{$_style["icon_folder"]}}"></i>
+                        </button>
                         <b id="parentName">{{(isset($_REQUEST['pid']) ? entities($_REQUEST['pid']) : $content['parent'])}} ({{entities($parentname)}})</b>
-                        <input type="hidden" name="parent" value="{{(isset($_REQUEST['pid']) ? entities($_REQUEST['pid']) : $content['parent'])}}" onchange="documentDirty=true;" />
+                        <input type="hidden" name="parent" value="{{(isset($_REQUEST['pid']) ? entities($_REQUEST['pid']) : $content['parent'])}}" data-slang-dirty="1" />
                     </div>
                 </div>
             </div>
@@ -95,7 +97,7 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_published_help')"></i>
                 </div>
                 <div class="col">
-                    <input {!!$mx_can_pub!!}name="publishedcheck" type="checkbox" class="form-checkbox form-control" {!!(isset($content['published']) && $content['published'] == 1) || (!isset($content['published']) && evo()->getConfig('publish_default')) ? "checked" : ''!!} onchange="documentDirty=true;" onclick="changestate(document.mutate.published);" />
+                    <input {!!$mx_can_pub!!}name="publishedcheck" type="checkbox" class="form-checkbox form-control" {!!(isset($content['published']) && $content['published'] == 1) || (!isset($content['published']) && evo()->getConfig('publish_default')) ? "checked" : ''!!} data-slang-dirty="1" data-slang-change-state="published" />
                     <input type="hidden" name="published" value="{{(isset($content['published']) && $content['published'] == 1) || (!isset($content['published']) && evo()->getConfig('publish_default')) ? 1 : 0}}" />
                 </div>
             </div>
@@ -107,7 +109,7 @@
                 </div>
                 <div class="col">
                     <label class="checkbox">
-                        <input {!!$mx_can_pub!!}name="menu_maincheck" type="checkbox" class="form-checkbox form-control" {!!(isset($content['menu_main']) && $content['menu_main'] == 1) ? "checked" : ''!!} onchange="documentDirty=true;" onclick="changestate(document.mutate.menu_main);" />
+                        <input {!!$mx_can_pub!!}name="menu_maincheck" type="checkbox" class="form-checkbox form-control" {!!(isset($content['menu_main']) && $content['menu_main'] == 1) ? "checked" : ''!!} data-slang-dirty="1" data-slang-change-state="menu_main" />
                         <input type="hidden" name="menu_main" value="{{(isset($content['menu_main']) && $content['menu_main'] == 1) ? 1 : 0}}" />
                     </label>
                 </div>
@@ -119,7 +121,7 @@
                 </div>
                 <div class="col">
                     <label class="checkbox">
-                        <input {!!$mx_can_pub!!}name="menu_footercheck" type="checkbox" class="form-checkbox form-control" {!!(isset($content['menu_footer']) && $content['menu_footer'] == 1) ? "checked" : ''!!} onchange="documentDirty=true;" onclick="changestate(document.mutate.menu_footer);" />
+                        <input {!!$mx_can_pub!!}name="menu_footercheck" type="checkbox" class="form-checkbox form-control" {!!(isset($content['menu_footer']) && $content['menu_footer'] == 1) ? "checked" : ''!!} data-slang-dirty="1" data-slang-change-state="menu_footer" />
                         <input type="hidden" name="menu_footer" value="{{(isset($content['menu_footer']) && $content['menu_footer'] == 1) ? 1 : 0}}" />
                     </label>
                 </div>
@@ -131,7 +133,7 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_alvisibled_help')"></i>
                 </div>
                 <div class="col">
-                    <input name="alias_visible_check" type="checkbox" class="form-checkbox form-control" {{((!isset($content['alias_visible']) || $content['alias_visible'] == 1) ? "checked" : '')}} onchange="documentDirty=true;" onclick="changestate(document.mutate.alias_visible);" />
+                    <input name="alias_visible_check" type="checkbox" class="form-checkbox form-control" {{((!isset($content['alias_visible']) || $content['alias_visible'] == 1) ? "checked" : '')}} data-slang-dirty="1" data-slang-change-state="alias_visible" />
                     <input type="hidden" name="alias_visible" value="{{((!isset($content['alias_visible']) || $content['alias_visible'] == 1) ? 1 : 0)}}" />
                 </div>
             </div>
@@ -141,8 +143,8 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.page_data_searchable_help')"></i>
                 </div>
                 <div class="col">
-                    <input name="searchablecheck" type="checkbox" class="form-checkbox form-control" {{(isset($content['searchable']) && $content['searchable'] == 1) || (!isset($content['searchable']) && evo()->getConfig('search_default')) ? "checked" : ''}} onclick="changestate(document.mutate.searchable);" />
-                    <input type="hidden" name="searchable" value="{{((isset($content['searchable']) && $content['searchable'] == 1) || (!isset($content['searchable']) && evo()->getConfig('search_default')) ? 1 : 0)}}" onchange="documentDirty=true;" />
+                    <input name="searchablecheck" type="checkbox" class="form-checkbox form-control" {{(isset($content['searchable']) && $content['searchable'] == 1) || (!isset($content['searchable']) && evo()->getConfig('search_default')) ? "checked" : ''}} data-slang-change-state="searchable" />
+                    <input type="hidden" name="searchable" value="{{((isset($content['searchable']) && $content['searchable'] == 1) || (!isset($content['searchable']) && evo()->getConfig('search_default')) ? 1 : 0)}}" data-slang-dirty="1" />
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
@@ -151,8 +153,8 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_richtext_help')"></i>
                 </div>
                 <div class="col">
-                    <input name="richtextcheck" type="checkbox" class="form-checkbox form-control" {{(empty($content['richtext']) && evo()->getManagerApi()->action == '27' ? '' : "checked")}} onclick="changestate(document.mutate.richtext);" />
-                    <input type="hidden" name="richtext" value="{{(empty($content['richtext']) && evo()->getManagerApi()->action == '27' ? 0 : 1)}}" onchange="documentDirty=true;" />
+                    <input name="richtextcheck" type="checkbox" class="form-checkbox form-control" {{(empty($content['richtext']) && evo()->getManagerApi()->action == '27' ? '' : "checked")}} data-slang-change-state="richtext" />
+                    <input type="hidden" name="richtext" value="{{(empty($content['richtext']) && evo()->getManagerApi()->action == '27' ? 0 : 1)}}" data-slang-dirty="1" />
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
@@ -161,8 +163,8 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_folder_help')"></i>
                 </div>
                 <div class="col">
-                    <input name="isfoldercheck" type="checkbox" class="form-checkbox form-control" {{((!empty($content['isfolder']) || evo()->getManagerApi()->action == '85') ? "checked" : '')}} onclick="changestate(document.mutate.isfolder);" />
-                    <input type="hidden" name="isfolder" value="{{((!empty($content['isfolder']) || evo()->getManagerApi()->action == '85') ? 1 : 0)}}" onchange="documentDirty=true;" />
+                    <input name="isfoldercheck" type="checkbox" class="form-checkbox form-control" {{((!empty($content['isfolder']) || evo()->getManagerApi()->action == '85') ? "checked" : '')}} data-slang-change-state="isfolder" />
+                    <input type="hidden" name="isfolder" value="{{((!empty($content['isfolder']) || evo()->getManagerApi()->action == '85') ? 1 : 0)}}" data-slang-dirty="1" />
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
@@ -171,8 +173,8 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_trackvisit_help')"></i>
                 </div>
                 <div class="col">
-                    <input name="hide_from_treecheck" type="checkbox" class="form-checkbox form-control" {!! empty($content['hide_from_tree']) ? 'checked="checked"' : '' !!} onclick="changestate(document.mutate.hide_from_tree);" />
-                    <input type="hidden" name="hide_from_tree" value="{!! empty($content['hide_from_tree']) ? 0 : 1 !!}" onchange="documentDirty=true;" />
+                    <input name="hide_from_treecheck" type="checkbox" class="form-checkbox form-control" {!! empty($content['hide_from_tree']) ? 'checked="checked"' : '' !!} data-slang-change-state="hide_from_tree" />
+                    <input type="hidden" name="hide_from_tree" value="{!! empty($content['hide_from_tree']) ? 0 : 1 !!}" data-slang-dirty="1" />
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
@@ -181,8 +183,8 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.page_data_cacheable_help')"></i>
                 </div>
                 <div class="col">
-                    <input name="cacheablecheck" type="checkbox" class="form-checkbox form-control" {{((isset($content['cacheable']) && $content['cacheable'] == 1) || (!isset($content['cacheable']) && evo()->getConfig('cache_default')) ? "checked" : '')}} onclick="changestate(document.mutate.cacheable);" />
-                    <input type="hidden" name="cacheable" value="{{((isset($content['cacheable']) && $content['cacheable'] == 1) || (!isset($content['cacheable']) && evo()->getConfig('cache_default')) ? 1 : 0)}}" onchange="documentDirty=true;" />
+                    <input name="cacheablecheck" type="checkbox" class="form-checkbox form-control" {{((isset($content['cacheable']) && $content['cacheable'] == 1) || (!isset($content['cacheable']) && evo()->getConfig('cache_default')) ? "checked" : '')}} data-slang-change-state="cacheable" />
+                    <input type="hidden" name="cacheable" value="{{((isset($content['cacheable']) && $content['cacheable'] == 1) || (!isset($content['cacheable']) && evo()->getConfig('cache_default')) ? 1 : 0)}}" data-slang-dirty="1" />
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
@@ -191,8 +193,8 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_emptycache_help')"></i>
                 </div>
                 <div class="col">
-                    <input id="syncsitecheck" name="syncsitecheck" type="checkbox" class="form-checkbox form-control" {{((isset($content['syncsitecheck']) && $content['syncsitecheck'] == 1) || (!isset($content['syncsitecheck']) && evo()->getConfig('cache_default')) ? "checked" : '')}} onclick="changestate(document.mutate.syncsitecheck);" />
-                    <input id="syncsite" type="hidden" name="syncsite" value="{{((isset($content['syncsite']) && $content['syncsite'] == 1) || (!isset($content['syncsite']) && evo()->getConfig('cache_default')) ? 1 : 0)}}" onchange="documentDirty=true;" />
+                    <input id="syncsitecheck" name="syncsitecheck" type="checkbox" class="form-checkbox form-control" {{((isset($content['syncsitecheck']) && $content['syncsitecheck'] == 1) || (!isset($content['syncsitecheck']) && evo()->getConfig('cache_default')) ? "checked" : '')}} data-slang-change-state="syncsitecheck" />
+                    <input id="syncsite" type="hidden" name="syncsite" value="{{((isset($content['syncsite']) && $content['syncsite'] == 1) || (!isset($content['syncsite']) && evo()->getConfig('cache_default')) ? 1 : 0)}}" data-slang-dirty="1" />
                 </div>
             </div>
         </div>
@@ -203,7 +205,7 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_alias_help')"></i>
                 </div>
                 <div class="col">
-                    <input name="alias" type="text" maxlength="255" value="{{stripslashes(get_by_key($content, 'alias', '', 'is_scalar'))}}" class="form-control" onchange="documentDirty=true;" />
+                    <input name="alias" type="text" maxlength="255" value="{{stripslashes(get_by_key($content, 'alias', '', 'is_scalar'))}}" class="form-control" data-slang-dirty="1" />
                 </div>
             </div>
             <div class="row form-row">
@@ -212,7 +214,7 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.link_attributes_help')"></i>
                 </div>
                 <div class="col">
-                    <input name="link_attributes" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, 'link_attributes', '', 'is_scalar')))}}" class="form-control" onchange="documentDirty=true;" />
+                    <input name="link_attributes" type="text" maxlength="255" value="{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, 'link_attributes', '', 'is_scalar')))}}" class="form-control" data-slang-dirty="1" />
                 </div>
             </div>
             <div class="row form-row">
@@ -222,10 +224,10 @@
                 </div>
                 <div class="input-group col">
                     <div class="input-group-prepend">
-                        <span class="btn btn-secondary" onclick="var elm = document.mutate.menuindex;var v=parseInt(elm.value+'')-1;elm.value=v>0? v:0;elm.focus();documentDirty=true;return false;" style="cursor: pointer;"><i class="fa fa-angle-left"></i></span>
-                        <span class="btn btn-secondary" onclick="var elm = document.mutate.menuindex;var v=parseInt(elm.value+'')+1;elm.value=v>0? v:0;elm.focus();documentDirty=true;return false;" style="cursor: pointer;"><i class="fa fa-angle-right"></i></span>
+                        <button type="button" class="evo-ui-btn evo-ui-btn--icon" data-slang-resource-action="menuindex-step" data-slang-step="-1" title="@lang('global.resource_opt_menu_index')" aria-label="@lang('global.resource_opt_menu_index')"><i class="fa fa-angle-left"></i></button>
+                        <button type="button" class="evo-ui-btn evo-ui-btn--icon" data-slang-resource-action="menuindex-step" data-slang-step="1" title="@lang('global.resource_opt_menu_index')" aria-label="@lang('global.resource_opt_menu_index')"><i class="fa fa-angle-right"></i></button>
                     </div>
-                    <input name="menuindex" type="text" maxlength="6" value="{{$content['menuindex']}}" class="form-control" onchange="documentDirty=true;" />
+                    <input name="menuindex" type="text" maxlength="6" value="{{$content['menuindex']}}" class="form-control" data-slang-dirty="1" />
                 </div>
             </div>
             <div class="row form-row form-row-checkbox">
@@ -234,7 +236,7 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_show_menu_help')"></i>
                 </div>
                 <div class="col">
-                    <input name="hidemenucheck" type="checkbox" class="form-checkbox form-control" {{(empty($content['hidemenu']) ? 'checked="checked"' : '')}} onclick="changestate(document.mutate.hidemenu);" />
+                    <input name="hidemenucheck" type="checkbox" class="form-checkbox form-control" {{(empty($content['hidemenu']) ? 'checked="checked"' : '')}} data-slang-change-state="hidemenu" />
                     <input type="hidden" name="hidemenu" class="hidden" value="{{(empty($content['hidemenu']) ? 0 : 1)}}" />
                 </div>
             </div>
@@ -244,11 +246,11 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.page_data_publishdate_help')"></i>
                 </div>
                 <div class="col">
-                    <input id="pub_date" type="text" {!!$mx_can_pub!!}name="pub_date" class="form-control DatePicker unstyled" value="{{((int)get_by_key($content, 'pub_date', 0, 'is_scalar') === 0 || !isset($content['pub_date']) ? '' : evo()->toDateFormat($content['pub_date']))}}" onblur="documentDirty=true;" placeholder="{{evo()->getConfig('datetime_format')}} HH:MM:SS" autocomplete="off"/>
+                    <input id="pub_date" type="text" {!!$mx_can_pub!!}name="pub_date" class="form-control DatePicker unstyled" value="{{((int)get_by_key($content, 'pub_date', 0, 'is_scalar') === 0 || !isset($content['pub_date']) ? '' : evo()->toDateFormat($content['pub_date']))}}" data-slang-dirty="1" placeholder="{{evo()->getConfig('datetime_format')}} HH:MM:SS" autocomplete="off"/>
                     <span class="input-group-append">
-                        <a class="btn text-danger" href="javascript:;" onclick="document.mutate.pub_date.value=''; documentDirty=true; return true;">
+                        <button type="button" class="evo-ui-btn evo-ui-btn--icon evo-ui-btn--danger" data-slang-resource-action="clear-field" data-slang-field="pub_date" title="@lang('global.remove_date')" aria-label="@lang('global.remove_date')">
                             <i class="{{$_style["icon_calendar_close"]}}" title="@lang('global.remove_date')"></i>
-                        </a>
+                        </button>
                     </span>
                 </div>
             </div>
@@ -258,11 +260,11 @@
                     <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.page_data_unpublishdate_help')"></i>
                 </div>
                 <div class="col">
-                    <input type="text" id="unpub_date" {!!$mx_can_pub!!}name="unpub_date" class="form-control DatePicker unstyled" value="{{((int)get_by_key($content, 'unpub_date', 0, 'is_scalar') === 0 || !isset($content['unpub_date']) ? '' : evo()->toDateFormat($content['unpub_date']))}}" onblur="documentDirty=true;" placeholder="{{evo()->getConfig('datetime_format')}} HH:MM:SS" autocomplete="off" />
+                    <input type="text" id="unpub_date" {!!$mx_can_pub!!}name="unpub_date" class="form-control DatePicker unstyled" value="{{((int)get_by_key($content, 'unpub_date', 0, 'is_scalar') === 0 || !isset($content['unpub_date']) ? '' : evo()->toDateFormat($content['unpub_date']))}}" data-slang-dirty="1" placeholder="{{evo()->getConfig('datetime_format')}} HH:MM:SS" autocomplete="off" />
                     <span class="input-group-append">
-                        <a class="btn text-danger" href="javascript:;" onclick="document.mutate.unpub_date.value=''; documentDirty=true; return true;">
+                        <button type="button" class="evo-ui-btn evo-ui-btn--icon evo-ui-btn--danger" data-slang-resource-action="clear-field" data-slang-field="unpub_date" title="@lang('global.remove_date')" aria-label="@lang('global.remove_date')">
                             <i class="{{$_style["icon_calendar_close"]}}" title="@lang('global.remove_date')"></i>
-                        </a>
+                        </button>
                     </span>
                 </div>
             </div>
@@ -273,7 +275,7 @@
                         <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_type_message')"></i>
                     </div>
                     <div class="col">
-                        <select id="type" class="form-control" name="type" onchange="documentDirty=true;">
+                        <select id="type" class="form-control" name="type" data-slang-dirty="1">
                             <option value="document"{!!($content['type'] === 'document' || evo()->getManagerApi()->action == '85' || evo()->getManagerApi()->action == '4') ? ' selected="selected"' : ''!!}>@lang('global.resource_type_webpage')</option>
                             <option value="reference"{!!($content['type'] === 'reference' || evo()->getManagerApi()->action == '72') ? ' selected="selected"' : ''!!}>@lang('global.resource_type_weblink')</option>
                         </select>
@@ -287,7 +289,7 @@
                     <div class="col">
                         @php($custom_content_type = evo()->getConfig('custom_contenttype', 'text/html,text/plain,text/xml'))
                         @php($ct = explode(",", $custom_content_type))
-                        <select id="contentType" class="form-control" name="contentType" onchange="documentDirty=true;">
+                        <select id="contentType" class="form-control" name="contentType" data-slang-dirty="1">
                             @for($i = 0; $i < count($ct); $i++)
                                 <option value="{{$ct[$i]}}"{!! ($content['contentType'] == $ct[$i] ? ' selected="selected"' : '') !!}>{{$ct[$i]}}</option>
                             @endfor
@@ -300,7 +302,7 @@
                         <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_opt_contentdispo_help')"></i>
                     </div>
                     <div class="col">
-                        <select id="content_dispo" class="form-control" name="content_dispo" onchange="documentDirty=true;">
+                        <select id="content_dispo" class="form-control" name="content_dispo" data-slang-dirty="1">
                             <option value="0"{!!(empty($content['content_dispo']) ? ' selected="selected"' : '')!!}>@lang('global.inline')</option>
                             <option value="1"{!!(!empty($content['content_dispo']) ? ' selected="selected"' : '')!!}>@lang('global.attachment')</option>
                         </select>

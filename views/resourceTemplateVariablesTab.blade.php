@@ -1,11 +1,11 @@
 @if($templateVariablesTab)
     <!-- Template Variables -->
     @if (!empty($templateVariablesTab['default']))
-        <div class="tab-page" id="templateDefaultVariables">
+        <div class="tab-page slang-resource-tab-page slang-resource-tv-surface" id="templateDefaultVariables" data-slang-tv-surface="default">
             <h2 class="tab">@lang('global.settings_templvars')</h2>
             <script>tpSettings.addTabPage(document.getElementById("templateDefaultVariables"));</script>
 
-            <div class="row form-row">
+            <div class="row form-row" data-slang-tv-wrapper="default">
                 <div class="row-col col-lg-12 col-12">
                     {!!$templateVariablesTab['default']!!}
                 </div>
@@ -14,11 +14,11 @@
     @endif
     @foreach(sLang::langConfig() as $lang)
         @if(!empty($templateVariablesTab[$lang]))
-            <div class="tab-page" id="templateVariables_{{$lang}}">
-                <h2 class="tab">@lang('global.settings_templvars') <span class="badge bg-seigerit">{{$lang}}</span></h2>
+            <div class="tab-page slang-resource-tab-page slang-resource-tv-surface" id="templateVariables_{{$lang}}" data-slang-tv-surface="{{$lang}}">
+                <h2 class="tab">@lang('global.settings_templvars') <span class="badge bg-seigerit slang-lang-badge">{{$lang}}</span></h2>
                 <script>tpSettings.addTabPage(document.getElementById("templateVariables_{{$lang}}"));</script>
 
-                <div class="row form-row">
+                <div class="row form-row" data-slang-tv-wrapper="{{$lang}}">
                     <div class="row-col col-lg-12 col-12">
                         {!!$templateVariablesTab[$lang]!!}
                     </div>

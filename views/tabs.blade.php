@@ -15,25 +15,131 @@
 @endforeach
 
 <style>
-    input[type=checkbox], input[type=radio] {padding:0.5em;}
-    form#mutate input[name="menuindex"] {padding:0.5em;text-align:left;}
-    .form-row .row-col {display:flex; flex-wrap:wrap; flex-direction:row; align-content:start; padding-right:0.75rem;}
-    .form-row .row-col > .row:not(.col):not(.col-sm):not(.col-md):not(.col-lg):not(.col-xl) {-ms-flex:0 0 100%;flex:0 0 100%;max-width:100%;}
-    .form-row-checkbox {align-items:center;}
-    .form-row .col-title-6{width:6rem;}
-    .form-row .col-title-7{width:7rem;}
-    .form-row .col-title{width:8rem;}
-    .form-row .col-title-9{width:9rem;}
-    .form-row .col-title-10{width:10rem;}
-    .form-row .col-title-11{width:11rem;}
-    .form-row .col-auto {padding-left:0;}
-    .warning + [data-tooltip].fa-question-circle {margin:0.3rem 0.5rem 0;}
-    .badge.bg-seigerit{background-color:#0057b8!important;color:#ffd700;border-radius:0;padding:0.25rem;font-size:83%;}
+    .slang-resource-tab-page input[type=checkbox], .slang-resource-tab-page input[type=radio] {padding:0.5em;}
+    .slang-resource-tab-page input[name="menuindex"] {padding:0.5em;text-align:left;}
+    .slang-resource-tab-page > .form-row:first-of-type {margin-top:0;}
+    .slang-resource-tab-page .form-row {margin-bottom:0.25rem;}
+    .slang-resource-tab-page .form-row label {margin-bottom:0.15rem;}
+    .slang-resource-tab-page .form-row .row-col {display:flex; flex-wrap:wrap; flex-direction:row; align-content:start; padding-right:0.75rem;}
+    .slang-resource-tab-page .form-row .row-col > .row:not(.col):not(.col-sm):not(.col-md):not(.col-lg):not(.col-xl) {-ms-flex:0 0 100%;flex:0 0 100%;max-width:100%;}
+    .slang-resource-tab-page .form-row-checkbox {align-items:center;}
+    .slang-resource-tab-page .form-row .col-title-6{width:6rem;}
+    .slang-resource-tab-page .form-row .col-title-7{width:7rem;}
+    .slang-resource-tab-page .form-row .col-title{width:8rem;}
+    .slang-resource-tab-page .form-row .col-title-9{width:9rem;}
+    .slang-resource-tab-page .form-row .col-title-10{width:10rem;}
+    .slang-resource-tab-page .form-row .col-title-11{width:11rem;}
+    .slang-resource-tab-page .form-row .col-auto {padding-left:0;}
+    .slang-resource-tab-page .warning + [data-tooltip].fa-question-circle {margin:0.3rem 0.5rem 0;}
+    .tab-row .slang-lang-badge, .tab-pane .slang-lang-badge{display:inline-block;background-color:#0057b8!important;color:#ffd700!important;border-radius:0;padding:0.25rem;font-size:83%;line-height:1;text-transform:uppercase;vertical-align:baseline;}
+    .slang-resource-tab-page .slang-resource-input {min-width:0;flex:1 1 auto;}
+    .slang-resource-tab-page .evo-ui-btn {display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 0.75rem;border:1px solid #d3d3d3;border-radius:0;background:#fff;color:#555;line-height:1;box-shadow:none;cursor:pointer;}
+    .slang-resource-tab-page .evo-ui-btn:hover, .slang-resource-tab-page .evo-ui-btn:focus {border-color:#80bdff;color:#007bff;outline:0;box-shadow:0 0 0 0.2rem rgba(0,123,255,0.15);}
+    .slang-resource-tab-page .evo-ui-btn:disabled {opacity:0.65;cursor:not-allowed;}
+    .slang-resource-tab-page .evo-ui-btn--icon {width:36px;min-width:36px;padding:0;}
+    .slang-resource-tab-page .evo-ui-btn--primary {color:#007bff;background:#fff;}
+    .slang-resource-tab-page .evo-ui-btn__icon {width:18px;height:18px;display:block;}
+    .slang-resource-tab-page .evo-ui-sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+    .slang-resource-tab-page .slang-resource-translate {flex:0 0 auto;}
+    .slang-resource-tab-page .input-group > .slang-resource-translate {border-top-left-radius:0;border-bottom-left-radius:0;}
+    .slang-resource-tv-surface {width:100%;}
 </style>
 
 <script>
     const which_editor = '{{evo()->getConfig("which_editor")}}';
-    document.querySelectorAll('.js_translate').forEach( btn => {
+    window.sLangResourceTabs = window.sLangResourceTabs || {};
+    window.sLangResourceTabs.markDirty = function () {
+        window.documentDirty = true;
+    };
+    window.sLangResourceTabs.changeState = function (field) {
+        if (document.mutate && document.mutate[field] && typeof window.changestate === 'function') {
+            window.changestate(document.mutate[field]);
+        }
+        window.sLangResourceTabs.markDirty();
+    };
+    window.sLangResourceTabs.adjustMenuIndex = function (step) {
+        if (!document.mutate || !document.mutate.menuindex) {
+            return;
+        }
+
+        const input = document.mutate.menuindex;
+        const next = parseInt(input.value + '', 10) + step;
+        input.value = next > 0 ? next : 0;
+        input.focus();
+        window.sLangResourceTabs.markDirty();
+    };
+    window.sLangResourceTabs.clearField = function (field) {
+        if (document.mutate && document.mutate[field]) {
+            document.mutate[field].value = '';
+            window.sLangResourceTabs.markDirty();
+        }
+    };
+
+    document.addEventListener('change', (event) => {
+        const dirtyTarget = event.target.closest('[data-slang-dirty]');
+        if (dirtyTarget) {
+            window.sLangResourceTabs.markDirty();
+        }
+
+        const stateTarget = event.target.closest('[data-slang-change-state]');
+        if (stateTarget) {
+            window.sLangResourceTabs.changeState(stateTarget.dataset.slangChangeState);
+        }
+
+        const resourceActionTarget = event.target.closest('[data-slang-resource-action]');
+        if (
+            resourceActionTarget
+            && resourceActionTarget.dataset.slangResourceAction === 'template-warning'
+            && typeof window.templateWarning === 'function'
+        ) {
+            window.templateWarning();
+        }
+
+        if (
+            resourceActionTarget
+            && resourceActionTarget.dataset.slangResourceAction === 'change-rte'
+            && typeof window.changeRTE === 'function'
+        ) {
+            window.changeRTE();
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        const actionTarget = event.target.closest('[data-slang-resource-action]');
+        if (!actionTarget) {
+            return;
+        }
+
+        const action = actionTarget.dataset.slangResourceAction;
+
+        if (action === 'select-parent' && typeof window.enableParentSelection === 'function') {
+            window.enableParentSelection(!window.allowParentSelection);
+            return;
+        }
+
+        if (action === 'select-link' && typeof window.enableLinkSelection === 'function') {
+            window.enableLinkSelection(!window.allowLinkSelection);
+            return;
+        }
+
+        if (action === 'browse-file' && typeof window.BrowseFileServer === 'function') {
+            window.BrowseFileServer(actionTarget.dataset.slangTarget || '');
+            return;
+        }
+
+        if (action === 'menuindex-step') {
+            window.sLangResourceTabs.adjustMenuIndex(parseInt(actionTarget.dataset.slangStep || '0', 10));
+            event.preventDefault();
+            return;
+        }
+
+        if (action === 'clear-field') {
+            window.sLangResourceTabs.clearField(actionTarget.dataset.slangField || '');
+            event.preventDefault();
+        }
+    });
+
+    document.querySelectorAll('[data-slang-translate]').forEach( btn => {
         btn.addEventListener("click", (e) => {
             let clicked = e.target.closest('button');
             clicked.disabled = true;

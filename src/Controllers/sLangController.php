@@ -5,7 +5,6 @@ use EvolutionCMS\Models\SiteContent;
 use EvolutionCMS\Models\SiteTmplvar;
 use EvolutionCMS\Models\SiteTmplvarContentvalue;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -143,43 +142,6 @@ class sLangController
             }
             sLangTmplvarContentvalue::updateOrCreate(['tmplvarid' => $tmplvarId, 'contentid' => $resourceId, 'lang' => $langKey], ['value' => $value]);
         }
-    }
-
-    /**
-     * Retrieve translations from the database
-     *
-     * Returns a paginated collection of translations based on the provided search keyword, if present.
-     * If no search keyword is provided, all translations are retrieved.
-     * Translations are ordered by descending `tid` (translation ID).
-     *
-     * @return \Illuminate\Contracts\Pagination\Paginator
-     */
-    public function dictionary()
-    {
-        if (request()->has('search')) {
-            $searchTerm = '%' . request()->search . '%';
-            $where = [];
-            $bindings = [];
-
-            $where[] = '`key` LIKE ?';
-            $bindings[] = $searchTerm;
-
-            foreach (sLang::langConfig() as $item) {
-                $where[] = '`' . $item . '` LIKE ?';
-                $bindings[] = $searchTerm;
-            }
-
-            $translates = sLangTranslate::whereRaw(implode(' OR ', $where), $bindings)
-                ->orderByDesc('tid')
-                ->paginate(17);
-
-            $translates->withPath(sLang::moduleUrl() . '&search=' . urlencode(request()->search));
-        } else {
-            $translates = sLangTranslate::orderByDesc('tid')->paginate(17);
-            $translates->withPath(sLang::moduleUrl());
-        }
-
-        return $translates;
     }
 
     /**
@@ -491,35 +453,21 @@ class sLangController
     }
 
     /**
-     * Saves the translation for a specific phrase.
-     *
-     * @param array $data An array containing the translation data.
-     *                    The array structure should be as follows:
-     *                    [
-     *                        'translate' => [
-     *                            'key' => 'the phrase key',
-     *                            'field1' => 'the translation value for field1',
-     *                            'field2' => 'the translation value for field2',
-     *                            ...
-     *                        ]
-     *                    ]
-     *
-     * @return array|null The updated element row if the translation was successfully saved,
-     *                   null otherwise.
+     * Delete a dictionary phrase and refresh generated language files.
      */
-    public function saveTranslate(array $data)
+    public function deleteTranslate(int $id): bool
     {
-        if (isset($data['translate']) && count($data['translate'])) {
-            $phrase = sLangTranslate::firstOrCreate(['key' => $data['translate']['key']]);
-            foreach ($data['translate'] as $field => $translate) {
-                $phrase->{$field} = $translate;
-            }
-            $phrase->save();
+        $phrase = sLangTranslate::find($id);
 
-            $this->updateLangFiles();
-
-            return $this->getElementRow($phrase);
+        if (!$phrase) {
+            return false;
         }
+
+        $phrase->delete();
+        $this->updateLangFiles();
+        $this->setModifyTables();
+
+        return true;
     }
 
     /**
@@ -533,40 +481,6 @@ class sLangController
     public function view(string $tpl, array $data = [])
     {
         return \View::make('sLang::'.$tpl, $data);
-    }
-
-    /**
-     * Generates the HTML table row for a data element.
-     *
-     * @param object $data The data element to generate the row for.
-     *
-     * @return string The HTML table row.
-     */
-    protected function getElementRow($data)
-    {
-        global $_lang;
-        if (is_file(sLang::basePath() . 'lang/' . evo()->getConfig('manager_language', 'uk') . '.php')) {
-            require_once sLang::basePath() . 'lang/' . evo()->getConfig('manager_language', 'uk') . '.php';
-        }
-
-        $html = '<tr><td>'.$data->key.'</td>';
-        foreach(sLang::langConfig() as $langConfig) {
-            $html .= '<td data-tid="'.$data->tid.'" data-lang="'.$langConfig.'">';
-            if ($langConfig == sLang::langDefault()) {
-                $html .= '<input type="text" class="form-control" name="sLang['.$data->tid.']['.$langConfig.']" value="'.$data->{$langConfig}.'" />';
-            } else {
-                $html .= '<div class="input-group">';
-                $html .= '<input type="text" class="form-control" name="sLang['.$data->tid.']['.$langConfig.']" value="'.$data->{$langConfig}.'" />';
-                $html .= '<span class="input-group-btn">';
-                $html .= '<button class="btn btn-light js_translate" type="button" title="'.__('auto_translate').' '.strtoupper(sLang::langDefault()).' => '.strtoupper($langConfig).'" style="padding:0 5px;color:#0057b8;">';
-                $html .= '<i class="fa fa-language" style="font-size:x-large;"></i>';
-                $html .= '</button></span></div>';
-            }
-            $html .= '</td>';
-        }
-        $html .= '</tr>';
-
-        return $html;
     }
 
     /**

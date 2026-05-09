@@ -1,4 +1,4 @@
-<div class="row form-row">
+<div class="row form-row slang-resource-tv-row" data-slang-tv-row="{{ $row['name'] ?? '' }}" data-slang-tv-type="{{ $row['type'] ?? '' }}">
     <div class="row-col col-lg-12 col-12">
         <div class="row form-row">
             @if(!in_array($row['type'], ['custom_tv:multifields']))

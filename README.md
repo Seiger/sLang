@@ -64,6 +64,41 @@ Run make DB structure with command:
 php artisan migrate
 ```
 
+## Local shared demo workflow
+
+This repo is developed inside the shared Extras demo:
+
+```console
+cd /Users/dmi3yy/PhpstormProjects/Extras/sArticles/demo/core
+composer update seiger/slang --with-all-dependencies
+php artisan package:discover
+php artisan migrate --force
+```
+
+The shared demo also loads `sArticles`, `dmi3yy/dissues`, `sSeo`, `evo-ui`,
+`dTui-editor`, and `eTinyMCE`. Before writing to dIssues task data, create a DB
+backup:
+
+```console
+php /Users/dmi3yy/PhpstormProjects/MiddleDuck/skills/dissues-demo-ops/scripts/dissues-demo.php backup
+```
+
+Run the sLang smoke check from this repo:
+
+```console
+php scripts/demo-smoke.php --url=http://127.0.0.1:8791
+```
+
+Run the targeted regression test for Dictionary CRUD and Settings state:
+
+```console
+php tests/regression/slang-demo-regression.php
+```
+
+The manager module shell now uses evo-ui for Dictionary and Settings. Resource
+edit multilingual tabs remain legacy-compatible and keep the existing
+Evolution mutate form contract.
+
 ## Usage in blade
 Current language:
 ```php
@@ -138,4 +173,7 @@ The `Seiger\sLang\Models\sLangContent` model now applies the current locale auto
   ```
   > **Deprecated:** `langAndTvs()` is deprecated since `1.0.8` and is scheduled for removal in `v1.2`. Use `lang()->withTVs()` instead.
 
-[See full documentation here](https://seiger.github.io/sLang/)
+## Documentation
+
+- [Multilingual dDocs package](docs/README.md)
+- [Legacy published documentation](https://seiger.github.io/sLang/)
