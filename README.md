@@ -23,6 +23,16 @@ industry best practices. With its focus on simplicity and integration, sLang eme
 an essential companion for those aiming to enhance the linguistic versatility of their
 Evolution CMS-powered websites.
 
+> sLang 1.x is the stable maintenance line for the current Evolution CMS manager UI.
+> The upcoming 2.x line will include the new evo-ui based design.
+
+## Versions
+
+| Version | Branch | Status | Notes |
+| --- | --- | --- | --- |
+| 1.x | `1.x` | Stable / maintenance | Current manager UI, bug fixes only |
+| 2.x | `2.x` | In development | New evo-ui based interface |
+
 ## Features
 
 - [x] Automatic Phrase Translation through Google or Custom.
@@ -51,7 +61,7 @@ cd core
 Run php artisan command
 
 ```console
-php artisan package:installrequire seiger/slang "*"
+php artisan package:installrequire seiger/slang "^1.0"
 ```
 
 ```console
