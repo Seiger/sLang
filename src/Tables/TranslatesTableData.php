@@ -107,6 +107,22 @@ class TranslatesTableData
         $this->controller()->deleteTranslate($id);
     }
 
+    public function synchronizeTranslations(array $action = [], ?int $selectedId = null): int
+    {
+        $before = sLangTranslate::query()->count();
+        $this->controller()->parseBlade();
+        $after = sLangTranslate::query()->count();
+
+        return max(0, $after - $before);
+    }
+
+    public function synchronizeAttributes(array $action = [], ?int $selectedId = null): array
+    {
+        return [
+            'title' => __('sLang::global.synchronize_help'),
+        ];
+    }
+
     public function updateInlineField(int $id, string $field, string $value, array $column = []): string
     {
         $translate = sLangTranslate::find($id);
@@ -118,12 +134,7 @@ class TranslatesTableData
         $value = trim($value);
 
         if ($field === 'key') {
-            $value = $this->uniqueKey($value !== '' ? $value : (string) $translate->key, $id);
-            $translate->key = $value;
-            $translate->save();
-            $this->controller()->setModifyTables();
-
-            return $value;
+            return (string) $translate->key;
         }
 
         if (in_array($field, sLang::langConfig(), true)) {

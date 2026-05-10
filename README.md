@@ -86,7 +86,7 @@ php /Users/dmi3yy/PhpstormProjects/MiddleDuck/skills/dissues-demo-ops/scripts/di
 Run the sLang smoke check from this repo:
 
 ```console
-php scripts/demo-smoke.php --url=http://127.0.0.1:8791
+php tests/demo-smoke.php --url=http://127.0.0.1:8791
 ```
 
 Run the targeted regression test for Dictionary CRUD and Settings state:

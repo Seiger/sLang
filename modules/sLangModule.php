@@ -32,6 +32,9 @@ switch ($data['get']) {
     default:
         $action = isset($_REQUEST['action']) ? $_REQUEST['action'] : "";
         switch ($action) {
+            case "synchronize":
+                $sLangController->parseBlade();
+                break;
             case "translate-only":
                 $result = sLang::getAutomaticTranslate($_POST['text'], $_POST['source'], $_POST['target']);
                 die($result);

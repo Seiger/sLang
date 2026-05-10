@@ -3,7 +3,7 @@
 return [
     'key' => 'slang.translates',
     'provider' => \Seiger\sLang\Tables\TranslatesTableData::class,
-    'wire_target' => 'search,perPage,setSort,switchView,createInlineRow,updateInlineField,runInlineFieldAction,runHeaderAction,openDeleteModal,closeDeleteModal,deleteConfirmed,goToPage,firstPage,previousPage,nextPage,goLastPage',
+    'wire_target' => 'search,perPage,setSort,switchView,createInlineRow,runTableAction,updateInlineField,runInlineFieldAction,runHeaderAction,openDeleteModal,closeDeleteModal,deleteConfirmed,goToPage,firstPage,previousPage,nextPage,goLastPage',
     'per_page' => 10,
     'per_page_options' => [5, 10, 20, 30, 50, 100],
     'views' => ['table'],
@@ -39,6 +39,17 @@ return [
             'icon_only' => true,
             'selection' => 'single',
         ],
+        [
+            'key' => 'synchronize',
+            'type' => 'wire',
+            'provider' => 'synchronizeTranslations',
+            'icon' => 'refresh',
+            'label' => 'sLang::global.synchronize',
+            'attributes_provider' => 'synchronizeAttributes',
+            'tone' => 'success',
+            'variant' => 'filled',
+            'placement' => 'controls',
+        ],
     ],
     'columns' => [
         [
@@ -48,7 +59,7 @@ return [
             'class' => 'evo-ui-table__title-column',
             'sortable' => true,
             'sort_field' => 'key',
-            'editable' => true,
+            'editable' => false,
             'rules' => ['required', 'string', 'max:256'],
         ],
     ],

@@ -117,12 +117,18 @@ function assertTableConfig(string $root): void
     assertSame([5, 10, 20, 30, 50, 100], array_values((array) ($config['per_page_options'] ?? [])), 'Dictionary per-page options must use the standard set.');
     assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'runInlineFieldAction'), 'Dictionary table must allow inline auto-translate actions.');
     assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'runHeaderAction'), 'Dictionary table must allow column header actions.');
+    assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'runTableAction'), 'Dictionary table must allow toolbar provider actions.');
     assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'openDeleteModal'), 'Dictionary table must expose delete modal action.');
     assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'deleteConfirmed'), 'Dictionary table must expose delete confirmation action.');
 
     $actions = array_column((array) ($config['actions'] ?? []), 'key');
-    assertTrue(!in_array('synchronize', $actions, true), 'Dictionary must not render the legacy synchronize/reload action.');
+    assertTrue(in_array('synchronize', $actions, true), 'Dictionary toolbar must expose synchronize action.');
     assertTrue(in_array('delete', $actions, true), 'Dictionary toolbar must expose selected-row delete action.');
+    assertSame(false, (bool) ($config['columns'][0]['editable'] ?? true), 'Dictionary key column must not be editable online.');
+    $syncAction = collect((array) ($config['actions'] ?? []))->firstWhere('key', 'synchronize');
+    assertSame('wire', (string) ($syncAction['type'] ?? ''), 'Dictionary synchronize action must be Livewire-based.');
+    assertSame('synchronizeTranslations', (string) ($syncAction['provider'] ?? ''), 'Dictionary synchronize action must call provider method.');
+    assertSame('controls', (string) ($syncAction['placement'] ?? ''), 'Dictionary synchronize action must be placed near search controls.');
 
     $rowActions = array_column((array) ($config['row_actions'] ?? []), 'key');
     assertTrue(in_array('delete', $rowActions, true), 'Dictionary rows must expose delete action.');
@@ -174,6 +180,10 @@ function assertDictionaryCrud(): int
 
     $translate = sLangTranslate::query()->find($id);
     assertTrue($translate !== null, 'Created dictionary row was not found.');
+    $originalKey = (string) $translate->key;
+    assertSame($originalKey, $table->updateInlineField($id, 'key', 'should.not.change.' . date('YmdHis')), 'Dictionary KEY inline update must be ignored.');
+    $translate->refresh();
+    assertSame($originalKey, (string) $translate->key, 'Dictionary KEY must remain unchanged after attempted inline edit.');
     assertSame($uk, (string) $translate->uk, 'UK inline edit was not persisted.');
     assertSame($en, (string) $translate->en, 'EN inline edit was not persisted.');
     assertSame((string) $translate->key, $table->deleteName($id), 'Delete modal must use translation key as record name.');
@@ -189,7 +199,6 @@ function assertDictionaryDelete(): void
     $id = $table->createInlineRow();
     assertTrue($id > 0, 'Dictionary delete regression could not create a row.');
 
-    $table->updateInlineField($id, 'key', 'delete.translation.' . date('YmdHis'));
     $table->deleteRow($id);
 
     assertTrue(sLangTranslate::query()->find($id) === null, 'Dictionary deleteRow did not remove the row.');

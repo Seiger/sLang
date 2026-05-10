@@ -178,7 +178,7 @@ function smokeHttp(string $demoCore, string $baseUrl): void
         }
     }
 
-    foreach (['data-evo-ui-root', 'slang.module-panel', 'slang-translates', 'evo-ui-table-toolbar'] as $marker) {
+    foreach (['data-evo-ui-root', 'slang.module-panel', 'slang-translates', 'evo-ui-table-toolbar', 'runTableAction', 'synchronize'] as $marker) {
         if (!str_contains($html, $marker)) {
             fwrite(STDERR, "HTTP smoke failed: missing {$marker}\n");
             exit(1);

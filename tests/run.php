@@ -91,12 +91,24 @@ slang_group('dictionary-table', function (): void {
         slang_assert(($table['inline']['save_provider'] ?? null) === 'updateInlineField', 'Dictionary table must save fields inline.');
         slang_assert(str_contains((string) ($table['wire_target'] ?? ''), 'runInlineFieldAction'), 'Dictionary table must expose inline actions.');
         slang_assert(str_contains((string) ($table['wire_target'] ?? ''), 'runHeaderAction'), 'Dictionary table must expose header actions.');
+        slang_assert(str_contains((string) ($table['wire_target'] ?? ''), 'runTableAction'), 'Dictionary table must expose toolbar provider actions.');
         slang_assert(str_contains((string) ($table['wire_target'] ?? ''), 'openDeleteModal'), 'Dictionary table must expose standard delete modal action.');
         slang_assert(str_contains((string) ($table['wire_target'] ?? ''), 'deleteConfirmed'), 'Dictionary table must expose standard delete confirmation action.');
         slang_assert(($table['per_page'] ?? null) === 10, 'Dictionary per-page default must be 10.');
         slang_assert(($table['per_page_options'] ?? []) === [5, 10, 20, 30, 50, 100], 'Dictionary per-page options must use the standard set.');
         slang_assert(($table['search']['width'] ?? null) === 'sm', 'Dictionary search must stay compact.');
-        slang_assert(($table['columns'][0]['editable'] ?? false) === true, 'Dictionary key column must be editable.');
+        slang_assert(($table['columns'][0]['editable'] ?? true) === false, 'Dictionary key column must not be editable online.');
+        slang_assert(in_array('synchronize', array_column((array) ($table['actions'] ?? []), 'key'), true), 'Dictionary toolbar must include synchronize action.');
+        $syncAction = null;
+        foreach ((array) ($table['actions'] ?? []) as $action) {
+            if (is_array($action) && ($action['key'] ?? null) === 'synchronize') {
+                $syncAction = $action;
+                break;
+            }
+        }
+        slang_assert(($syncAction['type'] ?? null) === 'wire', 'Dictionary synchronize action must avoid iframe reload.');
+        slang_assert(($syncAction['provider'] ?? null) === 'synchronizeTranslations', 'Dictionary synchronize action must call provider through Livewire.');
+        slang_assert(($syncAction['placement'] ?? null) === 'controls', 'Dictionary synchronize action must render near search controls.');
         slang_assert(in_array('delete', array_column((array) ($table['actions'] ?? []), 'key'), true), 'Dictionary toolbar must include delete action for selected row.');
         slang_assert(in_array('delete', array_column((array) ($table['row_actions'] ?? []), 'key'), true), 'Dictionary rows must include delete action.');
     });
@@ -116,6 +128,8 @@ slang_group('dictionary-table', function (): void {
             'public function createInlineRow',
             'public function deleteName',
             'public function deleteRow',
+            'public function synchronizeTranslations',
+            'public function synchronizeAttributes',
             'public function updateInlineField',
             'public function autoTranslateInlineField',
             'public function autoTranslateEmptyColumn',
@@ -237,7 +251,6 @@ slang_group('release-cleanup', function (): void {
         $bootstrap = slang_read('src/sLang.php');
 
         foreach ([
-            'case "synchronize"',
             'case "translate"',
             'case "update"',
             'case "add-new"',
@@ -246,6 +259,9 @@ slang_group('release-cleanup', function (): void {
         ] as $marker) {
             slang_assert(!str_contains($module, $marker), 'Manager module must not expose migrated legacy action: ' . $marker);
         }
+
+        slang_assert_contains('case "synchronize"', $module, 'Dictionary synchronize action must remain available for template key scanning.');
+        slang_assert_contains('parseBlade', $module, 'Dictionary synchronize action must call the legacy backend parser.');
 
         foreach ([
             'case "translate-only"',
@@ -398,6 +414,9 @@ slang_group('regression-entrypoint', function (): void {
         ] as $marker) {
             slang_assert_contains($marker, $script, 'Missing regression script marker: ' . $marker);
         }
+
+        slang_assert(is_file(slang_path('tests/demo-smoke.php')), 'Demo smoke runner must live with tests.');
+        slang_assert(!is_file(slang_path('scripts/demo-smoke.php')), 'Demo smoke runner must not live in production scripts.');
     });
 });
 
