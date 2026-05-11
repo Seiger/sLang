@@ -348,37 +348,97 @@ class sLangController
     }
 
     /**
-     * Parse blade views to extract translations and add them to the database if necessary
-     *
-     * @return void
+     * Discover translation keys used by project Blade views.
+     */
+    public function discoveredTranslationKeys(): array
+    {
+        $list = [];
+
+        if (!is_dir(EVO_BASE_PATH . 'views')) {
+            return [];
+        }
+
+        $views = Storage::disk('public')->allFiles('views');
+
+        if (!is_array($views) || count($views) === 0) {
+            return [];
+        }
+
+        foreach ($views as $view) {
+            if (!Str::of($view)->contains('.blade.')) {
+                continue;
+            }
+
+            $data = file_get_contents(EVO_BASE_PATH . $view);
+            preg_match_all("/@lang\('\K.+?(?='\))/", $data, $match);
+
+            if (!is_array($match) || !is_array($match[0] ?? null) || count($match[0]) === 0) {
+                continue;
+            }
+
+            foreach ($match[0] as $item) {
+                if (Str::of($item)->contains('::') || str_starts_with($item, 'global.')) {
+                    continue;
+                }
+
+                $list[] = Str::limit(str_replace(["@lang('", "')"], '', $item), 252, '...');
+            }
+        }
+
+        return array_values(array_unique($list));
+    }
+
+    /**
+     * Find obsolete parser-managed translation keys that can be safely cleaned.
+     */
+    public function obsoleteTranslationKeys(?int $limit = null): array
+    {
+        $discovered = array_flip($this->discoveredTranslationKeys());
+        $default = sLang::langDefault();
+        $keys = [];
+
+        foreach (sLangTranslate::all() as $translate) {
+            $key = (string) $translate->key;
+
+            if (!$this->isObsoleteTranslationCandidate($translate, $key, $default, $discovered)) {
+                continue;
+            }
+
+            $keys[] = $key;
+
+            if ($limit !== null && count($keys) >= $limit) {
+                break;
+            }
+        }
+
+        return $keys;
+    }
+
+    /**
+     * Delete obsolete parser-managed translation keys and refresh language files.
+     */
+    public function cleanupObsoleteTranslations(): int
+    {
+        $keys = $this->obsoleteTranslationKeys();
+
+        if (count($keys) === 0) {
+            return 0;
+        }
+
+        $deleted = sLangTranslate::query()->whereIn('key', $keys)->delete();
+        $this->updateLangFiles();
+        $this->setModifyTables();
+
+        return (int) $deleted;
+    }
+
+    /**
+     * Parse blade views to extract translations and add them to the database if necessary.
      */
     public function parseBlade(): void
     {
-        $list = [];
+        $list = $this->discoveredTranslationKeys();
         $langDefault = sLang::langDefault();
-        if (is_dir(EVO_BASE_PATH . 'views')) {
-            $views = Storage::disk('public')->allFiles('views');
-
-            if (is_array($views) && count($views)) {
-                foreach ($views as $view) {
-                    if (Str::of($view)->contains('.blade.')) {
-                        $data = file_get_contents(EVO_BASE_PATH . $view);
-                        preg_match_all("/@lang\('\K.+?(?='\))/", $data, $match);
-
-                        if (is_array($match) && is_array($match[0]) && count($match[0])) {
-                            foreach ($match[0] as $item) {
-                                if (!Str::of($item)->contains('::')) {
-                                    if (!str_starts_with($item, 'global.')) {
-                                        $list[] = str_replace(["@lang('", "')"], '', $item);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        $list = array_unique($list);
 
         $sLangs = sLangTranslate::all()->pluck('key')->toArray();
 
@@ -396,6 +456,19 @@ class sLangController
         }
 
         $this->updateLangFiles();
+    }
+
+    protected function isObsoleteTranslationCandidate(sLangTranslate $translate, string $key, string $default, array $discovered): bool
+    {
+        if ($key === '' || isset($discovered[$key])) {
+            return false;
+        }
+
+        if (str_starts_with($key, 'global.') || str_starts_with($key, 'new.translation.')) {
+            return false;
+        }
+
+        return trim((string) ($translate->{$default} ?? '')) === $key;
     }
 
     /**

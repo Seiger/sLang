@@ -86,4 +86,11 @@
     'multilang_tvs' => 'Мультиязычные параметры',
     'multilang_tvs_help' => 'TV-параметры, значения которых нужно хранить отдельно для каждого языка.',
     'select_multilang_tvs' => 'Выберите параметр',
+    'cleanup_obsolete' => 'Устаревшие переводы',
+    'cleanup_obsolete_help' => 'Удаляет только parser-managed ключи, которых больше нет в Blade-шаблонах. Ручные ключи new.translation.* не трогает.',
+    'cleanup_obsolete_action' => 'Очистить устаревшие',
+    'cleanup_obsolete_confirm' => 'Удалить устаревшие parser-managed ключи переводов? Это действие нельзя отменить.',
+    'cleanup_obsolete_count' => '{0} Нет кандидатов для очистки|{1} :count кандидат для очистки|[2,*] :count кандидатов для очистки',
+    'cleanup_obsolete_done' => '{0} Ничего не удалено|{1} Удалён :count ключ|[2,*] Удалено :count ключей',
+    'cleanup_obsolete_empty' => 'Все найденные ключи актуальны или защищены как ручные.',
 ];

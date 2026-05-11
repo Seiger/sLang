@@ -76,6 +76,8 @@ slang_group('package', function () use ($root): void {
         $composer = json_decode((string) file_get_contents($root . '/composer.json'), true, 512, JSON_THROW_ON_ERROR);
 
         slang_assert(isset($composer['require']['evolution-cms/evo-ui']), 'sLang must require evolution-cms/evo-ui.');
+        slang_assert(($composer['require']['evolution-cms/evo-ui'] ?? null) === '^1.0', 'sLang must pin evo-ui to the release line.');
+        slang_assert(($composer['license'] ?? null) === 'GPL-3.0-or-later', 'Composer license must use a non-deprecated SPDX identifier.');
         slang_assert(($composer['scripts']['test'] ?? null) === 'php tests/run.php', 'Composer test script must run the repeatable compatibility suite.');
         slang_assert(($composer['extra']['laravel']['priority']['Seiger\\sLang\\sLangServiceProvider'] ?? null) === 20, 'sLang service provider priority must stay first for language routing.');
     });
@@ -142,9 +144,19 @@ slang_group('dictionary-table', function (): void {
         }
 
         $controller = slang_read('src/Controllers/sLangController.php');
-        slang_assert_contains('public function deleteTranslate', $controller, 'Controller must expose deleteTranslate for provider-backed row delete.');
-        slang_assert_contains('$phrase->delete();', $controller, 'deleteTranslate must delete dictionary row.');
-        slang_assert_contains('$this->updateLangFiles();', $controller, 'deleteTranslate must refresh generated language files.');
+        foreach ([
+            'public function deleteTranslate',
+            'public function discoveredTranslationKeys',
+            'public function obsoleteTranslationKeys',
+            'public function cleanupObsoleteTranslations',
+            'protected function isObsoleteTranslationCandidate',
+            '$phrase->delete();',
+            '$this->updateLangFiles();',
+            "str_starts_with(\$key, 'new.translation.')",
+            "trim((string) (\$translate->{\$default} ?? '')) === \$key",
+        ] as $marker) {
+            slang_assert_contains($marker, $controller, 'Missing controller dictionary lifecycle marker: ' . $marker);
+        }
     });
 });
 
@@ -152,6 +164,7 @@ slang_group('settings', function (): void {
     slang_test('settings panel uses evo-ui choices and dirty-state form contract', function (): void {
         $component = slang_read('src/Livewire/SettingsPanel.php');
         $view = slang_read('views/livewire/settings-panel.blade.php');
+        $styles = slang_read('assets/css/manager.css');
 
         foreach ([
             'public bool $dirty = false;',
@@ -160,6 +173,8 @@ slang_group('settings', function (): void {
             'public function removeChoice',
             'public function toggleTv',
             'public function removeTv',
+            'public function cleanupObsoleteTranslations',
+            'obsoleteTranslationKeys',
             "dispatch('evo-ui:form.saved'",
             'normalizeLanguageSelections',
             'ensureDefaultLanguage',
@@ -176,13 +191,44 @@ slang_group('settings', function (): void {
             'toggle-method="toggleTv"',
             'remove-method="removeTv"',
             ':disabled="!$dirty"',
+            'wire:click="cleanupObsoleteTranslations"',
+            'wire:confirm="@lang(\'sLang::global.cleanup_obsolete_confirm\')"',
+            'cleanup_obsolete_count',
+            'slang-settings__segments',
+            'slang-settings__maintenance',
+        ] as $marker) {
+            slang_assert_contains($marker, $view, 'Missing settings view marker: ' . $marker);
+        }
+
+        foreach ([
             'justify-content: flex-end;',
             'justify-self: end;',
             'text-align: right;',
             'justify-content: flex-start;',
             'slang-settings__segments',
+            'slang-settings__maintenance',
+            'justify-content: space-between;',
+            'justify-items: start;',
         ] as $marker) {
-            slang_assert_contains($marker, $view, 'Missing settings view marker: ' . $marker);
+            slang_assert_contains($marker, $styles, 'Missing settings stylesheet marker: ' . $marker);
+        }
+
+        slang_assert(!str_contains($view, '<style>'), 'Settings panel must load package CSS instead of inline styles.');
+
+        foreach (['en', 'uk', 'ru', 'fr'] as $locale) {
+            $translations = slang_config('lang/' . $locale . '/global.php');
+
+            foreach ([
+                'cleanup_obsolete',
+                'cleanup_obsolete_help',
+                'cleanup_obsolete_action',
+                'cleanup_obsolete_confirm',
+                'cleanup_obsolete_count',
+                'cleanup_obsolete_done',
+                'cleanup_obsolete_empty',
+            ] as $key) {
+                slang_assert(isset($translations[$key]), 'Missing cleanup translation key for ' . $locale . ': ' . $key);
+            }
         }
     });
 });
@@ -206,16 +252,27 @@ slang_group('module-shell', function (): void {
 
     slang_test('manager chrome keeps module title and standard module icon stable', function (): void {
         $shell = slang_read('views/index.blade.php');
+        $managerScript = slang_read('assets/js/manager.js');
 
         foreach ([
             "\$moduleTitle = __('sLang::global.module_title')",
-            'const moduleTitle = @json($moduleTitle);',
+            'css/manager.css',
+            'js/manager.js',
+            'data-slang-module-title',
+        ] as $marker) {
+            slang_assert_contains($marker, $shell, 'Missing manager chrome marker: ' . $marker);
+        }
+
+        foreach ([
+            "document.querySelector('[data-slang-module-title]')",
             'const syncManagerChrome = () => {',
             'doc.title = moduleTitle;',
             'new MutationObserver(syncManagerChrome)',
         ] as $marker) {
-            slang_assert_contains($marker, $shell, 'Missing manager chrome marker: ' . $marker);
+            slang_assert_contains($marker, $managerScript, 'Missing manager asset marker: ' . $marker);
         }
+
+        slang_assert(!str_contains($shell, '<script>'), 'Module shell must load manager JS from package assets.');
 
         foreach ([
             'slang-manager-menu-icon',
@@ -333,6 +390,9 @@ slang_group('resource-tabs', function (): void {
         slang_assert(!str_contains(slang_read('views/resourceSettingsTab.blade.php'), 'onclick='), 'Resource Settings must route avoidable click handlers through data attributes.');
         slang_assert(!str_contains($tabs, '<x-evo::table.livewire'), 'Legacy resource tab boundary must not instantiate evo-ui module tables.');
         slang_assert(!str_contains($general, 'data-evo-form'), 'Legacy resource tabs must not masquerade as evo-ui module forms.');
+        slang_assert_contains('form#mutate', slang_read('docs/en/resource-bridge.md'), 'Resource bridge docs must document the Evolution form boundary.');
+        slang_assert_contains('tpSettings.addTabPage', slang_read('docs/en/resource-bridge.md'), 'Resource bridge docs must document the TabPane boundary.');
+        slang_assert_contains('window.sLangResourceTabs', slang_read('docs/en/resource-bridge.md'), 'Resource bridge docs must document the sLang resource adapter.');
     });
 });
 
@@ -356,7 +416,7 @@ slang_group('docs', function (): void {
         slang_assert(!is_dir(slang_path('docs/ua')), 'Ukrainian docs must use uk, not ua.');
 
         $languages = ['uk', 'en', 'de', 'fr', 'pl'];
-        $pages = ['README.md', 'getting-started.md', 'management-tabs.md', 'use-in-blade.md'];
+        $pages = ['README.md', 'getting-started.md', 'management-tabs.md', 'use-in-blade.md', 'resource-bridge.md'];
 
         foreach ($languages as $language) {
             foreach ($pages as $page) {
@@ -409,8 +469,10 @@ slang_group('regression-entrypoint', function (): void {
             'assertDictionaryCrud',
             'assertBulkAutoTranslateEmptyColumn',
             'assertSettingsPanel',
+            'assertObsoleteCleanup',
             'assertChoicesRenderCleanHtml',
             'SlangRegressionBulkTableData',
+            'SlangRegressionCleanupController',
         ] as $marker) {
             slang_assert_contains($marker, $script, 'Missing regression script marker: ' . $marker);
         }

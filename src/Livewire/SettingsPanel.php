@@ -11,6 +11,7 @@ class SettingsPanel extends Component
     public array $cleanData = [];
     public bool $saved = false;
     public bool $dirty = false;
+    public ?int $cleanedObsoleteTranslations = null;
 
     public function mount(): void
     {
@@ -25,6 +26,7 @@ class SettingsPanel extends Component
 
         $this->normalizeLanguageSelections();
         $this->saved = false;
+        $this->cleanedObsoleteTranslations = null;
         $this->dirty = $this->snapshot($this->data) !== $this->snapshot($this->cleanData);
     }
 
@@ -137,8 +139,17 @@ class SettingsPanel extends Component
         $this->dispatch('evo-ui:form.saved', preset: 'slang.settings');
     }
 
+    public function cleanupObsoleteTranslations(): void
+    {
+        $controller = new sLangController();
+        $this->cleanedObsoleteTranslations = $controller->cleanupObsoleteTranslations();
+        $this->saved = false;
+    }
+
     public function render()
     {
+        $obsoleteTranslationKeys = $this->obsoleteTranslationKeys();
+
         return view('sLang::livewire.settings-panel', [
             'languages' => $this->languageOptions(),
             'frontendLanguages' => $this->frontendLanguageOptions(),
@@ -149,6 +160,9 @@ class SettingsPanel extends Component
             'templateVariableOptions' => $this->templateVariableOptions(),
             'saved' => $this->saved,
             'dirty' => $this->dirty,
+            'cleanedObsoleteTranslations' => $this->cleanedObsoleteTranslations,
+            'obsoleteTranslationCount' => count($obsoleteTranslationKeys),
+            'obsoleteTranslationSample' => array_slice($obsoleteTranslationKeys, 0, 5),
         ]);
     }
 
@@ -277,6 +291,11 @@ class SettingsPanel extends Component
         $name = trim((string) ($variable->name ?? ''));
 
         return ($caption !== '' ? $caption : $name) . ($name !== '' ? ' (' . $name . ')' : '');
+    }
+
+    protected function obsoleteTranslationKeys(): array
+    {
+        return (new sLangController())->obsoleteTranslationKeys();
     }
 
     protected function snapshot(array $data): string

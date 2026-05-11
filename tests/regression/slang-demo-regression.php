@@ -57,6 +57,27 @@ class SlangRegressionBulkTableData extends TranslatesTableData
     }
 }
 
+class SlangRegressionCleanupController extends sLangController
+{
+    public function __construct(protected array $discoveredKeys)
+    {
+    }
+
+    public function discoveredTranslationKeys(): array
+    {
+        return $this->discoveredKeys;
+    }
+
+    public function setModifyTables()
+    {
+        return true;
+    }
+
+    protected function updateLangFiles(): void
+    {
+    }
+}
+
 try {
     assertAutoload();
     assertTableConfig($root);
@@ -66,6 +87,7 @@ try {
     assertDictionaryDelete();
     assertBulkAutoTranslateEmptyColumn();
     assertSettingsPanel();
+    assertObsoleteCleanup();
     assertChoicesRenderCleanHtml();
 } finally {
     if ($createdId !== null) {
@@ -334,6 +356,61 @@ function assertSettingsPanel(): void
     pass('Settings panel regression: OK');
 }
 
+function assertObsoleteCleanup(): void
+{
+    $default = sLang::langDefault();
+    $suffix = date('YmdHis');
+    $staleKey = 'cleanup.translation.stale.' . $suffix;
+    $manualKey = 'new.translation.cleanup.' . $suffix;
+    $editedKey = 'cleanup.translation.edited.' . $suffix;
+    $currentKey = 'cleanup.translation.current.' . $suffix;
+
+    $protectedDiscoveredKeys = sLangTranslate::query()
+        ->get()
+        ->filter(static fn (sLangTranslate $translate): bool => trim((string) ($translate->{$default} ?? '')) === (string) $translate->key)
+        ->pluck('key')
+        ->map(static fn ($key): string => (string) $key)
+        ->all();
+    $protectedDiscoveredKeys[] = $currentKey;
+
+    $rows = [];
+
+    try {
+        foreach ([
+            $staleKey => $staleKey,
+            $manualKey => $manualKey,
+            $editedKey => 'Edited default text',
+            $currentKey => $currentKey,
+        ] as $key => $defaultValue) {
+            $row = sLangTranslate::create(['key' => $key]);
+            $row->{$default} = $defaultValue;
+            $row->save();
+            $rows[] = $row;
+        }
+
+        $controller = new SlangRegressionCleanupController($protectedDiscoveredKeys);
+        $preview = $controller->obsoleteTranslationKeys();
+
+        assertTrue(in_array($staleKey, $preview, true), 'Obsolete cleanup preview must include stale parser-managed key.');
+        assertTrue(!in_array($manualKey, $preview, true), 'Obsolete cleanup preview must protect manual new.translation keys.');
+        assertTrue(!in_array($editedKey, $preview, true), 'Obsolete cleanup preview must protect keys with edited default text.');
+        assertTrue(!in_array($currentKey, $preview, true), 'Obsolete cleanup preview must keep discovered keys.');
+
+        $deleted = $controller->cleanupObsoleteTranslations();
+        assertSame(1, $deleted, 'Obsolete cleanup must delete only the stale parser-managed key.');
+        assertTrue(sLangTranslate::query()->where('key', $staleKey)->doesntExist(), 'Stale parser-managed key was not deleted.');
+        assertTrue(sLangTranslate::query()->where('key', $manualKey)->exists(), 'Manual new.translation key must not be deleted.');
+        assertTrue(sLangTranslate::query()->where('key', $editedKey)->exists(), 'Edited default key must not be deleted.');
+        assertTrue(sLangTranslate::query()->where('key', $currentKey)->exists(), 'Discovered key must not be deleted.');
+    } finally {
+        foreach ([$staleKey, $manualKey, $editedKey, $currentKey] as $key) {
+            sLangTranslate::query()->where('key', $key)->delete();
+        }
+    }
+
+    pass('Obsolete cleanup regression: OK');
+}
+
 function assertChoicesRenderCleanHtml(): void
 {
     $html = view('evo::components.choices', [
@@ -395,6 +472,8 @@ function cleanupGeneratedRows(PDO $pdo, string $table): void
     $pdo->exec("delete from {$table} where \"key\" like 'smoke.translation.%'");
     $pdo->exec("delete from {$table} where \"key\" like 'bulk.translation.%'");
     $pdo->exec("delete from {$table} where \"key\" like 'delete.translation.%'");
+    $pdo->exec("delete from {$table} where \"key\" like 'cleanup.translation.%'");
+    $pdo->exec("delete from {$table} where \"key\" like 'new.translation.cleanup.%'");
 }
 
 function assertSame(mixed $expected, mixed $actual, string $message): void

@@ -125,134 +125,37 @@
                     />
                 </div>
             </div>
+
+            <div class="slang-settings__row">
+                <span class="slang-settings__label">{!! $labelHelp(__('sLang::global.cleanup_obsolete'), __('sLang::global.cleanup_obsolete_help')) !!}</span>
+                <div class="slang-settings__control">
+                    <div class="slang-settings__maintenance">
+                        <div class="slang-settings__maintenance-copy">
+                            <strong>{{ trans_choice('sLang::global.cleanup_obsolete_count', $obsoleteTranslationCount, ['count' => $obsoleteTranslationCount]) }}</strong>
+                            @if($obsoleteTranslationCount > 0)
+                                <span>{{ implode(', ', $obsoleteTranslationSample) }}@if($obsoleteTranslationCount > count($obsoleteTranslationSample)), ...@endif</span>
+                            @else
+                                <span>@lang('sLang::global.cleanup_obsolete_empty')</span>
+                            @endif
+                            @if($cleanedObsoleteTranslations !== null)
+                                <em>{{ trans_choice('sLang::global.cleanup_obsolete_done', $cleanedObsoleteTranslations, ['count' => $cleanedObsoleteTranslations]) }}</em>
+                            @endif
+                        </div>
+                        <button
+                            type="button"
+                            class="evo-ui-btn evo-ui-btn--danger"
+                            wire:click="cleanupObsoleteTranslations"
+                            wire:confirm="@lang('sLang::global.cleanup_obsolete_confirm')"
+                            wire:loading.attr="disabled"
+                            wire:target="cleanupObsoleteTranslations"
+                            @disabled($obsoleteTranslationCount === 0)
+                        >
+                            <x-evo::icon name="trash" class="evo-ui-btn__icon" />
+                            <span>@lang('sLang::global.cleanup_obsolete_action')</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </section>
     </div>
 </form>
-
-<style>
-    .slang-settings {
-        display: grid;
-        gap: 14px;
-    }
-
-    .slang-settings__heading {
-        min-height: 34px;
-    }
-
-    .slang-settings__toolbar {
-        align-items: center;
-        gap: 8px;
-        border: 0;
-        border-radius: 0;
-        overflow: visible;
-    }
-
-    .slang-settings__saved {
-        color: var(--evo-ui-success);
-        font-size: 12px;
-        font-weight: 650;
-        white-space: nowrap;
-    }
-
-    .slang-settings__section {
-        display: grid;
-        gap: 12px;
-        padding: 2px 0;
-    }
-
-    .slang-settings__section-title {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--evo-ui-text);
-        font-weight: 650;
-    }
-
-    .slang-settings__section-title svg {
-        width: 18px;
-        height: 18px;
-        color: var(--evo-ui-muted);
-    }
-
-    .slang-settings__row {
-        display: grid;
-        grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
-        gap: 12px;
-        align-items: start;
-    }
-
-    .slang-settings__control--compound {
-        display: grid;
-        grid-template-columns: minmax(220px, 300px) max-content;
-        gap: 14px;
-        align-items: center;
-    }
-
-    .slang-settings__url-toggle {
-        min-height: 30px;
-        margin: 0;
-        white-space: nowrap;
-    }
-
-    .slang-settings__label {
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-end;
-        justify-self: end;
-        gap: 6px;
-        min-height: 34px;
-        color: var(--evo-ui-muted);
-        font-size: 13px;
-        font-weight: 650;
-        text-align: right;
-    }
-
-    .slang-settings__control,
-    .slang-settings__choices {
-        min-width: 0;
-    }
-
-    .slang-settings__choices .evo-ui-choices__control {
-        cursor: pointer;
-    }
-
-    .slang-settings__segments {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(118px, 150px));
-        gap: 8px;
-    }
-
-    .slang-settings__segment {
-        display: grid;
-        gap: 4px;
-    }
-
-    .slang-settings__segment span {
-        color: var(--evo-ui-muted);
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
-    .slang-settings__segment .evo-ui-input {
-        min-height: 30px;
-        padding-inline: 9px;
-    }
-
-    @media (max-width: 760px) {
-        .slang-settings__row,
-        .slang-settings__control--compound {
-            grid-template-columns: 1fr;
-        }
-
-        .slang-settings__url-toggle {
-            justify-self: start;
-        }
-
-        .slang-settings__label {
-            justify-content: flex-start;
-            justify-self: start;
-            text-align: left;
-        }
-    }
-</style>

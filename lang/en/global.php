@@ -86,4 +86,11 @@
     'multilang_tvs' => 'Multilingual parameters',
     'multilang_tvs_help' => 'Template variables that should store separate values for each language.',
     'select_multilang_tvs' => 'Select parameter',
+    'cleanup_obsolete' => 'Obsolete translations',
+    'cleanup_obsolete_help' => 'Deletes only parser-managed keys no longer found in Blade templates. Manual new.translation.* keys stay safe.',
+    'cleanup_obsolete_action' => 'Clean obsolete',
+    'cleanup_obsolete_confirm' => 'Delete obsolete parser-managed translation keys? This action cannot be undone.',
+    'cleanup_obsolete_count' => '{0} No cleanup candidates|{1} :count cleanup candidate|[2,*] :count cleanup candidates',
+    'cleanup_obsolete_done' => '{0} Nothing deleted|{1} Deleted :count key|[2,*] Deleted :count keys',
+    'cleanup_obsolete_empty' => 'All discovered keys are current or protected as manual entries.',
 ];

@@ -86,4 +86,11 @@
     'multilang_tvs' => 'Paramètres multilingues',
     'multilang_tvs_help' => 'Variables de template qui doivent stocker des valeurs séparées pour chaque langue.',
     'select_multilang_tvs' => 'Sélectionner un paramètre',
+    'cleanup_obsolete' => 'Traductions obsoletes',
+    'cleanup_obsolete_help' => 'Supprime seulement les clés gerees par le parseur qui ne sont plus presentes dans les templates Blade. Les cles manuelles new.translation.* restent protegees.',
+    'cleanup_obsolete_action' => 'Nettoyer les obsoletes',
+    'cleanup_obsolete_confirm' => 'Supprimer les cles de traduction obsoletes gerees par le parseur ? Cette action est irreversible.',
+    'cleanup_obsolete_count' => '{0} Aucun candidat au nettoyage|{1} :count candidat au nettoyage|[2,*] :count candidats au nettoyage',
+    'cleanup_obsolete_done' => '{0} Rien supprime|{1} :count cle supprimee|[2,*] :count cles supprimees',
+    'cleanup_obsolete_empty' => 'Toutes les cles detectees sont actuelles ou protegees comme entrees manuelles.',
 ];
