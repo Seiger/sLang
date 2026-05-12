@@ -350,6 +350,7 @@ class sLangContent extends Eloquent\Model
             'site_content.menuindex as menuindex',
             'site_content.hidemenu as hidemenu',
             'site_content.isfolder as isfolder',
+            'site_content.template as template',
             'site_content.type as type',
             'site_content.link_attributes as link_attributes',
             'site_content.pagetitle as pagetitle_orig',
