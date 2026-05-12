@@ -30,8 +30,8 @@ class CreateSLangTables extends Migration
                 $table->string('pagetitle', 255)->default('')->comment('Translate pagetitle');
                 $table->string('longtitle', 255)->default('')->comment('Translate longtitle');
                 $table->string('description', 255)->default('')->comment('Translate description');
-                $table->text('introtext')->default('')->comment('Translate introtext');
-                $table->longText('content')->default('')->comment('Translate content');
+                $table->text('introtext')->comment('Translate introtext');
+                $table->longText('content')->comment('Translate content');
                 $table->string('menutitle', 255)->default('')->comment('Translate menutitle');
                 $table->string('seotitle', 128)->default('')->comment('SEO title document');
                 $table->string('seodescription', 128)->default('')->comment('SEO description document');
@@ -75,7 +75,9 @@ class CreateSLangTables extends Migration
 
         if (Schema::hasTable('s_lang_content')) {
             Schema::table('s_lang_content', function ($table) {
-                $table->dropUnique('resource_lang');
+                if (Schema::hasIndex('s_lang_content', 'resource_lang')) {
+                    $table->dropUnique('resource_lang');
+                }
             });
         }
 
@@ -105,6 +107,10 @@ class CreateSLangTables extends Migration
         $indexName = 's_lang_tmplvar_contentvalues_value_fulltext';
 
         if ($driver === 'sqlite') {
+            if (!$this->sqliteSupportsFts5()) {
+                return;
+            }
+
             $ftsTableName = $tableName . '_fts';
 
             DB::statement("CREATE VIRTUAL TABLE IF NOT EXISTS \"{$ftsTableName}\" USING fts5(value, content='{$tableName}', content_rowid='id')");
@@ -141,5 +147,32 @@ class CreateSLangTables extends Migration
         Schema::table('s_lang_tmplvar_contentvalues', function (Blueprint $table) use ($indexName) {
             $table->fullText('value', $indexName);
         });
+    }
+
+    /**
+     * Determine whether the active SQLite connection can create FTS5 virtual tables.
+     *
+     * SQLite has supported FTS5 since 3.9.0, but the extension can still be omitted from
+     * a PHP SQLite build. Treating the index as optional keeps the schema compatible with
+     * SQLite 3.25+ environments that do not expose ENABLE_FTS5.
+     *
+     * @since 2.1.0
+     */
+    protected function sqliteSupportsFts5(): bool
+    {
+        try {
+            $options = DB::select('PRAGMA compile_options');
+        } catch (\Throwable $exception) {
+            return false;
+        }
+
+        foreach ($options as $option) {
+            $option = (array)$option;
+            if (strtoupper((string)($option['compile_options'] ?? reset($option))) === 'ENABLE_FTS5') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
