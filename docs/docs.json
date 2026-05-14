@@ -1,0 +1,25 @@
+{
+  "package": "sLang",
+  "defaultLocale": "uk",
+  "locales": ["uk", "en", "de", "fr", "pl"],
+  "canonicalPages": [
+    "README.md",
+    "getting-started.md",
+    "user-guide.md",
+    "management-tabs.md",
+    "configuration.md",
+    "use-in-blade.md",
+    "developer-guide.md",
+    "reference.md",
+    "frontend-guide.md",
+    "resource-bridge.md",
+    "troubleshooting.md",
+    "release-checklist.md"
+  ],
+  "checks": [
+    "php docs/checks/docs-check.php",
+    "php tests/run.php",
+    "php tests/regression/slang-demo-regression.php demo/core",
+    "php tests/demo-smoke.php demo/core --url=http://127.0.0.1:8788"
+  ]
+}

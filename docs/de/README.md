@@ -5,8 +5,16 @@
 ## Seiten
 
 - [Erste Schritte](getting-started.md)
+- [Benutzerhandbuch](user-guide.md)
 - [Verwaltungs-Tabs](management-tabs.md)
+- [Konfiguration](configuration.md)
 - [Verwendung in Blade](use-in-blade.md)
+- [Entwicklerhandbuch](developer-guide.md)
+- [Referenz](reference.md)
+- [Frontend-Leitfaden](frontend-guide.md)
+- [Resource Bridge](resource-bridge.md)
+- [Fehlerbehebung](troubleshooting.md)
+- [Release Checklist](release-checklist.md)
 
 ## Funktionen
 

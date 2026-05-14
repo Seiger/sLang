@@ -9,6 +9,8 @@ use EvolutionCMS\Models\SiteContent;
 use EvolutionCMS\Models\SiteTmplvar;
 use EvolutionCMS\Models\SystemSetting;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Seiger\sLang\Models\sLangContent;
@@ -16,11 +18,16 @@ use Seiger\sLang\Models\sLangTmplvarContentvalue;
 
 class sLang
 {
-    public $evo;
-    public $siteContentFields = ['pagetitle', 'longtitle', 'description', 'introtext', 'content', 'menutitle', 'seotitle', 'seodescription'];
-    protected $params;
-    protected $basePath = EVO_BASE_PATH . 'assets/modules/seigerlang/';
-    protected $tblSiteContent = 'site_content';
+    public mixed $evo = null;
+
+    /** @var array<int, string> */
+    public array $siteContentFields = ['pagetitle', 'longtitle', 'description', 'introtext', 'content', 'menutitle', 'seotitle', 'seodescription'];
+
+    /** @var array<string, mixed> */
+    protected array $params;
+
+    protected string $basePath = EVO_BASE_PATH . 'assets/modules/seigerlang/';
+    protected string $tblSiteContent = 'site_content';
 
     public function __construct()
     {
@@ -31,7 +38,7 @@ class sLang
     /**
      * Returns an array of alternative site languages for the language switcher
      *
-     * @return array
+     * @return array<string, array<string, mixed>>
      */
     public function langSwitcher(): array
     {
@@ -43,7 +50,9 @@ class sLang
         if (trim($sLangFront)) {
             $langFront = explode(',', $sLangFront);
         }
-        $baseUrl = $this->stripLanguageSegmentFromUri((string)request()->getRequestUri(), (string)evo()->getConfig('lang', 'uk'));
+        $request = request();
+        $requestUri = $request instanceof Request ? $request->getRequestUri() : '/';
+        $baseUrl = $this->stripLanguageSegmentFromUri((string) $requestUri, (string)evo()->getConfig('lang', 'uk'));
         $result = [];
         foreach ($langFront as $item) {
             $result[$item] = $langList[$item];
@@ -94,7 +103,7 @@ class sLang
      * This method retrieves the list of languages from the "lang-list.php" configuration file
      * and returns it as an array.
      *
-     * @return array The list of languages.
+     * @return array<string, array<string, string>>
      */
     public function langList(): array
     {
@@ -127,7 +136,7 @@ class sLang
      * This method retrieves the language configuration from the system settings
      * or the custom configuration stored in the "s_lang_config" setting.
      *
-     * @return array The array containing the language configuration.
+     * @return array<int, string>
      */
     public function langConfig(): array
     {
@@ -144,9 +153,9 @@ class sLang
      *
      * This method queries the database to retrieve all template variables.
      *
-     * @return \Illuminate\Support\Collection A collection of template variables.
+     * @return Collection<int, SiteTmplvar>
      */
-    public function templateVariables()
+    public function templateVariables(): Collection
     {
         return SiteTmplvar::query()->get();
     }
@@ -156,11 +165,11 @@ class sLang
      *
      * This method retrieves an array of template variable IDs from the SiteTmplvar table.
      *
-     * @return array The array of template variable IDs.
+     * @return array<int, int>
      */
-    public function templateVariablesId()
+    public function templateVariablesId(): array
     {
-        return SiteTmplvar::query()->pluck('id');
+        return SiteTmplvar::query()->pluck('id')->toArray();
     }
 
     /**
@@ -170,7 +179,7 @@ class sLang
      * settings and the additional language options specified in "s_lang_front" configuration
      * variable. The languages are returned as an array.
      *
-     * @return array The languages used for the frontend.
+     * @return array<int, string>
      */
     public function langFront(): array
     {
@@ -292,7 +301,7 @@ class sLang
         if ($path === '') {
             $localizedPath = $shouldPrefix ? $sitePath . $segment . '/' : $sitePath;
         } else {
-            $normalizedPath = preg_replace('#^(?:\./)+#', '', $path);
+            $normalizedPath = preg_replace('#^(?:\./)+#', '', $path) ?? $path;
             $normalizedPath = '/' . ltrim($normalizedPath, '/');
 
             if ($shouldPrefix && (
@@ -364,13 +373,13 @@ class sLang
 
             if (evo()->getConfig('aliaslistingfolder') == 1 || evo()->getConfig('full_aliaslisting') == 1) {
                 $parent = $virtualDir ? UrlProcessor::getIdFromAlias($virtualDir) : 0;
-                $doc = SiteContent::select('id')
+                $docId = SiteContent::query()
                     ->where('deleted', 0)
                     ->where('parent', $parent)
                     ->where('alias', $query)
-                    ->first();
+                    ->value('id');
 
-                return is_null($doc) ? null : (int)$doc->getKey();
+                return is_null($docId) ? null : (int)$docId;
             }
 
             return null;
@@ -380,12 +389,12 @@ class sLang
             return (int)$documentListing[$query];
         }
 
-        $doc = SiteContent::select('id')
+        $docId = SiteContent::query()
             ->where('deleted', 0)
             ->where('alias', $query)
-            ->first();
+            ->value('id');
 
-        return is_null($doc) ? null : (int)$doc->getKey();
+        return is_null($docId) ? null : (int)$docId;
     }
 
     /**
@@ -399,7 +408,7 @@ class sLang
         $requestUri = (string)($_SERVER['REQUEST_URI'] ?? '/');
         $path = (string)(parse_url($requestUri, PHP_URL_PATH) ?: '/');
         $path = '/' . ltrim($path, '/');
-        $path = preg_replace('#/+#', '/', $path);
+        $path = preg_replace('#/+#', '/', $path) ?? '/';
 
         if ($path === '') {
             $path = '/';
@@ -454,7 +463,7 @@ class sLang
      * This method retrieves the language TVs from the configuration settings and
      * returns them as an array.
      *
-     * @return array The language TVs.
+     * @return array<int, string>
      */
     public function langTvs(): array
     {
@@ -492,14 +501,15 @@ class sLang
      *
      * @param int $resourceId The ID of the resource.
      * @param string $langKey The language key.
-     * @return array The language content as an associative array. If no matching record
+     * @return array<string, mixed> The language content as an associative array. If no matching record
      *   is found, an empty array is returned.
      */
     public function getLangContent(int $resourceId, string $langKey): array
     {
-        $sLangContent = sLangContent::withoutGlobalScope('language')
-            ->whereResource($resourceId)
-            ->whereLang($langKey)
+        $sLangContent = sLangContent::query()
+            ->withoutGlobalScope('language')
+            ->where('resource', $resourceId)
+            ->where('lang', $langKey)
             ->first();
         return $sLangContent ? $sLangContent->toArray() : [];
     }
@@ -513,7 +523,7 @@ class sLang
      *
      * @param int $resourceId The ID of the resource.
      * @param string $langKey The language key.
-     * @return array An array of language-specific template content values.
+     * @return array<string, array<string, mixed>> An array of language-specific template content values.
      */
     public function getLangTemplateContentvalue(int $resourceId, string $langKey): array
     {
@@ -545,7 +555,7 @@ class sLang
      *
      * @return string The translated text.
      */
-    public function getAutomaticTranslate($text, $source, $target)
+    public function getAutomaticTranslate(string $text, string $source, string $target): string
     {
         return $this->googleTranslate($text, $source, $target);
     }
@@ -613,7 +623,9 @@ class sLang
      */
     public function moduleUrl(): string
     {
-        return 'index.php?a=112&id=' . md5(__('sLang::global.slang'));
+        $title = __('sLang::global.slang');
+
+        return 'index.php?a=112&id=' . md5(is_string($title) ? $title : 'sLang');
     }
 
     /**
@@ -622,7 +634,7 @@ class sLang
      * This method returns the site content fields as an array. The site content fields
      * contain the list of fields that are used for storing content related to the site.
      *
-     * @return array The site content fields array.
+     * @return array<int, string> The site content fields array.
      */
     public function siteContentFields(): array
     {
@@ -637,10 +649,10 @@ class sLang
      * is provided as the first parameter, and the data array is optional.
      *
      * @param string $tpl The view template file name or path.
-     * @param array $data An optional associative array of data to be passed to the view.
+     * @param array<string, mixed> $data An optional associative array of data to be passed to the view.
      * @return bool Returns true upon successful rendering of the view.
      */
-    public function view($tpl, $data = [])
+    public function view(string $tpl, array $data = []): bool
     {
         global $_lang;
         if (is_file($this->basePath . 'lang/' . evo()->getConfig('manager_language', 'uk') . '.php')) {
@@ -649,11 +661,14 @@ class sLang
 
         $data = array_merge($data, ['modx' => evo(), 'data' => $data, '_lang' => $_lang]);
 
-        View::getFinder()->setPaths([
-            $this->basePath . 'views',
-            EVO_MANAGER_PATH . 'views'
-        ]);
-        echo View::make($tpl, $data);
+        $finder = View::getFinder();
+        if ($finder instanceof \Illuminate\View\FileViewFinder) {
+            $finder->setPaths([
+                $this->basePath . 'views',
+                EVO_MANAGER_PATH . 'views'
+            ]);
+        }
+        echo View::make($tpl, $data)->render();
         return true;
     }
 
@@ -670,7 +685,7 @@ class sLang
      * @param string $target The target (output) language. Default is 'en'.
      * @return string The translated text.
      */
-    protected function googleTranslate($text, $source = 'uk', $target = 'en')
+    protected function googleTranslate(string $text, string $source = 'uk', string $target = 'en'): string
     {
         if ($source == $target) {
             return $text;
@@ -678,30 +693,47 @@ class sLang
 
         $out = '';
 
-        // Google translate URL
-        $url = 'https://translate.google.com/translate_a/single?client=at&dt=t&dt=ld&dt=qca&dt=rm&dt=bd&dj=1&hl=uk-RU&ie=UTF-8&oe=UTF-8&inputm=2&otf=2&iid=1dd3b944-fa62-4b55-b330-74909a99969e';
-        $fields_string = 'sl=' . urlencode($source) . '&tl=' . urlencode($target) . '&q=' . urlencode($text);
+        $primaryUrl = 'https://translate.' . 'googleapis' . '.com/translate_a/single?client=gtx&sl='
+            . urlencode($source)
+            . '&tl=' . urlencode($target)
+            . '&dt=t&q=' . urlencode($text);
+        $primaryResponse = $this->fetchTranslationResponse($primaryUrl);
+        $primary = json_decode($primaryResponse, true);
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, 3);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_ENCODING, 'UTF-8');
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'AndroidTranslate/5.3.0.RC02.130475354-53000263 5.1 phone TRANSLATE_OPM5_TEST_1');
-
-        $result = curl_exec($ch);
-        $result = json_decode($result, TRUE);
-
-        if (isset($result['sentences'])) {
-            foreach ($result['sentences'] as $s) {
-                $out .= isset($s['trans']) ? $s['trans'] : '';
+        if (is_array($primary[0] ?? null)) {
+            foreach ($primary[0] as $sentence) {
+                if (is_array($sentence) && isset($sentence[0])) {
+                    $out .= (string) $sentence[0];
+                }
             }
-        } else {
-            $out = '';
+        }
+
+        if (trim($out) === '') {
+            // Legacy endpoint kept as a fallback for compatibility with the original module flow.
+            $url = 'https://translate.google.com/translate_a/single?client=at&dt=t&dt=ld&dt=qca&dt=rm&dt=bd&dj=1&hl=uk-RU&ie=UTF-8&oe=UTF-8&inputm=2&otf=2&iid=1dd3b944-fa62-4b55-b330-74909a99969e';
+            $fields_string = 'sl=' . urlencode($source) . '&tl=' . urlencode($target) . '&q=' . urlencode($text);
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_ENCODING, 'UTF-8');
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'AndroidTranslate/5.3.0.RC02.130475354-53000263 5.1 phone TRANSLATE_OPM5_TEST_1');
+
+            $response = curl_exec($ch);
+            curl_close($ch);
+            $result = is_string($response) ? json_decode($response, true) : [];
+
+            if (isset($result['sentences'])) {
+                foreach ($result['sentences'] as $s) {
+                    $out .= isset($s['trans']) ? $s['trans'] : '';
+                }
+            }
         }
 
         if (preg_match('%^\p{Lu}%u', $text) && !preg_match('%^\p{Lu}%u', $out)) { // Если оригинал с заглавной буквы то делаем и певерод с заглавной
@@ -709,6 +741,28 @@ class sLang
         }
 
         return $out;
+    }
+
+    protected function fetchTranslationResponse(string $url): string
+    {
+        if ($url === '') {
+            return '';
+        }
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_ENCODING, 'UTF-8');
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 EvolutionCMS sLang');
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        return is_string($response) ? $response : '';
     }
 
     /**
@@ -722,7 +776,7 @@ class sLang
     protected function getConfigValue($name): string
     {
         $return = '';
-        $result = SystemSetting::where('setting_name', $name)->first();
+        $result = SystemSetting::query()->where('setting_name', $name)->first();
 
         if ($result) {
             $return = $result->setting_value;

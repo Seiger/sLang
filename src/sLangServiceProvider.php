@@ -15,7 +15,7 @@ class sLangServiceProvider extends ServiceProvider
     public function boot()
     {
         // Only Manager
-        if (IN_MANAGER_MODE) {
+        if (defined('IN_MANAGER_MODE') && constant('IN_MANAGER_MODE')) {
             // Add custom routes for package
             include(__DIR__.'/Http/routes.php');
 
@@ -46,8 +46,8 @@ class sLangServiceProvider extends ServiceProvider
         $this->app->singleton(sLang::class);
         $this->app->alias(sLang::class, 'sLang');
 
-        Paginator::currentPathResolver(function () {
-            return $this->app->make(sLang::class)->resolveCurrentPath();
+        Paginator::currentPathResolver(static function (): string {
+            return (new sLang())->resolveCurrentPath();
         });
     }
 
@@ -62,7 +62,7 @@ class sLangServiceProvider extends ServiceProvider
         $this->loadPluginsFrom(dirname(__DIR__) . '/plugins/');
 
         // Only Manager
-        if (IN_MANAGER_MODE) {
+        if (defined('IN_MANAGER_MODE') && constant('IN_MANAGER_MODE')) {
             // Add module to Evo. Module ID is md5('sLangModule').
             $lang = 'en';
             if (isset($_SESSION['mgrUsrConfigSet']['manager_language'])) {
@@ -70,8 +70,10 @@ class sLangServiceProvider extends ServiceProvider
             } else {
                 if (is_file(evo()->getSiteCacheFilePath())) {
                     $siteCache = file_get_contents(evo()->getSiteCacheFilePath());
-                    preg_match('@\$c\[\'manager_language\'\]="\w+@i', $siteCache, $matches);
-                    if (count($matches)) {
+                    if (is_string($siteCache)) {
+                        preg_match('@\$c\[\'manager_language\'\]="\w+@i', $siteCache, $matches);
+                    }
+                    if (!empty($matches)) {
                         $lang = str_replace('$c[\'manager_language\']="', '', $matches[0]);
                     }
                 }

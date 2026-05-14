@@ -3,16 +3,26 @@
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @template TModel of Model
+ * @extends EloquentCollection<int, TModel>
+ */
 class TreeCollection extends EloquentCollection
 {
     public const CHILDREN_RELATION_NAME = 'children';
 
-    public function toTree(): static
+    /**
+     * @return self<TModel>
+     */
+    public function toTree(): self
     {
         return $this->toTreeParent(null);
     }
 
-    public function toTreeParent($parent = null): static
+    /**
+     * @return self<TModel>
+     */
+    public function toTreeParent(int|string|null $parent = null): self
     {
         /** @var array<int|string, Model> $byId */
         $byId = [];
@@ -20,7 +30,7 @@ class TreeCollection extends EloquentCollection
 
         foreach ($this->items as $item) {
             if ($item instanceof Model) {
-                $item->setRelation(static::CHILDREN_RELATION_NAME, new static());
+                $item->setRelation(static::CHILDREN_RELATION_NAME, new self());
                 $byId[$item->getKey()] = $item;
             }
         }
@@ -44,6 +54,6 @@ class TreeCollection extends EloquentCollection
             }
         }
 
-        return new static($tops);
+        return new self($tops);
     }
 }

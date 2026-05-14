@@ -5,8 +5,16 @@
 ## Pages
 
 - [Getting Started](getting-started.md)
+- [User Guide](user-guide.md)
 - [Management tabs](management-tabs.md)
+- [Configuration](configuration.md)
 - [Use in Blade](use-in-blade.md)
+- [Developer Guide](developer-guide.md)
+- [Reference](reference.md)
+- [Frontend Guide](frontend-guide.md)
+- [Resource Bridge](resource-bridge.md)
+- [Troubleshooting](troubleshooting.md)
+- [Release Checklist](release-checklist.md)
 
 ## Features
 

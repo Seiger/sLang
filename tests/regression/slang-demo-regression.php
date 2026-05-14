@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use EvolutionCMS\Console;
+use Illuminate\Validation\ValidationException;
 use Seiger\sLang\Controllers\sLangController;
 use Seiger\sLang\Facades\sLang;
 use Seiger\sLang\Livewire\SettingsPanel;
@@ -25,6 +26,9 @@ $createdId = null;
 
 class SlangRegressionFakeController extends sLangController
 {
+    /**
+     * @var array<int, array{0: int, 1: string}>
+     */
     public static array $calls = [];
 
     public function setModifyTables()
@@ -59,10 +63,16 @@ class SlangRegressionBulkTableData extends TranslatesTableData
 
 class SlangRegressionCleanupController extends sLangController
 {
+    /**
+     * @param array<int, string> $discoveredKeys
+     */
     public function __construct(protected array $discoveredKeys)
     {
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function discoveredTranslationKeys(): array
     {
         return $this->discoveredKeys;
@@ -115,7 +125,7 @@ function bootstrapDemo(string $demoCore): void
         define('IN_INSTALL_MODE', false);
     }
 
-    new Console(evo(), evo()->events, evo()->version());
+    new Console(evo(), app('events'), evo()->version());
 }
 
 function assertAutoload(): void
@@ -140,12 +150,20 @@ function assertTableConfig(string $root): void
     assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'runInlineFieldAction'), 'Dictionary table must allow inline auto-translate actions.');
     assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'runHeaderAction'), 'Dictionary table must allow column header actions.');
     assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'runTableAction'), 'Dictionary table must allow toolbar provider actions.');
+    assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'openCreateModal'), 'Dictionary table must expose create modal action.');
+    assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'saveModal'), 'Dictionary table must expose modal save action.');
+    assertTrue(!str_contains((string) ($config['wire_target'] ?? ''), 'createInlineRow'), 'Dictionary plus button must not create random inline rows.');
     assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'openDeleteModal'), 'Dictionary table must expose delete modal action.');
     assertTrue(str_contains((string) ($config['wire_target'] ?? ''), 'deleteConfirmed'), 'Dictionary table must expose delete confirmation action.');
 
     $actions = array_column((array) ($config['actions'] ?? []), 'key');
     assertTrue(in_array('synchronize', $actions, true), 'Dictionary toolbar must expose synchronize action.');
     assertTrue(in_array('delete', $actions, true), 'Dictionary toolbar must expose selected-row delete action.');
+    $createAction = collect((array) ($config['actions'] ?? []))->firstWhere('key', 'create');
+    assertSame('openCreateModal', (string) ($createAction['method'] ?? ''), 'Dictionary create action must open the evo-ui modal.');
+    assertSame(true, (bool) ($config['modal']['enabled'] ?? false), 'Dictionary create modal must be enabled.');
+    assertSame('saveModal', (string) ($config['modal']['save_provider'] ?? ''), 'Dictionary create modal must save through provider.');
+    assertSame(false, (bool) ($config['modal']['row_dblclick'] ?? true), 'Dictionary create modal must not bind row double-click editing.');
     assertSame(false, (bool) ($config['columns'][0]['editable'] ?? true), 'Dictionary key column must not be editable online.');
     $syncAction = collect((array) ($config['actions'] ?? []))->firstWhere('key', 'synchronize');
     assertSame('wire', (string) ($syncAction['type'] ?? ''), 'Dictionary synchronize action must be Livewire-based.');
@@ -166,10 +184,12 @@ function assertDictionarySchemaAndSeed(PDO $pdo, string $table): void
         assertTrue(in_array($column, $columns, true), "Dictionary column is missing: {$column}");
     }
 
-    $seededRows = (int) $pdo->query("select count(*) from {$table}")?->fetchColumn();
+    $seededStatement = $pdo->query("select count(*) from {$table}");
+    $seededRows = $seededStatement === false ? 0 : (int) $seededStatement->fetchColumn();
     assertTrue($seededRows >= 7, 'Dictionary must contain demo seed rows.');
 
-    $generatedRows = (int) $pdo->query("select count(*) from {$table} where \"key\" like 'new.translation.%'")?->fetchColumn();
+    $generatedStatement = $pdo->query("select count(*) from {$table} where \"key\" like 'new.translation.%'");
+    $generatedRows = $generatedStatement === false ? 0 : (int) $generatedStatement->fetchColumn();
     assertSame(0, $generatedRows, 'Generated QA rows must be cleaned up.');
 
     pass('Dictionary schema/seed regression: OK');
@@ -178,14 +198,16 @@ function assertDictionarySchemaAndSeed(PDO $pdo, string $table): void
 function assertDictionaryCrud(): int
 {
     $table = new TranslatesTableData();
-    $id = $table->createInlineRow();
-    assertTrue($id > 0, 'Dictionary createInlineRow did not return an id.');
+    $suffix = date('YmdHis');
+    $key = 'regression.translation.create.' . $suffix;
 
-    $uk = 'Regression UA ' . date('YmdHis');
-    $en = 'Regression EN ' . date('YmdHis');
+    $modalData = ['key' => $key];
+    foreach (sLang::langConfig() as $locale) {
+        $modalData[$locale] = strtoupper($locale) . ' Regression ' . $suffix;
+    }
 
-    $table->updateInlineField($id, 'uk', $uk);
-    $table->updateInlineField($id, 'en', $en);
+    $id = $table->saveModal($modalData, null, 'create');
+    assertTrue($id > 0, 'Dictionary saveModal did not return an id.');
 
     $columns = collect($table->columns((array) (require dirname(__DIR__, 2) . '/config/translates/table.php')['columns']));
     $defaultColumn = $columns->firstWhere('key', sLang::langDefault());
@@ -200,15 +222,41 @@ function assertDictionaryCrud(): int
         assertSame('autoTranslateEmptyColumn', (string) data_get($englishColumn, 'header_actions.0.provider'), 'Bulk auto-translate action must use provider method.');
     }
 
-    $translate = sLangTranslate::query()->find($id);
-    assertTrue($translate !== null, 'Created dictionary row was not found.');
+    $translate = sLangTranslate::find($id);
+    if (!$translate instanceof sLangTranslate) {
+        fail('Created dictionary row was not found.');
+    }
     $originalKey = (string) $translate->key;
+    assertSame($key, $originalKey, 'Dictionary create modal must persist the explicit key.');
     assertSame($originalKey, $table->updateInlineField($id, 'key', 'should.not.change.' . date('YmdHis')), 'Dictionary KEY inline update must be ignored.');
     $translate->refresh();
     assertSame($originalKey, (string) $translate->key, 'Dictionary KEY must remain unchanged after attempted inline edit.');
-    assertSame($uk, (string) $translate->uk, 'UK inline edit was not persisted.');
-    assertSame($en, (string) $translate->en, 'EN inline edit was not persisted.');
+
+    foreach (sLang::langConfig() as $locale) {
+        assertSame((string) $modalData[$locale], (string) $translate->{$locale}, strtoupper($locale) . ' modal create value was not persisted.');
+    }
+
+    $updatedDefault = 'Regression default edit ' . $suffix;
+    $table->updateInlineField($id, sLang::langDefault(), $updatedDefault);
+    $translate->refresh();
+    assertSame($updatedDefault, (string) $translate->{sLang::langDefault()}, 'Default inline edit was not persisted after modal create.');
     assertSame((string) $translate->key, $table->deleteName($id), 'Delete modal must use translation key as record name.');
+
+    $duplicateFailed = false;
+    try {
+        $table->saveModal($modalData, null, 'create');
+    } catch (ValidationException) {
+        $duplicateFailed = true;
+    }
+    assertTrue($duplicateFailed, 'Dictionary create modal must reject duplicate keys.');
+
+    $emptyKeyFailed = false;
+    try {
+        $table->saveModal(['key' => ''], null, 'create');
+    } catch (ValidationException) {
+        $emptyKeyFailed = true;
+    }
+    assertTrue($emptyKeyFailed, 'Dictionary create modal must reject empty keys.');
 
     pass('Dictionary CRUD regression: OK');
 
@@ -218,7 +266,12 @@ function assertDictionaryCrud(): int
 function assertDictionaryDelete(): void
 {
     $table = new TranslatesTableData();
-    $id = $table->createInlineRow();
+    $suffix = date('YmdHis');
+    $modalData = ['key' => 'delete.translation.' . $suffix];
+    foreach (sLang::langConfig() as $locale) {
+        $modalData[$locale] = strtoupper($locale) . ' Delete ' . $suffix;
+    }
+    $id = $table->saveModal($modalData, null, 'create');
     assertTrue($id > 0, 'Dictionary delete regression could not create a row.');
 
     $table->deleteRow($id);
@@ -241,20 +294,19 @@ function assertBulkAutoTranslateEmptyColumn(): void
     SlangRegressionFakeController::$calls = [];
     $suffix = date('YmdHis');
 
-    $existingCandidates = sLangTranslate::query()
-        ->where(function (Illuminate\Database\Eloquent\Builder $query) use ($target) {
-            $query->whereNull($target)->orWhere($target, '');
-        })
-        ->whereNotNull($default)
-        ->where($default, '!=', '')
-        ->get()
-        ->mapWithKeys(static fn (sLangTranslate $translate): array => [
-            (int) $translate->getKey() => $translate->{$target},
-        ])
-        ->all();
+    $candidateQuery = sLangTranslate::query();
+    $candidateQuery->where(function (Illuminate\Database\Eloquent\Builder $query) use ($target) {
+        $query->whereNull($target)->orWhere($target, '');
+    });
+    $candidateQuery->whereNotNull($default);
+    $candidateQuery->where($default, '!=', '');
+    $existingCandidates = $candidateQuery->pluck($target, 'tid')->all();
 
     foreach ($existingCandidates as $id => $value) {
         $translate = sLangTranslate::query()->find((int) $id);
+        if (!$translate instanceof sLangTranslate) {
+            continue;
+        }
         $translate->{$target} = '__regression_existing__';
         $translate->save();
     }
@@ -365,12 +417,12 @@ function assertObsoleteCleanup(): void
     $editedKey = 'cleanup.translation.edited.' . $suffix;
     $currentKey = 'cleanup.translation.current.' . $suffix;
 
-    $protectedDiscoveredKeys = sLangTranslate::query()
-        ->get()
-        ->filter(static fn (sLangTranslate $translate): bool => trim((string) ($translate->{$default} ?? '')) === (string) $translate->key)
-        ->pluck('key')
-        ->map(static fn ($key): string => (string) $key)
-        ->all();
+    $protectedDiscoveredKeys = [];
+    foreach (sLangTranslate::query()->get() as $translate) {
+        if (trim((string) ($translate->{$default} ?? '')) === (string) $translate->key) {
+            $protectedDiscoveredKeys[] = (string) $translate->key;
+        }
+    }
     $protectedDiscoveredKeys[] = $currentKey;
 
     $rows = [];
@@ -413,7 +465,7 @@ function assertObsoleteCleanup(): void
 
 function assertChoicesRenderCleanHtml(): void
 {
-    $html = view('evo::components.choices', [
+    $view = view('evo::components.choices', [
         'field' => 's_lang_config',
         'options' => [
             ['value' => 'uk', 'label' => 'Українська (Українська)'],
@@ -426,7 +478,13 @@ function assertChoicesRenderCleanHtml(): void
         'selectedValues' => ['uk', 'en'],
         'placeholder' => 'Select languages',
         'searchPlaceholder' => 'Select languages',
-    ])->render();
+    ]);
+
+    if (!$view instanceof Illuminate\Contracts\View\View) {
+        fail('Choices component did not return a renderable view.');
+    }
+
+    $html = $view->render();
 
     foreach (['{{', '@if', '@empty', '@endforelse', '@foreach', '@php'] as $token) {
         assertTrue(!str_contains($html, $token), "Choices component rendered raw Blade token: {$token}");
@@ -458,11 +516,20 @@ function tableExists(PDO $pdo, string $table): bool
     return (bool) $statement->fetchColumn();
 }
 
+/**
+ * @return array<int, string>
+ */
 function tableColumns(PDO $pdo, string $table): array
 {
+    $statement = $pdo->query("pragma table_info({$table})");
+
+    if (!$statement instanceof PDOStatement) {
+        return [];
+    }
+
     return array_map(
         static fn (array $row): string => (string) $row['name'],
-        $pdo->query("pragma table_info({$table})")->fetchAll(PDO::FETCH_ASSOC)
+        $statement->fetchAll(PDO::FETCH_ASSOC)
     );
 }
 
@@ -470,6 +537,7 @@ function cleanupGeneratedRows(PDO $pdo, string $table): void
 {
     $pdo->exec("delete from {$table} where \"key\" like 'new.translation.%'");
     $pdo->exec("delete from {$table} where \"key\" like 'smoke.translation.%'");
+    $pdo->exec("delete from {$table} where \"key\" like 'regression.translation.%'");
     $pdo->exec("delete from {$table} where \"key\" like 'bulk.translation.%'");
     $pdo->exec("delete from {$table} where \"key\" like 'delete.translation.%'");
     $pdo->exec("delete from {$table} where \"key\" like 'cleanup.translation.%'");

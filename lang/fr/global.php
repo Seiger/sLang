@@ -1,5 +1,6 @@
 <?php return [
     'add_translation' => 'Ajouter une traduction',
+    'create_translation' => 'Creer la traduction',
     'auto_translate' => 'Traduire automatiquement',
     'auto_translate_empty' => 'Traduire les valeurs vides',
     'copyright' => 'Dévelopment',
@@ -8,6 +9,10 @@
     'do_not_empty' => 'ne doit pas être vide',
     'example_usage' => 'Utilisez la syntaxe <b>@lang(\'texte\')</b> pour intégrer des traductions de textes dans un modèle Blade. Par exemple : <b>@lang(\'Hello World!\')</b>',
     'champ' => 'Champ', 
+    'translation_key_help' => 'Cle de traduction stable utilisee dans les templates et le code.',
+    'translation_key_placeholder' => 'Exemple : site.header.title',
+    'translation_key_exists' => 'Cette cle de traduction existe deja.',
+    'translation_value_placeholder' => 'Texte de traduction',
     'lang_ab' => 'Abkhaze', 
     'lang_az' => 'Azerbaïdjanais', 
     'lang_be' => 'Biélorusse', 

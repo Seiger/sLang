@@ -15,12 +15,12 @@
 @endphp
 
 <form
-    class="evo-ui-form slang-settings"
+    class="evo-ui-form-surface evo-ui-form-surface--density-compact evo-ui-form-surface--layout-settings"
     wire:submit.prevent="save"
     data-evo-form
     data-evo-form-dirty="{{ $dirty ? 'true' : 'false' }}"
 >
-    <div class="evo-ui-form-heading slang-settings__heading">
+    <div class="evo-ui-form-heading">
         <div>
             <h2>
                 <x-evo::icon name="settings" />
@@ -28,9 +28,9 @@
             </h2>
         </div>
 
-        <div class="evo-ui-form-toolbar slang-settings__toolbar" aria-label="@lang('evo::global.form_actions')">
+        <div class="evo-ui-form-toolbar" aria-label="@lang('evo::global.form_actions')">
             @if($saved)
-                <span class="slang-settings__saved">@lang('evo::global.form_saved')</span>
+                <span class="evo-ui-form-static">@lang('evo::global.form_saved')</span>
             @endif
             <x-evo::button
                 icon="check"
@@ -45,17 +45,17 @@
         </div>
     </div>
 
-    <div class="slang-settings__body">
-        <section class="slang-settings__section slang-settings__section--main">
-            <div class="slang-settings__row">
-                <span class="slang-settings__label">{!! $labelHelp(__('sLang::global.lang_def'), __('sLang::global.lang_def_help')) !!}</span>
-                <div class="slang-settings__control slang-settings__control--compound">
+    <div class="evo-ui-form">
+        <section class="evo-ui-settings-values">
+            <div class="evo-ui-field">
+                <span class="evo-ui-field__label">{!! $labelHelp(__('sLang::global.lang_def'), __('sLang::global.lang_def_help')) !!}</span>
+                <div class="evo-ui-option-stack">
                     <select class="evo-ui-input" wire:model.live="data.s_lang_default">
                         @foreach($languages as $language)
                             <option value="{{ $language['value'] }}">{{ $language['label'] }}</option>
                         @endforeach
                     </select>
-                    <label class="evo-ui-check slang-settings__url-toggle">
+                    <label class="evo-ui-checkbox">
                         <input type="checkbox" wire:model.live="data.s_lang_default_show">
                         <span>@lang('sLang::global.use_url')</span>
                     </label>
@@ -63,11 +63,10 @@
                 </div>
             </div>
 
-            <div class="slang-settings__row">
-                <span class="slang-settings__label">{!! $labelHelp(__('sLang::global.languages'), __('sLang::global.languages_help')) !!}</span>
-                <div class="slang-settings__control">
+            <div class="evo-ui-field">
+                <span class="evo-ui-field__label">{!! $labelHelp(__('sLang::global.languages'), __('sLang::global.languages_help')) !!}</span>
+                <div>
                     <x-evo::choices
-                        class="slang-settings__choices"
                         field="s_lang_config"
                         :options="$languages"
                         :selected-options="$lockedSiteLanguages"
@@ -79,11 +78,10 @@
                 </div>
             </div>
 
-            <div class="slang-settings__row">
-                <span class="slang-settings__label">{!! $labelHelp(__('sLang::global.lang_front'), __('sLang::global.lang_front_help')) !!}</span>
-                <div class="slang-settings__control">
+            <div class="evo-ui-field">
+                <span class="evo-ui-field__label">{!! $labelHelp(__('sLang::global.lang_front'), __('sLang::global.lang_front_help')) !!}</span>
+                <div>
                     <x-evo::choices
-                        class="slang-settings__choices"
                         field="s_lang_front"
                         :options="$frontendLanguages"
                         :selected-options="$lockedFrontendLanguages"
@@ -95,25 +93,24 @@
                 </div>
             </div>
 
-            <div class="slang-settings__row">
-                <span class="slang-settings__label">{!! $labelHelp(__('sLang::global.lang_folders'), __('sLang::global.lang_folders_help')) !!}</span>
-                <div class="slang-settings__control">
-                    <div class="slang-settings__segments">
+            <div class="evo-ui-field">
+                <span class="evo-ui-field__label">{!! $labelHelp(__('sLang::global.lang_folders'), __('sLang::global.lang_folders_help')) !!}</span>
+                <div>
+                    <div class="evo-ui-option-stack">
                         @foreach($siteLanguageValues as $locale)
-                            <label class="slang-settings__segment">
+                            <label class="evo-ui-option-choice">
                                 <span>{{ strtoupper($locale) }}</span>
-                                <input class="evo-ui-input" type="text" wire:model.live="data.s_lang_url_map.{{ $locale }}" placeholder="{{ $locale }}">
+                                <input class="evo-ui-input" type="text" wire:model.live="data.s_lang_url_map.{{ $locale }}" placeholder="{{ $locale }}" size="8">
                             </label>
                         @endforeach
                     </div>
                 </div>
             </div>
 
-            <div class="slang-settings__row">
-                <span class="slang-settings__label">{!! $labelHelp(__('sLang::global.multilang_tvs'), __('sLang::global.multilang_tvs_help')) !!}</span>
-                <div class="slang-settings__control">
+            <div class="evo-ui-field">
+                <span class="evo-ui-field__label">{!! $labelHelp(__('sLang::global.multilang_tvs'), __('sLang::global.multilang_tvs_help')) !!}</span>
+                <div>
                     <x-evo::choices
-                        class="slang-settings__choices"
                         toggle-method="toggleTv"
                         remove-method="removeTv"
                         value-type="int"
@@ -126,11 +123,11 @@
                 </div>
             </div>
 
-            <div class="slang-settings__row">
-                <span class="slang-settings__label">{!! $labelHelp(__('sLang::global.cleanup_obsolete'), __('sLang::global.cleanup_obsolete_help')) !!}</span>
-                <div class="slang-settings__control">
-                    <div class="slang-settings__maintenance">
-                        <div class="slang-settings__maintenance-copy">
+            <div class="evo-ui-field">
+                <span class="evo-ui-field__label">{!! $labelHelp(__('sLang::global.cleanup_obsolete'), __('sLang::global.cleanup_obsolete_help')) !!}</span>
+                <div>
+                    <div class="evo-ui-option-stack">
+                        <div class="evo-ui-form-static">
                             <strong>{{ trans_choice('sLang::global.cleanup_obsolete_count', $obsoleteTranslationCount, ['count' => $obsoleteTranslationCount]) }}</strong>
                             @if($obsoleteTranslationCount > 0)
                                 <span>{{ implode(', ', $obsoleteTranslationSample) }}@if($obsoleteTranslationCount > count($obsoleteTranslationSample)), ...@endif</span>

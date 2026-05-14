@@ -5,8 +5,16 @@
 ## Pages
 
 - [Bien démarrer](getting-started.md)
+- [Guide utilisateur](user-guide.md)
 - [Onglets de gestion](management-tabs.md)
+- [Configuration](configuration.md)
 - [Utilisation dans Blade](use-in-blade.md)
+- [Guide développeur](developer-guide.md)
+- [Référence](reference.md)
+- [Guide frontend](frontend-guide.md)
+- [Pont des ressources](resource-bridge.md)
+- [Dépannage](troubleshooting.md)
+- [Release checklist](release-checklist.md)
 
 ## Fonctionnalités
 

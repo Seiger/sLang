@@ -14,16 +14,25 @@ class LanguageBridge
         return sLang::langDefault();
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function languages(): array
     {
         return sLang::langConfig();
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function frontendLanguages(): array
     {
         return sLang::langFront();
     }
 
+    /**
+     * @return array<int, array{value: string, label: string, short: string, segment: string, default: bool}>
+     */
     public function options(): array
     {
         $list = sLang::langList();
@@ -40,9 +49,11 @@ class LanguageBridge
             ->all();
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function contentFields(): array
     {
         return sLang::siteContentFields();
     }
 }
-

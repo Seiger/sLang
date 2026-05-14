@@ -1,5 +1,7 @@
 <?php namespace Seiger\sLang\Livewire;
 
+use EvolutionCMS\Models\SiteTmplvar;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Seiger\sLang\Controllers\sLangController;
@@ -7,7 +9,10 @@ use Seiger\sLang\Facades\sLang;
 
 class SettingsPanel extends Component
 {
+    /** @var array<string, mixed> */
     public array $data = [];
+
+    /** @var array<string, mixed> */
     public array $cleanData = [];
     public bool $saved = false;
     public bool $dirty = false;
@@ -146,11 +151,11 @@ class SettingsPanel extends Component
         $this->saved = false;
     }
 
-    public function render()
+    public function render(): View
     {
         $obsoleteTranslationKeys = $this->obsoleteTranslationKeys();
 
-        return view('sLang::livewire.settings-panel', [
+        $view = view('sLang::livewire.settings-panel', [
             'languages' => $this->languageOptions(),
             'frontendLanguages' => $this->frontendLanguageOptions(),
             'templateVariables' => sLang::templateVariables(),
@@ -164,6 +169,12 @@ class SettingsPanel extends Component
             'obsoleteTranslationCount' => count($obsoleteTranslationKeys),
             'obsoleteTranslationSample' => array_slice($obsoleteTranslationKeys, 0, 5),
         ]);
+
+        if (!$view instanceof View) {
+            throw new \RuntimeException('Unable to render sLang settings panel view.');
+        }
+
+        return $view;
     }
 
     protected function fillData(): void
@@ -233,17 +244,27 @@ class SettingsPanel extends Component
         data_set($this->data, 's_lang_url_map', $normalizedMap);
     }
 
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
     protected function languageOptions(): array
     {
         return collect(sLang::langList())
-            ->map(fn (array $language, string $locale) => [
-                'value' => $locale,
-                'label' => ($language['name'] ?? Str::upper($locale)) . ' (' . __('sLang::global.lang_' . $locale) . ')',
-            ])
+            ->map(function (array $language, string $locale): array {
+                $translated = __('sLang::global.lang_' . $locale);
+
+                return [
+                    'value' => $locale,
+                    'label' => (string) ($language['name'] ?? Str::upper($locale)) . ' (' . (is_string($translated) ? $translated : '') . ')',
+                ];
+            })
             ->values()
             ->all();
     }
 
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
     protected function selectedLanguageOptions(string $field): array
     {
         $selected = array_map('strval', (array) data_get($this->data, $field, []));
@@ -254,6 +275,9 @@ class SettingsPanel extends Component
             ->all();
     }
 
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
     protected function frontendLanguageOptions(): array
     {
         $siteLanguages = array_map('strval', (array) data_get($this->data, 's_lang_config', []));
@@ -264,6 +288,9 @@ class SettingsPanel extends Component
             ->all();
     }
 
+    /**
+     * @return array<int, array{value: int, label: string}>
+     */
     protected function selectedTemplateVariableOptions(): array
     {
         $selected = array_map('intval', (array) data_get($this->data, 's_lang_tvs', []));
@@ -274,10 +301,13 @@ class SettingsPanel extends Component
             ->all();
     }
 
+    /**
+     * @return array<int, array{value: int, label: string}>
+     */
     public function templateVariableOptions(): array
     {
         return collect(sLang::templateVariables())
-            ->map(fn ($variable) => [
+            ->map(fn (SiteTmplvar $variable) => [
                 'value' => (int) $variable->id,
                 'label' => $this->templateVariableLabel($variable),
             ])
@@ -285,7 +315,7 @@ class SettingsPanel extends Component
             ->all();
     }
 
-    public function templateVariableLabel($variable): string
+    public function templateVariableLabel(SiteTmplvar $variable): string
     {
         $caption = trim((string) ($variable->caption ?? ''));
         $name = trim((string) ($variable->name ?? ''));
@@ -293,11 +323,17 @@ class SettingsPanel extends Component
         return ($caption !== '' ? $caption : $name) . ($name !== '' ? ' (' . $name . ')' : '');
     }
 
+    /**
+     * @return array<int, string>
+     */
     protected function obsoleteTranslationKeys(): array
     {
         return (new sLangController())->obsoleteTranslationKeys();
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     protected function snapshot(array $data): string
     {
         ksort($data);

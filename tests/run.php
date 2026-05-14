@@ -60,6 +60,9 @@ function slang_read(string $path): string
     return (string) file_get_contents($absolute);
 }
 
+/**
+ * @return array<string, mixed>
+ */
 function slang_config(string $path): array
 {
     $absolute = slang_path($path);
@@ -76,7 +79,7 @@ slang_group('package', function () use ($root): void {
         $composer = json_decode((string) file_get_contents($root . '/composer.json'), true, 512, JSON_THROW_ON_ERROR);
 
         slang_assert(isset($composer['require']['evolution-cms/evo-ui']), 'sLang must require evolution-cms/evo-ui.');
-        slang_assert(($composer['require']['evolution-cms/evo-ui'] ?? null) === '^1.0', 'sLang must pin evo-ui to the release line.');
+        slang_assert(($composer['require']['evolution-cms/evo-ui'] ?? null) === '^1.0.1', 'sLang must pin evo-ui to the 1.0.1 release line.');
         slang_assert(($composer['license'] ?? null) === 'GPL-3.0-or-later', 'Composer license must use a non-deprecated SPDX identifier.');
         slang_assert(($composer['scripts']['test'] ?? null) === 'php tests/run.php', 'Composer test script must run the repeatable compatibility suite.');
         slang_assert(($composer['extra']['laravel']['priority']['Seiger\\sLang\\sLangServiceProvider'] ?? null) === 20, 'sLang service provider priority must stay first for language routing.');
@@ -89,8 +92,13 @@ slang_group('dictionary-table', function (): void {
 
         slang_assert(($table['provider'] ?? null) === \Seiger\sLang\Tables\TranslatesTableData::class, 'Dictionary table must use TranslatesTableData provider.');
         slang_assert(($table['views'] ?? []) === ['table'], 'Dictionary table must stay table-only.');
-        slang_assert(($table['inline']['create_provider'] ?? null) === 'createInlineRow', 'Dictionary table must create rows inline.');
         slang_assert(($table['inline']['save_provider'] ?? null) === 'updateInlineField', 'Dictionary table must save fields inline.');
+        slang_assert(($table['modal']['enabled'] ?? false) === true, 'Dictionary table must enable the evo-ui create modal.');
+        slang_assert(($table['modal']['save_provider'] ?? null) === 'saveModal', 'Dictionary create modal must save through provider.');
+        slang_assert(($table['modal']['row_dblclick'] ?? true) === false, 'Dictionary rows must not open the create modal on double click.');
+        slang_assert(str_contains((string) ($table['wire_target'] ?? ''), 'openCreateModal'), 'Dictionary table must expose create modal action.');
+        slang_assert(str_contains((string) ($table['wire_target'] ?? ''), 'saveModal'), 'Dictionary table must expose modal save action.');
+        slang_assert(!str_contains((string) ($table['wire_target'] ?? ''), 'createInlineRow'), 'Dictionary toolbar must not create random inline rows.');
         slang_assert(str_contains((string) ($table['wire_target'] ?? ''), 'runInlineFieldAction'), 'Dictionary table must expose inline actions.');
         slang_assert(str_contains((string) ($table['wire_target'] ?? ''), 'runHeaderAction'), 'Dictionary table must expose header actions.');
         slang_assert(str_contains((string) ($table['wire_target'] ?? ''), 'runTableAction'), 'Dictionary table must expose toolbar provider actions.');
@@ -100,14 +108,23 @@ slang_group('dictionary-table', function (): void {
         slang_assert(($table['per_page_options'] ?? []) === [5, 10, 20, 30, 50, 100], 'Dictionary per-page options must use the standard set.');
         slang_assert(($table['search']['width'] ?? null) === 'sm', 'Dictionary search must stay compact.');
         slang_assert(($table['columns'][0]['editable'] ?? true) === false, 'Dictionary key column must not be editable online.');
-        slang_assert(in_array('synchronize', array_column((array) ($table['actions'] ?? []), 'key'), true), 'Dictionary toolbar must include synchronize action.');
+        $createAction = null;
         $syncAction = null;
         foreach ((array) ($table['actions'] ?? []) as $action) {
-            if (is_array($action) && ($action['key'] ?? null) === 'synchronize') {
+            if (!is_array($action)) {
+                continue;
+            }
+
+            if (($action['key'] ?? null) === 'create') {
+                $createAction = $action;
+            }
+
+            if (($action['key'] ?? null) === 'synchronize') {
                 $syncAction = $action;
-                break;
             }
         }
+        slang_assert(($createAction['method'] ?? null) === 'openCreateModal', 'Dictionary plus button must open the create modal.');
+        slang_assert(in_array('synchronize', array_column((array) ($table['actions'] ?? []), 'key'), true), 'Dictionary toolbar must include synchronize action.');
         slang_assert(($syncAction['type'] ?? null) === 'wire', 'Dictionary synchronize action must avoid iframe reload.');
         slang_assert(($syncAction['provider'] ?? null) === 'synchronizeTranslations', 'Dictionary synchronize action must call provider through Livewire.');
         slang_assert(($syncAction['placement'] ?? null) === 'controls', 'Dictionary synchronize action must render near search controls.');
@@ -127,7 +144,10 @@ slang_group('dictionary-table', function (): void {
             "'provider' => 'autoTranslateInlineField'",
             "'header_actions'",
             "'provider' => 'autoTranslateEmptyColumn'",
-            'public function createInlineRow',
+            'public function modalDefaults',
+            'public function modalFields',
+            'public function saveModal',
+            'ValidationException::withMessages',
             'public function deleteName',
             'public function deleteRow',
             'public function synchronizeTranslations',
@@ -164,7 +184,6 @@ slang_group('settings', function (): void {
     slang_test('settings panel uses evo-ui choices and dirty-state form contract', function (): void {
         $component = slang_read('src/Livewire/SettingsPanel.php');
         $view = slang_read('views/livewire/settings-panel.blade.php');
-        $styles = slang_read('assets/css/manager.css');
 
         foreach ([
             'public bool $dirty = false;',
@@ -194,26 +213,16 @@ slang_group('settings', function (): void {
             'wire:click="cleanupObsoleteTranslations"',
             'wire:confirm="@lang(\'sLang::global.cleanup_obsolete_confirm\')"',
             'cleanup_obsolete_count',
-            'slang-settings__segments',
-            'slang-settings__maintenance',
+            'evo-ui-form-surface--layout-settings',
+            'evo-ui-field__label',
+            'evo-ui-option-stack',
+            'evo-ui-option-choice',
         ] as $marker) {
             slang_assert_contains($marker, $view, 'Missing settings view marker: ' . $marker);
         }
 
-        foreach ([
-            'justify-content: flex-end;',
-            'justify-self: end;',
-            'text-align: right;',
-            'justify-content: flex-start;',
-            'slang-settings__segments',
-            'slang-settings__maintenance',
-            'justify-content: space-between;',
-            'justify-items: start;',
-        ] as $marker) {
-            slang_assert_contains($marker, $styles, 'Missing settings stylesheet marker: ' . $marker);
-        }
-
         slang_assert(!str_contains($view, '<style>'), 'Settings panel must load package CSS instead of inline styles.');
+        slang_assert(!str_contains($view, 'slang-settings__'), 'Settings panel must use shared evo-ui primitives instead of local manager layout classes.');
 
         foreach (['en', 'uk', 'ru', 'fr'] as $locale) {
             $translations = slang_config('lang/' . $locale . '/global.php');
@@ -256,13 +265,13 @@ slang_group('module-shell', function (): void {
 
         foreach ([
             "\$moduleTitle = __('sLang::global.module_title')",
-            'css/manager.css',
             'js/manager.js',
             'data-slang-module-title',
         ] as $marker) {
             slang_assert_contains($marker, $shell, 'Missing manager chrome marker: ' . $marker);
         }
 
+        slang_assert(!str_contains($shell, 'css/manager.css'), 'Manager module must not load local manager CSS; module surface is owned by evo-ui.');
         foreach ([
             "document.querySelector('[data-slang-module-title]')",
             'const syncManagerChrome = () => {',
@@ -416,7 +425,20 @@ slang_group('docs', function (): void {
         slang_assert(!is_dir(slang_path('docs/ua')), 'Ukrainian docs must use uk, not ua.');
 
         $languages = ['uk', 'en', 'de', 'fr', 'pl'];
-        $pages = ['README.md', 'getting-started.md', 'management-tabs.md', 'use-in-blade.md', 'resource-bridge.md'];
+        $pages = [
+            'README.md',
+            'getting-started.md',
+            'user-guide.md',
+            'management-tabs.md',
+            'configuration.md',
+            'use-in-blade.md',
+            'developer-guide.md',
+            'reference.md',
+            'frontend-guide.md',
+            'resource-bridge.md',
+            'troubleshooting.md',
+            'release-checklist.md',
+        ];
 
         foreach ($languages as $language) {
             foreach ($pages as $page) {
@@ -424,11 +446,9 @@ slang_group('docs', function (): void {
             }
         }
 
-        foreach (['user-guide.md', 'developer-guide.md'] as $generatedFile) {
-            foreach ($languages as $language) {
-                slang_assert(!is_file(slang_path('docs/' . $language . '/' . $generatedFile)), 'Generated guide file must not return: docs/' . $language . '/' . $generatedFile);
-            }
-        }
+        slang_assert(is_file(slang_path('docs/README.md')), 'Missing root dDocs package README.');
+        slang_assert(is_file(slang_path('docs/checks/docs-check.php')), 'Missing local dDocs check runner.');
+        slang_assert(is_dir(slang_path('docs/assets')), 'Missing dDocs assets directory.');
 
         foreach ($languages as $language) {
             foreach ($pages as $page) {
@@ -458,6 +478,28 @@ slang_group('docs', function (): void {
                 }
             }
         }
+
+        foreach ([
+            'SettingsPanel',
+            'ModulePanel',
+            'TranslatesTableData',
+            'LanguageBridge',
+            'CreateSLangTables',
+            's_lang_default',
+            's_lang_config',
+            'config/translates/table.php',
+            'tpSettings.addTabPage',
+            'form#mutate',
+            'window.sLangResourceTabs',
+        ] as $signal) {
+            $haystack = '';
+            foreach ($languages as $language) {
+                foreach ($pages as $page) {
+                    $haystack .= "\n" . (string) file_get_contents(slang_path('docs/' . $language . '/' . $page));
+                }
+            }
+            slang_assert_contains($signal, $haystack, 'Missing dDocs signal in localized docs: ' . $signal);
+        }
     });
 });
 
@@ -482,7 +524,9 @@ slang_group('regression-entrypoint', function (): void {
     });
 });
 
-if ($failed > 0) {
+$failedCount = (int) ($GLOBALS['failed'] ?? 0);
+
+if ($failedCount > 0) {
     exit(1);
 }
 
