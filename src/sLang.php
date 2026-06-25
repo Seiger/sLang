@@ -46,7 +46,9 @@ class sLang
         if (trim($sLangFront)) {
             $langFront = explode(',', $sLangFront);
         }
-        $baseUrl = $this->stripLanguageSegmentFromUri((string)request()->getRequestUri(), (string)evo()->getConfig('lang', 'uk'));
+        $baseUrl = $this->removeTrackingQueryParameters(
+            $this->stripLanguageSegmentFromUri((string)request()->getRequestUri(), (string)evo()->getConfig('lang', 'uk'))
+        );
         $result = [];
         foreach ($langFront as $item) {
             $result[$item] = $langList[$item];
@@ -449,6 +451,28 @@ class sLang
         $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
 
         return $path . $query . $fragment;
+    }
+
+    /**
+     * Remove known external tracking parameters from URLs generated for language alternatives.
+     *
+     * @since 1.1.0
+     */
+    protected function removeTrackingQueryParameters(string $uri): string
+    {
+        $parts = parse_url($uri);
+        if ($parts === false || empty($parts['query'])) {
+            return $uri;
+        }
+
+        parse_str($parts['query'], $query);
+        unset($query['srsltid'], $query['srsltiid']);
+
+        $path = (string)($parts['path'] ?? '');
+        $queryString = !empty($query) ? '?' . http_build_query($query) : '';
+        $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+        return $path . $queryString . $fragment;
     }
 
     /**
