@@ -73,20 +73,29 @@
                     @endif
                 @endif
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'introtext', 'content' => $content]))
-                @if(is_array($evtField)){!!implode('', $evtField)!!}@else
+                @if($content['type'] == 'reference' || evo()->getManagerApi()->action == '72') {{-- Web Link specific --}}
+                @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'ta', 'content' => $content]))
+                @if(is_array($evtField)){!! implode('', $evtField) !!}@else
                     <div class="row form-row">
-                            @include('sLang::partials.resource-field-label', ['for' => $lang . '_introtext', 'label' => __('global.resource_summary'), 'help' => __('global.resource_summary_help')])
+                        <div class="col-auto col-title-11">
+                            <label for="{{$lang}}_content" class="warning">@lang('global.weblink')</label>
+                            <i class="{{$_style["icon_question_circle"]}}" data-tooltip="@lang('global.resource_weblink_help')"></i>
+                        </div>
                         <div class="col">
-                            @if($lang == sLang::langDefault())
-                                <textarea id="{{$lang}}_introtext" name="{{$lang}}_introtext" class="form-control" rows="3" cols="" data-slang-dirty="1">{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_introtext', '', 'is_scalar')))}}</textarea>
-                            @else
-                                <div class="input-group">
-                                    <textarea id="{{$lang}}_introtext" name="{{$lang}}_introtext" class="form-control slang-resource-input" rows="3" cols="" data-slang-dirty="1">{{evo()->getPhpCompat()->htmlspecialchars(stripslashes(get_by_key($content, $lang.'_introtext', '', 'is_scalar')))}}</textarea>
-                                    @include('sLang::partials.translate-button', ['lang' => $lang])
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i id="llock_{{$lang}}" class="{{$_style["icon_chain"]}}" onclick="enableLinkSelection(!allowLinkSelection);"></i>
+                                        </span>
                                 </div>
-                            @endif
+                                <input name="{{$lang}}_content" id="{{$lang}}_content" type="text" maxlength="255" value="{{($value = get_by_key($content, $lang.'_content', '', 'is_scalar')) !== '' ? entities(stripslashes($value), evo()->getConfig('modx_charset')) : 'http://'}}" class="form-control" onchange="documentDirty=true;" />
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="BrowseFileServer('{{$lang}}_content')">@lang('global.insert')</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                @endif
                 @endif
                 @php($evtField = evo()->invokeEvent('sLangDocFormFieldRender', ['lang' => $lang, 'name' => 'menutitle', 'content' => $content]))
                 @if(is_array($evtField)){!!implode('', $evtField)!!}@else
