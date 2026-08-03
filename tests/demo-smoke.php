@@ -25,9 +25,9 @@ if (!is_string($demoCore) || !is_file($demoCore . '/artisan')) {
 run('Package discovery', PHP_BINARY . ' ' . escapeshellarg($demoCore . '/artisan') . ' package:discover');
 run('Clear Blade views', PHP_BINARY . ' ' . escapeshellarg($demoCore . '/artisan') . ' view:clear');
 run('Run migrations', PHP_BINARY . ' ' . escapeshellarg($demoCore . '/artisan') . ' migrate --force');
-assertAutoload($demoCore);
-assertDatabase($demoCore);
-assertDictionaryCrud($demoCore);
+smokeAssertAutoload($demoCore);
+smokeAssertDatabase($demoCore);
+smokeAssertDictionaryCrud($demoCore);
 
 if ($url !== null) {
     smokeHttp($demoCore, $url);
@@ -51,7 +51,7 @@ function run(string $label, string $command): void
     echo "{$label}: OK\n";
 }
 
-function assertAutoload(string $demoCore): void
+function smokeAssertAutoload(string $demoCore): void
 {
     require $demoCore . '/vendor/autoload.php';
 
@@ -71,7 +71,7 @@ function assertAutoload(string $demoCore): void
     echo "Autoload classes: OK\n";
 }
 
-function assertDatabase(string $demoCore): void
+function smokeAssertDatabase(string $demoCore): void
 {
     $database = $demoCore . '/database/database.sqlite';
 
@@ -93,14 +93,14 @@ function assertDatabase(string $demoCore): void
     echo "sLang database tables: OK\n";
 }
 
-function assertDictionaryCrud(string $demoCore): void
+function smokeAssertDictionaryCrud(string $demoCore): void
 {
     $database = $demoCore . '/database/database.sqlite';
     $pdo = new PDO('sqlite:' . $database);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $prefix = tableExists($pdo, 'evo_s_lang_translates') ? 'evo_' : '';
     $table = $prefix . 's_lang_translates';
-    $columns = tableColumns($pdo, $table);
+    $columns = smokeTableColumns($pdo, $table);
 
     foreach (['key', 'uk', 'en'] as $column) {
         if (!in_array($column, $columns, true)) {
@@ -109,7 +109,8 @@ function assertDictionaryCrud(string $demoCore): void
         }
     }
 
-    $rows = (int) $pdo->query("select count(*) from {$table}")?->fetchColumn();
+    $countStatement = $pdo->query("select count(*) from {$table}");
+    $rows = $countStatement instanceof PDOStatement ? (int) $countStatement->fetchColumn() : 0;
     if ($rows < 3) {
         fwrite(STDERR, "Dictionary CRUD smoke failed: expected seeded demo rows\n");
         exit(1);
@@ -229,7 +230,7 @@ function smokeSettingsHttp(string $demoCore, string $baseUrl): void
         }
     }
 
-    foreach (['slang-settings', 'evo-ui-choices', 'data-evo-form-dirty'] as $marker) {
+    foreach (['evo-ui-form-surface--layout-settings', 'evo-ui-choices', 'data-evo-form-dirty'] as $marker) {
         if (!str_contains($html, $marker)) {
             fwrite(STDERR, "HTTP settings smoke failed: missing {$marker}\n");
             exit(1);
@@ -305,7 +306,9 @@ function activeSession(string $database): string
         return '';
     }
 
-    return (string) ($pdo->query("select sid from {$table} order by lasthit desc limit 1")?->fetchColumn() ?: '');
+    $statement = $pdo->query("select sid from {$table} order by lasthit desc limit 1");
+
+    return $statement instanceof PDOStatement ? (string) ($statement->fetchColumn() ?: '') : '';
 }
 
 function tableExists(PDO $pdo, string $table): bool
@@ -316,10 +319,19 @@ function tableExists(PDO $pdo, string $table): bool
     return (bool) $statement->fetchColumn();
 }
 
-function tableColumns(PDO $pdo, string $table): array
+/**
+ * @return array<int, string>
+ */
+function smokeTableColumns(PDO $pdo, string $table): array
 {
+    $statement = $pdo->query("pragma table_info({$table})");
+
+    if (!$statement instanceof PDOStatement) {
+        return [];
+    }
+
     return array_map(
         static fn (array $row): string => (string) $row['name'],
-        $pdo->query("pragma table_info({$table})")->fetchAll(PDO::FETCH_ASSOC)
+        $statement->fetchAll(PDO::FETCH_ASSOC)
     );
 }

@@ -5,8 +5,16 @@
 ## Сторінки
 
 - [Початок роботи](getting-started.md)
+- [Гайд користувача](user-guide.md)
 - [Вкладки керування](management-tabs.md)
+- [Конфігурація](configuration.md)
 - [Використання в Blade](use-in-blade.md)
+- [Гайд розробника](developer-guide.md)
+- [Довідник](reference.md)
+- [Frontend-гайд](frontend-guide.md)
+- [Міст ресурсу](resource-bridge.md)
+- [Діагностика](troubleshooting.md)
+- [Release checklist](release-checklist.md)
 
 ## Можливості
 

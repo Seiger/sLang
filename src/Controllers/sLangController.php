@@ -5,10 +5,11 @@ use EvolutionCMS\Models\SiteContent;
 use EvolutionCMS\Models\SiteTmplvar;
 use EvolutionCMS\Models\SiteTmplvarContentvalue;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View as ViewFacade;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
+use Illuminate\Contracts\View\View;
 use Seiger\sLang\Facades\sLang;
 use Seiger\sLang\Models\sLangContent;
 use Seiger\sLang\Models\sLangTmplvarContentvalue;
@@ -17,7 +18,7 @@ use Seiger\sLang\Models\sLangTranslate;
 
 class sLangController
 {
-    public $tblLang = '';
+    public string $tblLang = '';
 
     /**
      * Show tabs module
@@ -32,10 +33,10 @@ class sLangController
     /**
      * Render tabs resource
      *
-     * @param array $params Additional parameters for rendering the tabs view
+     * @param array<string, mixed> $params Additional parameters for rendering the tabs view
      * @return View The rendered tabs view
      */
-    public function tabs($params = []): View
+    public function tabs(array $params = []): View
     {
         global $_lang, $_style, $content;
 
@@ -58,8 +59,8 @@ class sLangController
     /**
      * Prepare fields for content
      *
-     * @param array $content Array containing the content data
-     * @return array Prepared array containing the content data with language-specific fields and menu values
+     * @param array<string, mixed> $content Array containing the content data
+     * @return array<string, mixed> Prepared array containing the content data with language-specific fields and menu values
      */
     public function prepareFields(array $content): array
     {
@@ -71,8 +72,9 @@ class sLangController
             }
         }
 
-        $translates = sLangContent::withoutGlobalScope('language')
-            ->whereResource($content['id'] ?? 0)
+        $translates = sLangContent::query()
+            ->withoutGlobalScope('language')
+            ->where('resource', $content['id'] ?? 0)
             ->get()
             ->toArray();
 
@@ -95,16 +97,16 @@ class sLangController
         }
 
         $contentMenu['menu_main'] = 0;
-        $tv = SiteTmplvar::whereName('menu_main')->first();
+        $tv = SiteTmplvar::query()->where('name', 'menu_main')->first();
         if ($tv) {
-            $value = SiteTmplvarContentvalue::where('tmplvarid', $tv->id)->where('contentid', ($content['id'] ?? 0))->first();
+            $value = SiteTmplvarContentvalue::query()->where('tmplvarid', $tv->id)->where('contentid', ($content['id'] ?? 0))->first();
             $contentMenu['menu_main'] = $value->value ?? 0;
         }
 
         $contentMenu['menu_footer'] = 0;
-        $tv = SiteTmplvar::whereName('menu_footer')->first();
+        $tv = SiteTmplvar::query()->where('name', 'menu_footer')->first();
         if ($tv) {
-            $value = SiteTmplvarContentvalue::where('tmplvarid', $tv->id)->where('contentid', ($content['id'] ?? 0))->first();
+            $value = SiteTmplvarContentvalue::query()->where('tmplvarid', $tv->id)->where('contentid', ($content['id'] ?? 0))->first();
             $contentMenu['menu_footer'] = $value->value ?? 0;
         }
 
@@ -116,7 +118,7 @@ class sLangController
      *
      * @param int $resourceId The ID of the resource
      * @param string $langKey The language key
-     * @param array $fields An associative array of fields and their values to update or create
+     * @param array<string, mixed> $fields An associative array of fields and their values to update or create
      * @return void
      */
     public function setLangContent(int $resourceId, string $langKey, array $fields): void
@@ -130,7 +132,7 @@ class sLangController
      *
      * @param int $resourceId The ID of the resource.
      * @param string $langKey The language key.
-     * @param array $fields An associative array where the key is the template variable ID and the value is the content value.
+     * @param array<int|string, mixed> $fields An associative array where the key is the template variable ID and the value is the content value.
      *
      * @return void
      */
@@ -138,7 +140,7 @@ class sLangController
     {
         foreach ($fields as $tmplvarId => $value) {
             if ($langKey === sLang::langDefault()) {
-                SiteTmplvarContentvalue::updateOrCreate(['tmplvarid' => $tmplvarId, 'contentid' => $resourceId], ['value' => $value]);
+                SiteTmplvarContentvalue::query()->updateOrCreate(['tmplvarid' => $tmplvarId, 'contentid' => $resourceId], ['value' => $value]);
             }
             sLangTmplvarContentvalue::updateOrCreate(['tmplvarid' => $tmplvarId, 'contentid' => $resourceId, 'lang' => $langKey], ['value' => $value]);
         }
@@ -171,7 +173,7 @@ class sLangController
     {
         $value = (int)$value;
 
-        return $this->updateTblSetting('s_lang_default_show', $value);
+        return $this->updateTblSetting('s_lang_default_show', (string)$value);
     }
 
     /**
@@ -260,7 +262,9 @@ class sLangController
             }
         }
 
-        return $this->updateTblSetting('s_lang_url_map', json_encode($segments, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $encoded = json_encode($segments, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return $this->updateTblSetting('s_lang_url_map', is_string($encoded) ? $encoded : '{}');
     }
 
     /**
@@ -276,7 +280,6 @@ class sLangController
 
         if ($templateVariables) {
             $multilangTvs = [];
-            $templateVariables = $templateVariables->toArray();
             if (is_array($value)) {
                 $multilangTvs = array_filter($value, function ($var) use ($templateVariables) {
                     return in_array($var, $templateVariables) ? true : false;
@@ -299,7 +302,7 @@ class sLangController
     {
         $value = (int)$value;
 
-        return $this->updateTblSetting('s_lang_enable', $value);
+        return $this->updateTblSetting('s_lang_enable', (string)$value);
     }
 
     /**
@@ -344,11 +347,15 @@ class sLangController
         /**
          * Clearing the cache
          */
-        return evo()->clearCache('full');
+        evo()->clearCache('full');
+
+        return true;
     }
 
     /**
      * Discover translation keys used by project Blade views.
+     *
+     * @return array<int, string>
      */
     public function discoveredTranslationKeys(): array
     {
@@ -370,9 +377,12 @@ class sLangController
             }
 
             $data = file_get_contents(EVO_BASE_PATH . $view);
+            if (!is_string($data)) {
+                continue;
+            }
             preg_match_all("/@lang\('\K.+?(?='\))/", $data, $match);
 
-            if (!is_array($match) || !is_array($match[0] ?? null) || count($match[0]) === 0) {
+            if ($match[0] === []) {
                 continue;
             }
 
@@ -390,6 +400,8 @@ class sLangController
 
     /**
      * Find obsolete parser-managed translation keys that can be safely cleaned.
+     *
+     * @return array<int, string>
      */
     public function obsoleteTranslationKeys(?int $limit = null): array
     {
@@ -458,6 +470,9 @@ class sLangController
         $this->updateLangFiles();
     }
 
+    /**
+     * @param array<string, int> $discovered
+     */
     protected function isObsoleteTranslationCandidate(sLangTranslate $translate, string $key, string $default, array $discovered): bool
     {
         if ($key === '' || isset($discovered[$key])) {
@@ -485,11 +500,11 @@ class sLangController
         $phrase = sLangTranslate::find($source);
 
         if ($phrase) {
-            $text = $phrase[$langDefault];
+            $text = (string) $phrase[$langDefault];
             $result = sLang::getAutomaticTranslate($text, $langDefault, $target);
         }
 
-        if (trim($result)) {
+        if ($phrase && trim($result)) {
             $phrase->{$target} = $result;
             $phrase->save();
         }
@@ -547,23 +562,23 @@ class sLangController
      * Renders a view with optional data.
      *
      * @param string $tpl The name of the template to render.
-     * @param array $data Optional data to pass to the template.
+     * @param array<string, mixed> $data Optional data to pass to the template.
      *
-     * @return Illuminate\View\View The rendered view.
+     * @return View The rendered view.
      */
-    public function view(string $tpl, array $data = [])
+    public function view(string $tpl, array $data = []): View
     {
-        return \View::make('sLang::'.$tpl, $data);
+        return ViewFacade::make('sLang::'.$tpl, $data);
     }
 
     /**
      * Retrieves the HTML output of the template variables for a specific content.
      *
-     * @param array $params The parameters for retrieving the template variables.
+     * @param array<string, mixed> $params The parameters for retrieving the template variables.
      *
-     * @return string The HTML output of the template variables.
+     * @return array<string, mixed> The rendered template variable sections.
      */
-    protected function getTvsHtml($params)
+    protected function getTvsHtml(array $params): array
     {
         global $_lang, $_style, $content, $richtexteditorIds, $richtexteditorOptions;;
         $id = (int)$params['id'];
@@ -703,10 +718,12 @@ class sLangController
                     if ($row['type'] == 'richtext' || $row['type'] == 'htmlarea') {
                         // determine TV-options
                         $tvOptions = EvolutionCMS()->parseProperties($row['elements']);
+                        $editor = EvolutionCMS()->getConfig('which_editor');
                         if (!empty($tvOptions)) {
                             // Allow different Editor with TV-option {"editor":"CKEditor4"} or &editor=Editor;text;CKEditor4
                             $editor = isset($tvOptions['editor']) ? $tvOptions['editor'] : EvolutionCMS()->getConfig('which_editor');
                         };
+                        $editor = (string) $editor;
                         // Add richtext editor to the list
                         $richtexteditorIds[$editor][] = "tv" . $row['id'];
                         $richtexteditorOptions[$editor]["tv" . $row['id']] = $tvOptions;
@@ -904,7 +921,7 @@ class sLangController
     {
         $tbl = evo()->getDatabase()->getFullTableName('system_settings');
 
-        return evo()->getDatabase()->query("REPLACE INTO {$tbl} (`setting_name`, `setting_value`) VALUES ('{$name}', '{$value}')");
+        return evo()->getDatabase()->query("REPLACE INTO {$tbl} (`setting_name`, `setting_value`) VALUES ('{$name}', '{$value}')") !== false;
     }
 
     /**

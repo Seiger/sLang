@@ -5,8 +5,16 @@
 ## Strony
 
 - [Pierwsze kroki](getting-started.md)
+- [Przewodnik użytkownika](user-guide.md)
 - [Zakładki zarządzania](management-tabs.md)
+- [Konfiguracja](configuration.md)
 - [Użycie w Blade](use-in-blade.md)
+- [Przewodnik dewelopera](developer-guide.md)
+- [Referencja](reference.md)
+- [Przewodnik frontend](frontend-guide.md)
+- [Most zasobu](resource-bridge.md)
+- [Rozwiązywanie problemów](troubleshooting.md)
+- [Release checklist](release-checklist.md)
 
 ## Funkcje
 

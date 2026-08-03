@@ -1,5 +1,6 @@
 <?php return [
     'add_translation' => 'Добавить перевод',
+    'create_translation' => 'Создать перевод',
     'auto_translate' => 'Автоперевод',
     'auto_translate_empty' => 'Перевести пустые',
     'copyright' => 'Разработка',
@@ -8,6 +9,10 @@
     'do_not_empty' => 'не должно быть пустым',
     'example_usage' => 'Используйте конструкцию <b>@lang(\'phrase\')</b> для встраивания фраз переводов в Blade шаблоне. Например <b>@lang(\'Привет Мир!\')</b>',
     'field' => 'Поле',
+    'translation_key_help' => 'Стабильный ключ перевода, который используется в шаблонах и коде.',
+    'translation_key_placeholder' => 'Например: site.header.title',
+    'translation_key_exists' => 'Такой ключ перевода уже существует.',
+    'translation_value_placeholder' => 'Текст перевода',
     'lang_ab' => 'Абхазский',
     'lang_az' => 'Азербайджанский',
     'lang_be' => 'Белорусский',

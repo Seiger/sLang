@@ -3,9 +3,20 @@
 use EvolutionCMS\Facades\UrlProcessor;
 use Illuminate\Database\Eloquent;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Seiger\sLang\Support\TreeCollection;
 
+/**
+ * @property int $resource
+ * @property string|null $content
+ * @property string|null $content_orig
+ * @property bool $isExternalLink
+ * @property string $fullLink
+ * @method static \Illuminate\Database\Eloquent\Builder<self> query()
+ * @method static \Illuminate\Database\Eloquent\Builder<self> withoutGlobalScope(string $scope)
+ */
 class sLangContent extends Eloquent\Model
 {
     protected $table = 's_lang_content';
@@ -14,24 +25,28 @@ class sLangContent extends Eloquent\Model
     /**
      * Add the language and template variable fields to the query.
      *
-     * @param Builder $query The query builder instance
+     * @param Builder<self> $query The query builder instance
      * @param string $locale The language locale
-     * @param array $tvNames The array of template variable names
-     * @return Builder The modified query builder instance
+     * @param array<int, string> $tvNames The array of template variable names
+     * @return Builder<self> The modified query builder instance
      *
      * @deprecated since 1.0.8
      * TODO: REMOVE IN v1.2
      */
-    public function scopeLangAndTvs($query, $locale, $tvNames = [])
+    public function scopeLangAndTvs(Builder $query, string $locale, array $tvNames = []): Builder
     {
         $query = $this->scopeLang($query, $locale);
-        return $query->withTVs($tvNames);
+        return $this->scopeWithTVs($query, $tvNames);
     }
 
     /**
      * Limit the query to a specific language. Falls back to evo()->getLocale() when locale is not provided.
      */
-    public function scopeLang($query, ?string $locale = null)
+    /**
+     * @param Builder<self> $query
+     * @return Builder<self>
+     */
+    public function scopeLang(Builder $query, ?string $locale = null): Builder
     {
         $query = $query->withoutGlobalScope('language');
         $locale = static::resolveLocale($locale);
@@ -42,7 +57,12 @@ class sLangContent extends Eloquent\Model
     /**
      * Append template variable fields while preserving base selects.
      */
-    public function scopeWithTVs($query, array $tvNames = [])
+    /**
+     * @param Builder<self> $query
+     * @param array<int, string> $tvNames
+     * @return Builder<self>
+     */
+    public function scopeWithTVs(Builder $query, array $tvNames = []): Builder
     {
         $this->applyContentSelects($query);
         return $this->scopeSelectTvs($query, $tvNames);
@@ -51,11 +71,11 @@ class sLangContent extends Eloquent\Model
     /**
      * Adds TV selections to the query based on the given TV names.
      *
-     * @param \Illuminate\Database\Query\Builder $query The database query builder instance
-     * @param array $tvNames The array of TV names to select
-     * @return \Illuminate\Database\Query\Builder The modified query builder instance
+     * @param Builder<self> $query The database query builder instance
+     * @param array<int, string> $tvNames The array of TV names to select
+     * @return Builder<self> The modified query builder instance
      */
-    public function scopeSelectTvs($query, $tvNames = [])
+    public function scopeSelectTvs(Builder $query, array $tvNames = []): Builder
     {
         if (count($tvNames)) {
             foreach ($tvNames as $tvName) {
@@ -77,10 +97,10 @@ class sLangContent extends Eloquent\Model
     /**
      * Adds conditions to the query to filter for active items.
      *
-     * @param \Illuminate\Database\Query\Builder $query The database query builder instance
-     * @return \Illuminate\Database\Query\Builder The modified query builder instance
+     * @param Builder<self> $query The database query builder instance
+     * @return Builder<self> The modified query builder instance
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('published', '1')->where('deleted', '0');
     }
@@ -88,47 +108,56 @@ class sLangContent extends Eloquent\Model
     /**
      * Performs a search on the query based on the search term.
      *
-     * @return \Illuminate\Support\HigherOrderWhenProxy|sLangContent The modified query builder instance or null if no search term is provided
+     * @return Builder The modified query builder instance.
      */
-    public function scopeSearch()
+    /**
+     * @param Builder<self> $query
+     * @return Builder<self>
+     */
+    public function scopeSearch(Builder $query): Builder
     {
-        if (request()->has('search')) {
-            $fields = collect(['pagetitle', 'longtitle']);
+        $request = request();
+        if (!$request instanceof Request || !$request->has('search')) {
+            return $query;
+        }
 
-            $searchTerms = Str::of(request('search'))
-                ->stripTags()
-                ->replaceMatches('/[^\p{L}\p{N}\@\.!#$%&\'*+-\/=?^_`{|}~]/iu', ' ') // allowed symbol in email
-                ->replaceMatches('/(\s){2,}/', '$1') // removing extra spaces
-                ->trim()->explode(' ')
-                ->filter(fn($word) => mb_strlen($word) > 2);
+        $fields = collect(['pagetitle', 'longtitle']);
 
-            if ($searchTerms->isEmpty()) {
-                return;
+        $searchTerms = Str::of((string) $request->input('search'))
+            ->stripTags()
+            ->replaceMatches('/[^\p{L}\p{N}\@\.!#$%&\'*+-\/=?^_`{|}~]/iu', ' ') // allowed symbol in email
+            ->replaceMatches('/(\s){2,}/', '$1') // removing extra spaces
+            ->trim()->explode(' ')
+            ->filter(fn($word) => mb_strlen($word) > 2);
+
+        if ($searchTerms->isEmpty()) {
+            return $query;
+        }
+
+        $table = $this->getTable();
+        $selectExpressions = [];
+        $bindings = [];
+
+        foreach ($searchTerms as $word) {
+            foreach ($fields as $field) {
+                $selectExpressions[] = "(CASE WHEN `{$table}`.`{$field}` LIKE ? THEN 1 ELSE 0 END)";
+                $bindings[] = "%{$word}%";
             }
+        }
 
-            $table = $this->getTable();
-            $selectExpressions = [];
-            $bindings = [];
+        $pointsSql = empty($selectExpressions) ? '0' : implode(' + ', $selectExpressions);
 
+        $query->selectRaw('*, (' . $pointsSql . ') as points', $bindings);
+        $query->where(function ($query) use ($searchTerms, $fields) {
             foreach ($searchTerms as $word) {
                 foreach ($fields as $field) {
-                    $selectExpressions[] = "(CASE WHEN `{$table}`.`{$field}` LIKE ? THEN 1 ELSE 0 END)";
-                    $bindings[] = "%{$word}%";
+                    $query->orWhere($field, 'like', "%{$word}%");
                 }
             }
+        });
+        $query->orderByDesc('points');
 
-            $pointsSql = empty($selectExpressions) ? '0' : implode(' + ', $selectExpressions);
-
-            return $this->selectRaw('*, (' . $pointsSql . ') as points', $bindings)
-                ->where(function ($query) use ($searchTerms, $fields) {
-                    foreach ($searchTerms as $word) {
-                        foreach ($fields as $field) {
-                            $query->orWhere($field, 'like', "%{$word}%");
-                        }
-                    }
-                })
-                ->orderByDesc('points');
-        }
+        return $query;
     }
 
     /**
@@ -144,17 +173,17 @@ class sLangContent extends Eloquent\Model
      * - Numeric: >, <, >=, <= (casts TV value to a numeric type per DB driver)
      * - Arrays: value as array -> WHERE IN (operator is ignored)
      *
-     * @param Builder $query The Eloquent query builder instance.
+     * @param Builder<self> $query The Eloquent query builder instance.
      * @param string  $name The TV name to filter by.
      * @param mixed   $value The value to filter by (scalar or array).
      * @param string  $operator The comparison operator (=, >, <, >=, <=, !=, <>, like, not like).
-     * @return Builder The modified query builder instance.
+     * @return Builder<self> The modified query builder instance.
      */
     public function scopeWhereTv(Builder $query, string $name, $value, string $operator = '='): Builder
     {
         $op = strtolower(trim($operator));
 
-        return $query->whereExists(function ($sub) use ($name, $value, $op) {
+        $query->whereExists(function ($sub) use ($name, $value, $op) {
             $sub->select(DB::raw('1'))
                 ->from('site_tmplvar_contentvalues as stvc')
                 ->join('site_tmplvars as stv', 'stv.id', '=', 'stvc.tmplvarid')
@@ -192,6 +221,8 @@ class sLangContent extends Eloquent\Model
 
             $sub->where('stvc.value', $op, $value);
         });
+
+        return $query;
     }
 
     /**
@@ -288,6 +319,11 @@ class sLangContent extends Eloquent\Model
     /**
      * Applies base selects and joins required for language-aware scopes.
      */
+    /**
+     * @template TModel of self
+     * @param Builder<TModel> $query
+     * @return Builder<TModel>
+     */
     protected function applyContentSelects(Builder $query): Builder
     {
         $eloquentQuery = $query->getQuery();
@@ -345,7 +381,7 @@ class sLangContent extends Eloquent\Model
             $query->leftJoin('site_content', 's_lang_content.resource', '=', 'site_content.id');
         }
 
-        return $query->addSelect(
+        $query->addSelect(
             'site_content.parent as parent_id',
             'site_content.menuindex as menuindex',
             'site_content.hidemenu as hidemenu',
@@ -361,6 +397,8 @@ class sLangContent extends Eloquent\Model
             'site_content.menutitle as menutitle_orig',
             'site_content.pub_date as pub_date_orig'
         );
+
+        return $query;
     }
 
     /**
@@ -396,6 +434,9 @@ class sLangContent extends Eloquent\Model
     /**
      * Detect whether site_content join has already been added.
      */
+    /**
+     * @param array<int, mixed> $joins
+     */
     protected function hasSiteContentJoin(array $joins): bool
     {
         foreach ($joins as $join) {
@@ -409,6 +450,9 @@ class sLangContent extends Eloquent\Model
 
     /**
      * Detect whether TV join with the given alias has already been added.
+     */
+    /**
+     * @param array<int, mixed> $joins
      */
     protected function hasTvJoin(array $joins, string $alias): bool
     {
@@ -509,8 +553,7 @@ class sLangContent extends Eloquent\Model
     protected static function booted(): void
     {
         static::addGlobalScope('language', function (Builder $builder) {
-            /** @var self $model */
-            $model = new static;
+            $model = new self();
             $locale = static::resolveLocale(null);
             $model->applyContentSelects($builder);
             $builder->where($model->getTable() . '.lang', '=', $locale);
@@ -520,10 +563,10 @@ class sLangContent extends Eloquent\Model
     /**
      * Create a new Eloquent Collection instance.
      *
-     * @param array $models
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param array<int, static> $models
+     * @return TreeCollection<static>
      */
-    public function newCollection(array $models = [])
+    public function newCollection(array $models = []): Eloquent\Collection
     {
         return new TreeCollection($models);
     }

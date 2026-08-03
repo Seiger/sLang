@@ -1,5 +1,6 @@
 <?php return [
     'add_translation' => 'Add translation',
+    'create_translation' => 'Create translation',
     'auto_translate' => 'Auto-translation',
     'auto_translate_empty' => 'Translate empty values',
     'copyright' => 'Development',
@@ -8,6 +9,10 @@
     'do_not_empty' => 'should not be empty',
     'example_usage' => 'Use the construct <b>@lang(\'phrase\')</b> to embed translation phrases into a Blade template. for example <b>@lang(\'Hallo World!\')</b>',
     'field' => 'Field',
+    'translation_key_help' => 'Stable translation key used in templates and code.',
+    'translation_key_placeholder' => 'Example: site.header.title',
+    'translation_key_exists' => 'This translation key already exists.',
+    'translation_value_placeholder' => 'Translation text',
     'lang_ab' => 'Abkhazian',
     'lang_az' => 'Azerbaijani',
     'lang_be' => 'Belarusian',

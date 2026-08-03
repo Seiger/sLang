@@ -7,6 +7,7 @@ use EvolutionCMS\Facades\UrlProcessor;
 use EvolutionCMS\Models\SiteContent;
 use EvolutionCMS\Models\SiteTmplvar;
 use EvolutionCMS\Models\SiteTmplvarContentvalue;
+use Illuminate\Http\Request;
 use Seiger\sLang\Controllers\sLangController;
 use Seiger\sLang\Facades\sLang;
 
@@ -20,10 +21,12 @@ Event::listen('evolution.OnParseDocument', function($params) {
     preg_match_all("/@lang\(['|\"](.*?)['|\"]\)/", evo()->documentOutput, $match);
 
     if (is_file($file = EVO_BASE_PATH . 'core/lang/' . evo()->getLocale() . '.json')) {
-        $translates = json_decode(file_get_contents($file), true);
+        $json = file_get_contents($file);
+        $translates = is_string($json) ? json_decode($json, true) : [];
+        $translates = is_array($translates) ? $translates : [];
 
         foreach ($match[0] as $key => $value) {
-            evo()->documentOutput = str_replace($value, $translates[$match[1][$key]], evo()->documentOutput);
+            evo()->documentOutput = str_replace($value, (string) ($translates[$match[1][$key]] ?? ''), evo()->documentOutput);
         }
     }
 
@@ -270,6 +273,11 @@ Event::listen('evolution.OnDocFormTemplateRender', function($params) {
  * Modifying fields before saving a resource
  */
 Event::listen('evolution.OnBeforeDocFormSave', function($params) {
+    $request = request();
+    if (!$request instanceof Request) {
+        return;
+    }
+
     if (empty($params['id'])) {
         $params['id'] = \DB::table('site_content')->max('id') + 1;
     }
@@ -278,7 +286,7 @@ Event::listen('evolution.OnBeforeDocFormSave', function($params) {
     foreach (sLang::langConfig() as $langConfig) {
         $fields = [];
         //$tvs = [];
-        foreach (request()->all() as $key => $value) {
+        foreach ($request->all() as $key => $value) {
             $matches = [];
             if (str_starts_with($key, $langConfig.'_')) {
                 $keyName = str_replace($langConfig.'_', '', $key);
@@ -306,19 +314,24 @@ Event::listen('evolution.OnBeforeDocFormSave', function($params) {
  */
 Event::listen('evolution.OnDocFormSave', function($params) {
     if (isset($params['id']) && !empty($params['id'])) {
+        $request = request();
+        if (!$request instanceof Request) {
+            return;
+        }
+
         $sLangController = new sLangController();
         $data = [];
 
-        foreach (request()->all() as $key => $value) {
+        foreach ($request->all() as $key => $value) {
             if (str_starts_with($key, sLang::langDefault().'_')) {
                 $keyName = str_replace(sLang::langDefault().'_', '', $key);
-                $data[$keyName] = evo()->getDatabase()->escape($value);
+                $data[$keyName] = evo()->getDatabase()->escape((string) $value);
             }
         }
 
         $defaultLang = sLang::langDefault();
-        if (request()->has('alias') && !trim(request('alias')) && request()->has($defaultLang . '_pagetitle')) {
-            $alias = strtolower(evo()->stripAlias(trim(request($defaultLang . '_pagetitle'))));
+        if ($request->has('alias') && !trim((string) $request->input('alias')) && $request->has($defaultLang . '_pagetitle')) {
+            $alias = strtolower(evo()->stripAlias(trim((string) $request->input($defaultLang . '_pagetitle'))));
             if (SiteContent::withTrashed()
                     ->where('id', '<>', $params['id'])
                     ->where('alias', $alias)->count() > 0) {
@@ -341,55 +354,55 @@ Event::listen('evolution.OnDocFormSave', function($params) {
             evo()->db->update($data, evo()->getDatabase()->getFullTableName('site_content'), 'id=' . $params['id']);
         }
 
-        if (request()->has('menu_main')) {
-            $tv = SiteTmplvar::whereName('menu_main')->first();
+        if ($request->has('menu_main')) {
+            $tv = SiteTmplvar::query()->where('name', 'menu_main')->first();
             if (!$tv) {
                 $tv = new SiteTmplvar();
                 $tv->type = 'checkbox';
                 $tv->name = 'menu_main';
                 $tv->caption = 'menu_main';
                 $tv->description = 'menu_main';
-                $tv->editor_type = '0';
-                $tv->category = '1';
-                $tv->locked = '1';
+                $tv->editor_type = 0;
+                $tv->category = 1;
+                $tv->locked = 1;
                 $tv->elements = '==1';
                 $tv->default_text = '0';
                 $tv->save();
             }
 
-            $value = SiteTmplvarContentvalue::where('tmplvarid', $tv->id)->where('contentid', $params['id'])->firstOrNew();
+            $value = SiteTmplvarContentvalue::query()->where('tmplvarid', $tv->id)->where('contentid', $params['id'])->firstOrNew();
             $value->tmplvarid = $tv->id;
             $value->contentid = $params['id'];
-            $value->value = (int)request()->menu_main;
+            $value->value = (string) $request->input('menu_main', 0);
             $value->save();
         }
 
-        if (request()->has('menu_footer')) {
-            $tv = SiteTmplvar::whereName('menu_footer')->first();
+        if ($request->has('menu_footer')) {
+            $tv = SiteTmplvar::query()->where('name', 'menu_footer')->first();
             if (!$tv) {
                 $tv = new SiteTmplvar();
                 $tv->type = 'checkbox';
                 $tv->name = 'menu_footer';
                 $tv->caption = 'menu_footer';
                 $tv->description = 'menu_footer';
-                $tv->editor_type = '0';
-                $tv->category = '1';
-                $tv->locked = '1';
+                $tv->editor_type = 0;
+                $tv->category = 1;
+                $tv->locked = 1;
                 $tv->elements = '==1';
                 $tv->default_text = '0';
                 $tv->save();
             }
 
-            $value = SiteTmplvarContentvalue::where('tmplvarid', $tv->id)->where('contentid', $params['id'])->firstOrNew();
+            $value = SiteTmplvarContentvalue::query()->where('tmplvarid', $tv->id)->where('contentid', $params['id'])->firstOrNew();
             $value->tmplvarid = $tv->id;
             $value->contentid = $params['id'];
-            $value->value = (int)request()->menu_footer;
+            $value->value = (string) $request->input('menu_footer', 0);
             $value->save();
         }
 
         foreach (sLang::langConfig() as $langConfig) {
             $tvs = [];
-            foreach (request()->all() as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 $matches = [];
                 if(preg_match_all('/tv([0-9]*)_'.$langConfig.'$/', $key, $matches)) {
                     $keyName = $matches[1][0];

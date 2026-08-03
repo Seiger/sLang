@@ -6,7 +6,7 @@
 use Seiger\sLang\Controllers\sLangController;
 use Seiger\sLang\Facades\sLang;
 
-if (!defined('IN_MANAGER_MODE') || IN_MANAGER_MODE != 'true') die("No access");
+if (!defined('IN_MANAGER_MODE') || !constant('IN_MANAGER_MODE')) die("No access");
 
 $sLangController = new sLangController();
 $data['get'] = request()->get ?? "translates";
@@ -44,4 +44,4 @@ switch ($data['get']) {
         break;
 }
 
-echo $sLangController->view('index', $data);
+echo $sLangController->view('index', $data)->render();

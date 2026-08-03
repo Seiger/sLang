@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Seiger\sLang\Controllers\sLangController;
 use Seiger\sLang\Facades\sLang;
 use Seiger\sLang\Models\sLangTranslate;
@@ -10,6 +11,11 @@ class TranslatesTableData
 {
     protected string $moduleUrl;
 
+    /**
+     * @param array<string, mixed> $context
+     * @param array<string, mixed> $state
+     * @param array<string, mixed> $config
+     */
     public function __construct(
         protected array $context = [],
         protected array $state = [],
@@ -23,16 +29,25 @@ class TranslatesTableData
         return (clone $this->query())->toBase()->getCountForPagination();
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function rows(int $page, int $perPage): array
     {
-        return $this->query()
-            ->forPage(max(1, $page), max(1, $perPage))
-            ->get()
+        $query = $this->query();
+        $query->forPage(max(1, $page), max(1, $perPage));
+        $translations = $query->get();
+
+        return $translations
             ->map(fn (sLangTranslate $translate) => $this->row($translate))
             ->values()
             ->all();
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $columns
+     * @return array<int, array<string, mixed>>
+     */
     public function columns(array $columns): array
     {
         $defaultLocale = sLang::langDefault();
@@ -78,9 +93,95 @@ class TranslatesTableData
         return array_merge($columns, $languageColumns);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function filterGroups(): array
     {
         return [];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function modalDefaults(): array
+    {
+        return collect(sLang::langConfig())
+            ->mapWithKeys(fn (string $locale): array => [$locale => ''])
+            ->prepend('', 'key')
+            ->all();
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $fields
+     * @param array<string, mixed> $data
+     * @return array<int, array<string, mixed>>
+     */
+    public function modalFields(array $fields, array $data, ?int $id, string $mode): array
+    {
+        $languageFields = collect(sLang::langConfig())
+            ->map(fn (string $locale): array => [
+                'name' => $locale,
+                'type' => 'text',
+                'label' => strtoupper($locale),
+                'placeholder' => 'sLang::global.translation_value_placeholder',
+                'rules' => ['nullable', 'string'],
+            ])
+            ->values()
+            ->all();
+
+        return array_merge([
+            [
+                'name' => 'key',
+                'type' => 'text',
+                'label' => 'KEY',
+                'placeholder' => 'sLang::global.translation_key_placeholder',
+                'help' => 'sLang::global.translation_key_help',
+                'rules' => ['required', 'string', 'max:256'],
+            ],
+        ], $languageFields);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function saveModal(array $data, ?int $id, string $mode): int
+    {
+        if ($mode !== 'create') {
+            return 0;
+        }
+
+        $key = trim((string) ($data['key'] ?? ''));
+
+        if ($key === '') {
+            throw ValidationException::withMessages([
+                'modalData.key' => __('validation.required', ['attribute' => 'KEY']),
+            ]);
+        }
+
+        if (mb_strlen($key) > 256) {
+            throw ValidationException::withMessages([
+                'modalData.key' => __('validation.max.string', ['attribute' => 'KEY', 'max' => 256]),
+            ]);
+        }
+
+        if (sLangTranslate::query()->where('key', $key)->exists()) {
+            throw ValidationException::withMessages([
+                'modalData.key' => __('sLang::global.translation_key_exists'),
+            ]);
+        }
+
+        $controller = $this->controller();
+        $controller->setModifyTables();
+
+        $translate = sLangTranslate::create(['key' => $key]);
+        $translateId = (int) $translate->getKey();
+
+        foreach (sLang::langConfig() as $locale) {
+            $controller->updateTranslate((string) $translateId, $locale, trim((string) ($data[$locale] ?? '')));
+        }
+
+        return $translateId;
     }
 
     public function createInlineRow(): int
@@ -107,6 +208,9 @@ class TranslatesTableData
         $this->controller()->deleteTranslate($id);
     }
 
+    /**
+     * @param array<string, mixed> $action
+     */
     public function synchronizeTranslations(array $action = [], ?int $selectedId = null): int
     {
         $before = sLangTranslate::query()->count();
@@ -116,13 +220,22 @@ class TranslatesTableData
         return max(0, $after - $before);
     }
 
+    /**
+     * @param array<string, mixed> $action
+     * @return array<string, string>
+     */
     public function synchronizeAttributes(array $action = [], ?int $selectedId = null): array
     {
+        $title = __('sLang::global.synchronize_help');
+
         return [
-            'title' => __('sLang::global.synchronize_help'),
+            'title' => is_string($title) ? $title : '',
         ];
     }
 
+    /**
+     * @param array<string, mixed> $column
+     */
     public function updateInlineField(int $id, string $field, string $value, array $column = []): string
     {
         $translate = sLangTranslate::find($id);
@@ -145,6 +258,10 @@ class TranslatesTableData
         return $value;
     }
 
+    /**
+     * @param array<string, mixed> $action
+     * @param array<string, mixed> $column
+     */
     public function autoTranslateInlineField(int $id, string $field, array $action = [], array $column = []): string
     {
         if (!in_array($field, sLang::langConfig(), true) || $field === sLang::langDefault()) {
@@ -156,6 +273,10 @@ class TranslatesTableData
         return $this->controller()->setAutomaticTranslate((string) $id, $field);
     }
 
+    /**
+     * @param array<string, mixed> $action
+     * @param array<string, mixed> $column
+     */
     public function autoTranslateEmptyColumn(string $field, array $action = [], array $column = []): int
     {
         if (!in_array($field, sLang::langConfig(), true) || $field === sLang::langDefault()) {
@@ -190,6 +311,9 @@ class TranslatesTableData
         return $translated;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function row(sLangTranslate $translate): array
     {
         $row = [
@@ -205,6 +329,9 @@ class TranslatesTableData
         return $row;
     }
 
+    /**
+     * @return Builder<sLangTranslate>
+     */
     protected function query(): Builder
     {
         $query = sLangTranslate::query();
@@ -229,7 +356,9 @@ class TranslatesTableData
             $sort = 'tid';
         }
 
-        return $query->orderBy($sort, $direction);
+        $query->orderBy($sort, $direction);
+
+        return $query;
     }
 
     protected function uniqueKey(string $key, int $ignoreId = 0): string
