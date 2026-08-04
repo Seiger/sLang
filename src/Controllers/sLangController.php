@@ -781,7 +781,7 @@ class sLangController
                                     $richtexteditorIds[evo()->getConfig('which_editor')][] = "tv" . $temp_row['id'];
                                     $richtexteditorOptions[evo()->getConfig('which_editor')]["tv" . $temp_row['id']] = '';
                                 }
-                                $templateVariablesTab[$tab][] = $this->view('partials.tvResource', [
+                                $templateVariable = $this->view('partials.tvResource', [
                                     '_lang' => $_lang,
                                     '_style' => $_style,
                                     'row' => $temp_row,
@@ -789,6 +789,12 @@ class sLangController
                                     'tvsArray' => $tvsArray,
                                     'content' => $content,
                                 ])->render();
+
+                                if ($group_tvs < 3) {
+                                    $templateVariablesLng[$tab][] = $templateVariable;
+                                } else {
+                                    $templateVariablesTab[$tab][] = $templateVariable;
+                                }
                             }
                         } else {
                             if ($row['type'] == 'richtext') {
@@ -832,12 +838,6 @@ class sLangController
                 if (!$group_tvs) {
                     $str = '<div class="sectionHeader" id="tv_header">' . $_lang['settings_templvars'] . '</div><div class="sectionBody tmplvars">';
                     $templateVariables .= $str;
-
-                    if (count($templateVariablesLng)) {
-                        foreach ($templateVariablesLng as $lng => $item) {
-                            $templateVariablesLng[$lng][0] .= $str;
-                        }
-                    }
                 } else if ($group_tvs == 2) {
                     $templateVariables .= '
                     <div class="tab-section">
@@ -866,7 +866,7 @@ class sLangController
                     $templateVariables .= $templateVariablesOutput;
                     $templateVariables .= '</div>' . "\n";
 
-                    if (count($templateVariablesLng)) {
+                    if ($group_tvs && count($templateVariablesLng)) {
                         foreach ($templateVariablesLng as $lng => $item) {
                             array_push($templateVariablesLng[$lng], '</div>' . "\n");
                         }
