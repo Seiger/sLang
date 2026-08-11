@@ -111,7 +111,10 @@ Event::listen('evolution.OnPageNotFound', function() {
     evo()->setConfig('lang', $langDefault);
 
     if (sLang::langDefault() != $langDefault || sLang::defaultInUrl()) {
-        evo()->setConfig('base_url', evo()->getConfig('base_url', '/') . sLang::langSegment($langDefault) . '/');
+        evo()->setConfig(
+            'base_url',
+            sLang::localizeGeneratedUrl((string)evo()->getConfig('base_url', '/'), $langDefault)
+        );
     }
 
     if ($requestUri !== '') {
@@ -172,7 +175,10 @@ Event::listen('evolution.OnLoadSettings', function($params) {
     evo()->setConfig('lang', $langDefault);
 
     if (sLang::langDefault() != $langDefault || sLang::defaultInUrl()) {
-        evo()->setConfig('base_url', evo()->getConfig('base_url', '/') . sLang::langSegment($langDefault) . '/');
+        evo()->setConfig(
+            'base_url',
+            sLang::localizeGeneratedUrl((string)evo()->getConfig('base_url', '/'), $langDefault)
+        );
     }
 
     if (!is_null($resolvedLocale) && isset($_REQUEST['q'])) {
