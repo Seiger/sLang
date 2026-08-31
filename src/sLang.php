@@ -22,6 +22,7 @@ class sLang
     protected $params;
     protected $basePath = EVO_BASE_PATH . 'assets/modules/seigerlang/';
     protected $tblSiteContent = 'site_content';
+    protected static array $configValueCache = [];
 
     public function __construct()
     {
@@ -739,22 +740,21 @@ class sLang
     }
 
     /**
-     * Get system setting value bypassing cache
+     * Get a system setting value once per PHP request.
      *
-     * This method retrieves the value of the configuration setting with the given name.
+     * Repeated sLang instances share the same in-memory value without creating
+     * one database query per product or rendered component.
      *
      * @param string $name The name of the configuration setting.
      * @return string The value of the configuration setting, or an empty string if the setting does not exist.
      */
     protected function getConfigValue($name): string
     {
-        $return = '';
-        $result = SystemSetting::where('setting_name', $name)->first();
-
-        if ($result) {
-            $return = $result->setting_value;
+        if (!array_key_exists($name, static::$configValueCache)) {
+            static::$configValueCache[$name] = (string)(SystemSetting::where('setting_name', $name)
+                ->value('setting_value') ?? '');
         }
 
-        return $return;
+        return static::$configValueCache[$name];
     }
 }
