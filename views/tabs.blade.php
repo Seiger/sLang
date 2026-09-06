@@ -33,6 +33,7 @@
 
 <script>
     const which_editor = '{{evo()->getConfig("which_editor")}}';
+    const sLangCsrfToken = '{{csrf_token()}}';
     document.querySelectorAll('.js_translate').forEach( btn => {
         btn.addEventListener("click", (e) => {
             let clicked = e.target.closest('button');
@@ -50,24 +51,28 @@
                 body: new URLSearchParams({'text': _text, 'source': defaultLang, 'target': targetLang}),
                 method: "post",
                 cache: "no-store",
-                headers: { "X-Requested-With": "XMLHttpRequest" }
-            }).then((response) => {
-                return response.text();
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN": sLangCsrfToken
+                }
+            }).then(async (response) => {
+                const data = await response.text();
+                if (!response.ok) {
+                    throw new Error(data || `HTTP ${response.status}`);
+                }
+
+                return data;
             }).then((data) => {
                 if (element.type == 'textarea' && which_editor != 'none' && tinymce.get(sourceField)) {
                     tinymce.get(targetField).setContent(data);
                 } else {
                     document.querySelector(`[name="${targetField}"]`).value = data;
                 }
+            }).catch(function(error) {
+                console.error('sLang automatic translation request failed', error);
+            }).finally(function() {
                 clicked.disabled = false;
                 window.parent.document.getElementById('mainloader').classList.remove('show');
-            }).catch(function(error) {
-                if (error == 'SyntaxError: Unexpected token < in JSON at position 0') {
-                    console.error('Request failed SyntaxError: The response must contain a JSON string.');
-                } else {
-                    console.error('Request failed', error, '.');
-                }
-                clicked.disabled = false;
             });
         });
     });

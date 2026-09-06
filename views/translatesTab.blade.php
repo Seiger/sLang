@@ -94,6 +94,8 @@
         </div>
     </div>
     <script>
+        const sLangAjaxHeaders = {'X-CSRF-TOKEN': '{{csrf_token()}}'};
+
         jQuery(document).on("click", ".js_translate", function () {
             window.parent.document.getElementById('mainloader').classList.add('show');
             var _this = jQuery(this).parents('td');
@@ -103,9 +105,12 @@
             jQuery.ajax({
                 url: '{!!$url!!}&get=translates&action=translate',
                 type: 'POST',
-                data: 'source=' + source + '&target=' + target,
+                headers: sLangAjaxHeaders,
+                data: {source: source, target: target},
                 success: function (ajax) {
                     _this.find('input').val(ajax);
+                },
+                complete: function () {
                     window.parent.document.getElementById('mainloader').classList.remove('show');
                 }
             });
@@ -120,7 +125,8 @@
             jQuery.ajax({
                 url: '{!!$url!!}&get=translates&action=update',
                 type: 'POST',
-                data: 'source=' + source + '&target=' + target + '&value=' + _value,
+                headers: sLangAjaxHeaders,
+                data: {source: source, target: target, value: _value},
             });
         });
 
@@ -145,9 +151,12 @@
             jQuery.ajax({
                 url: '{!!$url!!}&get=translates&action=translate-only',
                 type: 'POST',
-                data: 'text=' + _text + '&source=' + source + '&target=' + target,
+                headers: sLangAjaxHeaders,
+                data: {text: _text, source: source, target: target},
                 success: function (ajax) {
                     _this.parent().parent().find('input').val(ajax);
+                },
+                complete: function () {
                     window.parent.document.getElementById('mainloader').classList.remove('show');
                 }
             });
@@ -160,11 +169,14 @@
             jQuery.ajax({
                 url: '{!!$url!!}&get=translates&action=add-new',
                 type: 'POST',
+                headers: sLangAjaxHeaders,
                 data: _form.serialize(),
                 cache: false,
                 success: function (ajax) {
                     $('.sectionTrans tbody').prepend(ajax);
                     $('#addTranslate').modal('hide');
+                },
+                complete: function () {
                     window.parent.document.getElementById('mainloader').classList.remove('show');
                 }
             });
@@ -176,6 +188,7 @@
             jQuery.ajax({
                 url: '{!!$url!!}&get=translates&action=search',
                 type: 'POST',
+                headers: sLangAjaxHeaders,
                 data: _form.serialize(),
                 cache: false,
                 success: function (ajax) {}
