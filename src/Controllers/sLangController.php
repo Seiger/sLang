@@ -31,7 +31,9 @@ class sLangController
     }
 
     /**
-     * Render tabs resource
+     * Render resource language tabs using the registered manager theme.
+     *
+     * Reuse loaded styles without including style.php in the controller's scope.
      *
      * @param array<string, mixed> $params Additional parameters for rendering the tabs view
      * @return View The rendered tabs view
@@ -40,13 +42,8 @@ class sLangController
     {
         global $_lang, $_style, $content;
 
-        $data['theme'] = new ManagerTheme(evo(), evo()->getConfig('manager_theme', 'default'));
-
-        $data['_style'] = [];
-        if (is_file($data['theme']->getThemeDir(true) . 'style.php')) {
-            include $data['theme']->getThemeDir(true) . 'style.php';
-            $data['_style'] = $_style;
-        }
+        $data['theme'] = evo()->make(ManagerTheme::class);
+        $data['_style'] = $data['theme']->getStyle();
 
         $data['richtexteditorIds'] = [evo()->getConfig('which_editor') => []];
         $data['richtexteditorOptions'] = [evo()->getConfig('which_editor') => []];
