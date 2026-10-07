@@ -14,6 +14,7 @@ use Seiger\sLang\Facades\sLang;
 use Seiger\sLang\Models\sLangContent;
 use Seiger\sLang\Models\sLangTmplvarContentvalue;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use Seiger\sLang\Models\sLangTranslate;
 
 class sLangController
@@ -314,21 +315,16 @@ class sLangController
     public function setModifyTables()
     {
         $tblName = 's_lang_translates';
-        $fullTblName = evo()->getDatabase()->getFullTableName($tblName);
-        $langConfig = sLang::langConfig();
+        $langConfig = array_values(array_unique(array_merge([sLang::langDefault()], sLang::langConfig())));
 
         /**
          * Translation table modification
          */
-        $isSqlite = Schema::getConnection()->getDriverName() === 'sqlite';
-
         foreach ($langConfig as $lang) {
             if (!Schema::hasColumn($tblName, $lang)) {
-                $columnSql = "ADD COLUMN `{$lang}` text";
-                if (!$isSqlite) {
-                    $columnSql .= " COMMENT '" . strtoupper($lang) . " sLang version'";
-                }
-                evo()->getDatabase()->query("ALTER TABLE `{$fullTblName}` {$columnSql}");
+                Schema::table($tblName, function (Blueprint $table) use ($lang) {
+                    $table->text($lang)->nullable();
+                });
             }
         }
 
@@ -446,6 +442,8 @@ class sLangController
      */
     public function parseBlade(): void
     {
+        // A fresh installation may not have saved language settings yet.
+        $this->setModifyTables();
         $list = $this->discoveredTranslationKeys();
         $langDefault = sLang::langDefault();
 
