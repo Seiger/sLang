@@ -503,6 +503,312 @@ slang_group('docs', function (): void {
     });
 });
 
+final class SlangDocFormSaveStub
+{
+    /** @var array<string, array<int, Closure>> */
+    public static array $listeners = [];
+    public static array $request = [];
+    public static array $langContent = [];
+    public static array $siteContentUpdates = [];
+    public static array $siteContentFields = [];
+    public static array $langConfig = ['uk', 'en'];
+    public static int $maxId = 100;
+
+    public static function reset(array $request): void
+    {
+        self::$request = $request;
+        self::$langContent = [];
+        self::$siteContentUpdates = [];
+        self::$langConfig = ['uk', 'en'];
+    }
+
+    public static function fire(string $event, array $params): void
+    {
+        foreach (self::$listeners[$event] ?? [] as $listener) {
+            $listener($params);
+        }
+    }
+}
+
+final class SlangDocFormSaveRequestStub
+{
+    public function all(): array
+    {
+        return SlangDocFormSaveStub::$request;
+    }
+
+    public function has(string $key): bool
+    {
+        return array_key_exists($key, SlangDocFormSaveStub::$request);
+    }
+
+    public function input(string $key, $default = null)
+    {
+        return SlangDocFormSaveStub::$request[$key] ?? $default;
+    }
+}
+
+final class SlangDocFormSaveControllerStub
+{
+    public function setLangContent($id, string $lang, array $fields): void
+    {
+        SlangDocFormSaveStub::$langContent[] = ['id' => $id, 'lang' => $lang, 'fields' => $fields];
+    }
+
+    public function setLangTmplvarContentvalue($id, string $lang, array $tvs): void
+    {
+    }
+}
+
+final class SlangDocFormSaveLangStub
+{
+    public static function langDefault(): string
+    {
+        return 'uk';
+    }
+
+    public static function langConfig(): array
+    {
+        return SlangDocFormSaveStub::$langConfig;
+    }
+
+    public static function siteContentFields(): array
+    {
+        return SlangDocFormSaveStub::$siteContentFields;
+    }
+}
+
+final class SlangDocFormSaveDatabaseStub
+{
+    public function escape(string $value): string
+    {
+        return $value;
+    }
+
+    public function getFullTableName(string $table): string
+    {
+        return $table;
+    }
+
+    public function update(array $data, string $table, string $where): void
+    {
+        SlangDocFormSaveStub::$siteContentUpdates[] = ['data' => $data, 'table' => $table, 'where' => $where];
+    }
+}
+
+final class SlangDocFormSaveEvoStub
+{
+    public SlangDocFormSaveDatabaseStub $db;
+
+    public function __construct()
+    {
+        $this->db = new SlangDocFormSaveDatabaseStub();
+    }
+
+    public function getDatabase(): SlangDocFormSaveDatabaseStub
+    {
+        return $this->db;
+    }
+}
+
+final class SlangDocFormSaveQueryStub
+{
+    public function max(string $column): int
+    {
+        return SlangDocFormSaveStub::$maxId;
+    }
+}
+
+final class SlangDocFormSaveEventStub
+{
+    public static function listen(string $event, Closure $listener): void
+    {
+        SlangDocFormSaveStub::$listeners[$event][] = $listener;
+    }
+}
+
+final class SlangDocFormSaveDbStub
+{
+    public static function table(string $table): SlangDocFormSaveQueryStub
+    {
+        return new SlangDocFormSaveQueryStub();
+    }
+}
+
+function request()
+{
+    return new SlangDocFormSaveRequestStub();
+}
+
+function evo()
+{
+    static $evo = null;
+
+    return $evo ??= new SlangDocFormSaveEvoStub();
+}
+
+function slang_docformsave_boot(): void
+{
+    static $booted = false;
+
+    if ($booted) {
+        return;
+    }
+
+    preg_match('/\$siteContentFields\s*=\s*\[([^\]]*)\]/', slang_read('src/sLang.php'), $match);
+    preg_match_all("/'([a-z_]+)'/", $match[1] ?? '', $fields);
+    slang_assert(count($fields[1]) > 0, 'Unable to read sLang::$siteContentFields.');
+    SlangDocFormSaveStub::$siteContentFields = $fields[1];
+
+    class_alias('SlangDocFormSaveRequestStub', 'Illuminate\Http\Request');
+    class_alias('SlangDocFormSaveControllerStub', 'Seiger\sLang\Controllers\sLangController');
+    class_alias('SlangDocFormSaveLangStub', 'Seiger\sLang\Facades\sLang');
+    class_alias('SlangDocFormSaveEventStub', 'Event');
+    class_alias('SlangDocFormSaveDbStub', 'DB');
+
+    require slang_path('plugins/sLangPlugin.php');
+    $booted = true;
+}
+
+slang_group('docformsave', function (): void {
+    $request = [
+        'pagetitle' => 'Title',
+        'uk_pagetitle' => 'Uk title',
+        'uk_longtitle' => 'Uk long',
+        'uk_published' => '1',
+        'uk_parent' => '5',
+        'uk_template' => '3',
+        'uk_id' => '999',
+        'en_pagetitle' => 'English title',
+    ];
+
+    slang_test('plugin loads with stubbed environment and registers both save listeners', function (): void {
+        slang_docformsave_boot();
+
+        slang_assert(count(SlangDocFormSaveStub::$listeners['evolution.OnBeforeDocFormSave'] ?? []) === 1, 'Expected one OnBeforeDocFormSave listener.');
+        slang_assert(count(SlangDocFormSaveStub::$listeners['evolution.OnDocFormSave'] ?? []) === 1, 'Expected one OnDocFormSave listener.');
+    });
+
+    slang_test('on doc form save only whitelisted default language fields reach site_content', function () use ($request): void {
+        slang_docformsave_boot();
+        SlangDocFormSaveStub::reset($request);
+
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', ['mode' => 'upd', 'id' => 7]);
+
+        slang_assert(count(SlangDocFormSaveStub::$siteContentUpdates) === 1, 'Expected one site_content update.');
+        $update = SlangDocFormSaveStub::$siteContentUpdates[0];
+        slang_assert($update['data'] === ['pagetitle' => 'Uk title', 'longtitle' => 'Uk long'], 'Only whitelisted fields must be written, got: ' . json_encode($update['data']));
+        slang_assert($update['where'] === 'id=7', 'Update must target the saved document id.');
+    });
+
+    slang_test('on doc form save never writes published parent template or id from default language keys', function () use ($request): void {
+        slang_docformsave_boot();
+        SlangDocFormSaveStub::reset($request);
+
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', ['mode' => 'upd', 'id' => 7]);
+
+        $written = array_keys(SlangDocFormSaveStub::$siteContentUpdates[0]['data'] ?? []);
+        foreach (['published', 'parent', 'template', 'id'] as $forbidden) {
+            slang_assert(!in_array($forbidden, $written, true), 'Forbidden site_content column written: ' . $forbidden);
+        }
+    });
+
+    slang_test('on doc form save skips site_content update when no whitelisted default language field is posted', function (): void {
+        slang_docformsave_boot();
+        SlangDocFormSaveStub::reset(['uk_published' => '1', 'uk_parent' => '5']);
+
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', ['mode' => 'upd', 'id' => 7]);
+
+        slang_assert(SlangDocFormSaveStub::$siteContentUpdates === [], 'site_content must not be updated without whitelisted fields.');
+    });
+
+    slang_test('on before doc form save writes nothing for a new document', function () use ($request): void {
+        slang_docformsave_boot();
+        SlangDocFormSaveStub::reset($request);
+
+        SlangDocFormSaveStub::fire('evolution.OnBeforeDocFormSave', ['mode' => 'new', 'id' => 0]);
+
+        slang_assert(SlangDocFormSaveStub::$langContent === [], 'Translations must not be written before the real id exists.');
+    });
+
+    slang_test('on before doc form save writes nothing for a new document even with a predicted id', function () use ($request): void {
+        slang_docformsave_boot();
+        SlangDocFormSaveStub::reset($request);
+
+        SlangDocFormSaveStub::fire('evolution.OnBeforeDocFormSave', ['mode' => 'new', 'id' => 101]);
+
+        slang_assert(SlangDocFormSaveStub::$langContent === [], 'Predicted id must not be used for translations.');
+    });
+
+    slang_test('on doc form save writes translations for a new document with the real id', function () use ($request): void {
+        slang_docformsave_boot();
+        SlangDocFormSaveStub::reset($request);
+
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', ['mode' => 'new', 'id' => 250]);
+
+        $byLang = [];
+        foreach (SlangDocFormSaveStub::$langContent as $call) {
+            slang_assert($call['id'] === 250, 'Translations must use the id from OnDocFormSave, got: ' . var_export($call['id'], true));
+            $byLang[$call['lang']] = $call['fields'];
+        }
+        slang_assert(isset($byLang['uk'], $byLang['en']), 'Expected translations for every configured language.');
+        slang_assert($byLang['en'] === ['pagetitle' => 'English title'], 'English translation fields mismatch.');
+        slang_assert(($byLang['uk']['pagetitle'] ?? null) === 'Uk title', 'Default language translation must contain pagetitle.');
+    });
+
+    slang_test('on doc form save does not leak a longer language prefix into a shorter language row', function (): void {
+        slang_docformsave_boot();
+        SlangDocFormSaveStub::reset([
+            'en_pagetitle' => 'English title',
+            'en_gb_pagetitle' => 'British title',
+            'en_gb_longtitle' => 'British long',
+        ]);
+        SlangDocFormSaveStub::$langConfig = ['en', 'en_gb'];
+
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', ['mode' => 'new', 'id' => 250]);
+
+        $byLang = [];
+        foreach (SlangDocFormSaveStub::$langContent as $call) {
+            $byLang[$call['lang']] = $call['fields'];
+        }
+        slang_assert(($byLang['en'] ?? null) === ['pagetitle' => 'English title'], 'en row must contain only en_ fields, got: ' . json_encode($byLang['en'] ?? null));
+        slang_assert(($byLang['en_gb'] ?? null) === ['pagetitle' => 'British title', 'longtitle' => 'British long'], 'en_gb row mismatch, got: ' . json_encode($byLang['en_gb'] ?? null));
+    });
+
+    slang_test('on before doc form save still writes translations for an existing document', function () use ($request): void {
+        slang_docformsave_boot();
+        SlangDocFormSaveStub::reset($request);
+
+        SlangDocFormSaveStub::fire('evolution.OnBeforeDocFormSave', ['mode' => 'upd', 'id' => 42]);
+
+        slang_assert(count(SlangDocFormSaveStub::$langContent) === 2, 'Expected translations for both languages.');
+        foreach (SlangDocFormSaveStub::$langContent as $call) {
+            slang_assert($call['id'] === 42, 'Update must use the given id, got: ' . var_export($call['id'], true));
+        }
+    });
+
+    slang_test('on doc form save does not write translations again for an existing document', function () use ($request): void {
+        slang_docformsave_boot();
+        SlangDocFormSaveStub::reset($request);
+
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', ['mode' => 'upd', 'id' => 42]);
+
+        slang_assert(SlangDocFormSaveStub::$langContent === [], 'Existing documents are written in OnBeforeDocFormSave only.');
+    });
+
+    slang_test('on before doc form save without mode keeps the max id fallback', function () use ($request): void {
+        slang_docformsave_boot();
+        SlangDocFormSaveStub::reset($request);
+
+        SlangDocFormSaveStub::fire('evolution.OnBeforeDocFormSave', ['id' => 0]);
+
+        slang_assert(count(SlangDocFormSaveStub::$langContent) === 2, 'Expected translations for both languages.');
+        foreach (SlangDocFormSaveStub::$langContent as $call) {
+            slang_assert($call['id'] === 101, 'Fallback id must be max(id)+1, got: ' . var_export($call['id'], true));
+        }
+    });
+});
+
 slang_group('regression-entrypoint', function (): void {
     slang_test('demo regression script remains available for database-backed smoke', function (): void {
         $script = slang_read('tests/regression/slang-demo-regression.php');

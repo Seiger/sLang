@@ -284,7 +284,8 @@ Event::listen('evolution.OnBeforeDocFormSave', function($params) {
         return;
     }
 
-    if (empty($params['id'])) {
+    $isNew = ($params['mode'] ?? '') === 'new';
+    if (!$isNew && empty($params['id'])) {
         $params['id'] = \DB::table('site_content')->max('id') + 1;
     }
 
@@ -305,7 +306,7 @@ Event::listen('evolution.OnBeforeDocFormSave', function($params) {
             }*/
         }
 
-        if (count($fields)) {
+        if (count($fields) && !$isNew) {
             $sLangController->setLangContent($params['id'], $langConfig, $fields);
         }
         /*if (count($tvs)) {
@@ -326,16 +327,30 @@ Event::listen('evolution.OnDocFormSave', function($params) {
         }
 
         $sLangController = new sLangController();
-        $data = [];
+        $defaultLang = sLang::langDefault();
 
-        foreach ($request->all() as $key => $value) {
-            if (str_starts_with($key, sLang::langDefault().'_')) {
-                $keyName = str_replace(sLang::langDefault().'_', '', $key);
-                $data[$keyName] = evo()->getDatabase()->escape((string) $value);
+        if (($params['mode'] ?? '') === 'new') {
+            foreach (sLang::langConfig() as $langConfig) {
+                $fields = [];
+                foreach (sLang::siteContentFields() as $siteContentField) {
+                    if ($request->has($langConfig . '_' . $siteContentField)) {
+                        $fields[$siteContentField] = $request->input($langConfig . '_' . $siteContentField);
+                    }
+                }
+
+                if (count($fields)) {
+                    $sLangController->setLangContent((int) $params['id'], $langConfig, $fields);
+                }
             }
         }
 
-        $defaultLang = sLang::langDefault();
+        $data = [];
+        foreach (sLang::siteContentFields() as $siteContentField) {
+            if ($request->has($defaultLang . '_' . $siteContentField)) {
+                $data[$siteContentField] = evo()->getDatabase()->escape((string) $request->input($defaultLang . '_' . $siteContentField));
+            }
+        }
+
         if ($request->has('alias') && !trim((string) $request->input('alias')) && $request->has($defaultLang . '_pagetitle')) {
             $alias = strtolower(evo()->stripAlias(trim((string) $request->input($defaultLang . '_pagetitle'))));
             if (SiteContent::withTrashed()
