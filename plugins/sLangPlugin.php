@@ -204,6 +204,11 @@ Event::listen('evolution.OnLoadSettings', function($params) {
  * Enforce one canonical frontend route per localized page.
  */
 Event::listen('evolution.OnWebPageInit', function() {
+    // Service endpoints such as CAPTCHA do not use frontend routing.
+    if (defined('EVO_API_MODE') && EVO_API_MODE) {
+        return;
+    }
+
     if (evo()->getLoginUserID('mgr')) {
         return;
     }
