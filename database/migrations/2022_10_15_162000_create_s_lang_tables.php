@@ -44,7 +44,7 @@ class CreateSLangTables extends Migration
             Schema::create('s_lang_tmplvar_contentvalues', function (Blueprint $table) {
                 $table->id();
                 $table->string('lang', 4)->default('base')->index()->comment('Language of content data');
-                $table->unsignedInteger('tmplvarid')->index()->comment('Template variable ID');
+                $table->integer('tmplvarid')->index()->comment('Template variable ID');
                 $table->foreign('tmplvarid')->references('id')->on('site_tmplvars')->cascadeOnDelete();
                 $table->unsignedInteger('contentid')->index()->comment('Site content resource ID');
                 $table->foreign('contentid')->references('id')->on('site_content')->cascadeOnDelete();
