@@ -29,6 +29,9 @@ class sLang
     protected string $basePath = EVO_BASE_PATH . 'assets/modules/seigerlang/';
     protected string $tblSiteContent = 'site_content';
 
+    /** @var array<string, string> Raw routing settings read during the current request. */
+    private array $languageSettings = [];
+
     public function __construct()
     {
         $this->params = evo()->event->params ?? [];
@@ -38,14 +41,16 @@ class sLang
     /**
      * Returns an array of alternative site languages for the language switcher
      *
+     * Reuses the current request's routing settings when generating language links.
+     *
      * @return array<string, array<string, mixed>>
      */
     public function langSwitcher(): array
     {
         $langFront = [evo()->getConfig('manager_language', 'uk')];
-        $sLangFront = $this->getConfigValue('s_lang_front');
-        $sLangDefault = $this->getConfigValue('s_lang_default');
-        $sLangDefaultShow = $this->getConfigValue('s_lang_default_show');
+        $sLangFront = $this->getLanguageSetting('s_lang_front');
+        $sLangDefault = $this->getLanguageSetting('s_lang_default');
+        $sLangDefaultShow = $this->getLanguageSetting('s_lang_default_show');
         $langList = $this->langList();
         if (trim($sLangFront)) {
             $langFront = explode(',', $sLangFront);
@@ -117,31 +122,40 @@ class sLang
     /**
      * Returns the default language code.
      *
-     * This method retrieves the default language code from the configuration
-     * settings. If the default language code is not set in the configuration, it
-     * will default to 'uk'.
+     * Reuses the stored locale for the current request and falls back to 'uk'
+     * when the setting is empty.
      *
      * @return string The default language code.
      */
     public function langDefault(): string
     {
-        $defaultLocale = trim($this->getConfigValue('s_lang_default'));
+        $defaultLocale = trim($this->getLanguageSetting('s_lang_default'));
 
         return $defaultLocale !== '' ? $defaultLocale : 'uk';
     }
 
     /**
+     * Discard a setting after a successful write so it is read again on demand.
+     *
+     * @param string $name The saved system setting key.
+     * @since 2.0.0
+     */
+    public function forgetLanguageSetting(string $name): void
+    {
+        unset($this->languageSettings[$name]);
+    }
+
+    /**
      * Retrieves the language configuration.
      *
-     * This method retrieves the language configuration from the system settings
-     * or the custom configuration stored in the "s_lang_config" setting.
+     * Uses the cached "s_lang_config" value and falls back to the manager language.
      *
      * @return array<int, string>
      */
     public function langConfig(): array
     {
         $langConfig = [evo()->getConfig('manager_language', 'uk')];
-        $sLangConfig = $this->getConfigValue('s_lang_config');
+        $sLangConfig = $this->getLanguageSetting('s_lang_config');
         if (trim($sLangConfig)) {
             $langConfig = explode(',', $sLangConfig);
         }
@@ -175,16 +189,14 @@ class sLang
     /**
      * Retrieves the languages used for the frontend.
      *
-     * This method retrieves the languages used for the frontend based on the configuration
-     * settings and the additional language options specified in "s_lang_front" configuration
-     * variable. The languages are returned as an array.
+     * Uses the cached "s_lang_front" value and falls back to the manager language.
      *
      * @return array<int, string>
      */
     public function langFront(): array
     {
         $langFront = [evo()->getConfig('manager_language', 'uk')];
-        $sLangFront = $this->getConfigValue('s_lang_front');
+        $sLangFront = $this->getLanguageSetting('s_lang_front');
         if (trim($sLangFront)) {
             $langFront = explode(',', $sLangFront);
         }
@@ -193,21 +205,25 @@ class sLang
 
     /**
      * Whether the default frontend language must be present in URLs.
+     *
+     * Uses the request's cached "s_lang_default_show" value.
      */
     public function defaultInUrl(): bool
     {
-        return trim($this->getConfigValue('s_lang_default_show')) === '1';
+        return trim($this->getLanguageSetting('s_lang_default_show')) === '1';
     }
 
     /**
      * Returns the configured URL segment map for languages.
+     *
+     * Builds the map for the configured locales using the cached URL map setting.
      *
      * @return array<string, string>
      */
     public function langSegments(): array
     {
         $segments = [];
-        $stored = trim((string)$this->getConfigValue('s_lang_url_map'));
+        $stored = trim($this->getLanguageSetting('s_lang_url_map'));
         $decoded = $stored !== '' ? json_decode($stored, true) : [];
 
         foreach ($this->configuredLocales() as $locale) {
@@ -249,22 +265,15 @@ class sLang
     }
 
     /**
-     * Localize an internally generated Evo URL for the active non-default language.
+     * Localize an internally generated Evo URL for the requested language.
      *
+     * Uses one segment map to validate the locale and find its prefix.
      * Keeps external URLs untouched and avoids duplicating an existing locale prefix.
      */
     public function localizeGeneratedUrl(string $url, ?string $locale = null): string
     {
         $locale = trim((string)($locale ?? evo()->getConfig('lang', '')));
-        $defaultLocale = trim($this->langDefault());
-        $shouldPrefixDefault = $locale === $defaultLocale && $this->defaultInUrl();
-        $segment = $this->langSegment($locale);
-
         if ($url === '' || $locale === '') {
-            return $url;
-        }
-
-        if (!in_array($locale, $this->configuredLocales(), true)) {
             return $url;
         }
 
@@ -292,11 +301,16 @@ class sLang
             return $url;
         }
 
+        $segments = $this->langSegments();
+        if (!isset($segments[$locale])) {
+            return $url;
+        }
+
+        $segment = $segments[$locale];
+        $shouldPrefix = $locale !== $this->langDefault() || $this->defaultInUrl();
         $path = (string)($parts['path'] ?? '');
         $query = isset($parts['query']) ? '?' . $parts['query'] : '';
         $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
-
-        $shouldPrefix = $locale !== $defaultLocale || $shouldPrefixDefault;
 
         if ($path === '') {
             $localizedPath = $shouldPrefix ? $sitePath . $segment . '/' : $sitePath;
@@ -763,6 +777,17 @@ class sLang
         curl_close($ch);
 
         return is_string($response) ? $response : '';
+    }
+
+    /**
+     * Read a routing setting once per request, including missing and empty values.
+     *
+     * @param string $name The system setting key.
+     * @since 2.0.0
+     */
+    private function getLanguageSetting(string $name): string
+    {
+        return $this->languageSettings[$name] ??= $this->getConfigValue($name);
     }
 
     /**

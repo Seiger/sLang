@@ -905,7 +905,7 @@ class sLangController
     }
 
     /**
-     * Updates the value of a specific setting in the database table 'system_settings'.
+     * Updates a system setting and invalidates its cached value after a successful write.
      *
      * @param string $name The name of the setting to update.
      * @param string $value The new value to be set for the setting.
@@ -916,7 +916,15 @@ class sLangController
     {
         $tbl = evo()->getDatabase()->getFullTableName('system_settings');
 
-        return evo()->getDatabase()->query("REPLACE INTO {$tbl} (`setting_name`, `setting_value`) VALUES ('{$name}', '{$value}')") !== false;
+        $saved = evo()->getDatabase()->query("REPLACE INTO {$tbl} (`setting_name`, `setting_value`) VALUES ('{$name}', '{$value}')") !== false;
+        if ($saved) {
+            $lang = sLang::getFacadeRoot();
+            if (is_object($lang) && method_exists($lang, 'forgetLanguageSetting')) {
+                $lang->forgetLanguageSetting($name);
+            }
+        }
+
+        return $saved;
     }
 
     /**

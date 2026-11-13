@@ -177,7 +177,7 @@ Event::listen('evolution.OnLoadSettings', function($params) {
     evo()->setLocale($langDefault);
     evo()->setConfig('lang', $langDefault);
 
-    if (sLang::langDefault() != $langDefault || sLang::defaultInUrl()) {
+    if ($defaultLocale != $langDefault || sLang::defaultInUrl()) {
         evo()->setConfig(
             'base_url',
             sLang::localizeGeneratedUrl((string)evo()->getConfig('base_url', '/'), $langDefault)

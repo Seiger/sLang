@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Facade;
  */
 class sLang extends Facade
 {
+    /** @var bool Resolve through the container so a scope reset discards the previous instance. */
+    protected static $cached = false;
+
     /**
      * Get the registered name of the component.
      *

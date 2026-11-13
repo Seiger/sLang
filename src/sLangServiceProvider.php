@@ -8,7 +8,7 @@ use Livewire\Livewire;
 class sLangServiceProvider extends ServiceProvider
 {
     /**
-     * Bootstrap the application services.
+     * Bootstrap the application services and scope sLang to the current request.
      *
      * @return void
      */
@@ -43,7 +43,7 @@ class sLangServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(dirname(__DIR__) . '/config/sLangCheck.php', 'cms.settings');
 
         // Class alias
-        $this->app->singleton(sLang::class);
+        $this->app->scoped(sLang::class);
         $this->app->alias(sLang::class, 'sLang');
 
         Paginator::currentPathResolver(static function (): string {
