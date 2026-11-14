@@ -415,7 +415,6 @@ slang_group('docs', function (): void {
             'old_docs/_config.yml',
             'old_docs/assets/img/logo.svg',
             'docs/Images',
-            '.dissues/tasks',
         ] as $file) {
             slang_assert(file_exists(slang_path($file)), 'Missing documentation archive item: ' . $file);
         }

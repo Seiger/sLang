@@ -7,6 +7,7 @@ return [
     'per_page' => 10,
     'per_page_options' => [5, 10, 20, 30, 50, 100],
     'views' => ['table'],
+    'equal_columns' => true,
     'default_view' => 'table',
     'default_sort' => 'key',
     'default_direction' => 'asc',
