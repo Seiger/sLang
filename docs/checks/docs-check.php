@@ -140,7 +140,7 @@ foreach ($frontendGuides as $frontendGuide) {
 
 $staleManagerCssDocs = [];
 foreach ($markdownFiles as $path) {
-    $relative = ltrim(str_replace($root, 'docs', $path), DIRECTORY_SEPARATOR);
+    $relative = 'docs/' . str_replace(DIRECTORY_SEPARATOR, '/', substr($path, strlen($root) + 1));
     if (preg_match('#^docs/(en|uk|de|fr|pl)/(developer-guide|frontend-guide|release-checklist)\.md$#', $relative)) {
         continue;
     }
