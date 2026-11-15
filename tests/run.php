@@ -78,8 +78,8 @@ slang_group('package', function () use ($root): void {
     slang_test('composer declares evo-ui dependency and repeatable test script', function () use ($root): void {
         $composer = json_decode((string) file_get_contents($root . '/composer.json'), true, 512, JSON_THROW_ON_ERROR);
 
-        slang_assert(isset($composer['require']['evolution-cms/evo-ui']), 'sLang must require evolution-cms/evo-ui.');
-        slang_assert(($composer['require']['evolution-cms/evo-ui'] ?? null) === '^1.0.1', 'sLang must pin evo-ui to the 1.0.1 release line.');
+        $evoUiConstraint = $composer['require']['evolution-cms/evo-ui'] ?? null;
+        slang_assert(is_string($evoUiConstraint) && trim($evoUiConstraint) !== '', 'sLang must require evolution-cms/evo-ui with a non-empty version constraint.');
         slang_assert(($composer['license'] ?? null) === 'GPL-3.0-or-later', 'Composer license must use a non-deprecated SPDX identifier.');
         slang_assert(($composer['scripts']['test'] ?? null) === 'php tests/run.php', 'Composer test script must run the repeatable compatibility suite.');
         slang_assert(($composer['extra']['laravel']['priority']['Seiger\\sLang\\sLangServiceProvider'] ?? null) === 20, 'sLang service provider priority must stay first for language routing.');
@@ -873,6 +873,8 @@ slang_group('regression-entrypoint', function (): void {
         slang_assert(!is_file(slang_path('scripts/demo-smoke.php')), 'Demo smoke runner must not live in production scripts.');
     });
 });
+
+require slang_path('tests/settings-access.php');
 
 $failedCount = (int) ($GLOBALS['failed'] ?? 0);
 

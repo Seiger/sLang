@@ -6,7 +6,11 @@ use Illuminate\Support\Str;
 use Livewire\Component;
 use Seiger\sLang\Controllers\sLangController;
 use Seiger\sLang\Facades\sLang;
+use Seiger\sLang\Support\SettingsAccess;
 
+/**
+ * Edit multilingual site settings and maintain the dictionary from the manager.
+ */
 class SettingsPanel extends Component
 {
     /** @var array<string, mixed> */
@@ -17,6 +21,16 @@ class SettingsPanel extends Component
     public bool $saved = false;
     public bool $dirty = false;
     public ?int $cleanedObsoleteTranslations = null;
+
+    /**
+     * Authorize the initial mount and each Livewire update before reading settings or running actions.
+     *
+     * @since 2.1.0
+     */
+    public function boot(): void
+    {
+        SettingsAccess::authorize();
+    }
 
     public function mount(): void
     {
@@ -97,8 +111,13 @@ class SettingsPanel extends Component
         $this->updatedData();
     }
 
+    /**
+     * Validate and persist settings, then update the translation schema for the selected languages.
+     */
     public function save(): void
     {
+        SettingsAccess::authorize();
+
         $this->saved = false;
         $languages = array_keys(sLang::langList());
 
@@ -144,8 +163,13 @@ class SettingsPanel extends Component
         $this->dispatch('evo-ui:form.saved', preset: 'slang.settings');
     }
 
+    /**
+     * Remove obsolete dictionary keys and regenerate translation files as a settings maintenance action.
+     */
     public function cleanupObsoleteTranslations(): void
     {
+        SettingsAccess::authorize();
+
         $controller = new sLangController();
         $this->cleanedObsoleteTranslations = $controller->cleanupObsoleteTranslations();
         $this->saved = false;
@@ -302,9 +326,11 @@ class SettingsPanel extends Component
     }
 
     /**
+     * Build the private list of available template variables for the settings form.
+     *
      * @return array<int, array{value: int, label: string}>
      */
-    public function templateVariableOptions(): array
+    protected function templateVariableOptions(): array
     {
         return collect(sLang::templateVariables())
             ->map(fn (SiteTmplvar $variable) => [
@@ -315,7 +341,10 @@ class SettingsPanel extends Component
             ->all();
     }
 
-    public function templateVariableLabel(SiteTmplvar $variable): string
+    /**
+     * Format a template variable's caption and name for the settings picker.
+     */
+    protected function templateVariableLabel(SiteTmplvar $variable): string
     {
         $caption = trim((string) ($variable->caption ?? ''));
         $name = trim((string) ($variable->name ?? ''));
