@@ -1,3 +1,7 @@
+---
+sidebar_position: 6
+---
+
 # Użycie w Blade
 
 ## Aktualny język
@@ -101,7 +105,7 @@ Filtrowanie według wartości TV:
 $resources = sLangContent::withTVs(['tv_image'])->whereTv('tv_image', '!=', '')->get();
 ```
 
-> **Deprecated:** helper `langAndTvs()` jest przestarzały od `1.0.8` i zostanie usunięty w `v1.2`. Zastąp go przez `lang()` i `withTVs()`.
+> **Deprecated:** `langAndTvs()` działa w istniejącym kodzie. W nowych zapytaniach używaj `lang()` i `withTVs()`.
 
 ## Pola zasobu w panelu admina
 

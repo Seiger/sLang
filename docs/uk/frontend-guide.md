@@ -1,3 +1,7 @@
+---
+sidebar_position: 9
+---
+
 # Frontend-гайд
 
 Цей гайд описує використання sLang у шаблонах і межі manager UI.

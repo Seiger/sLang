@@ -1,9 +1,13 @@
+---
+sidebar_position: 2
+---
+
 # Bien démarrer
 
 ## Prérequis
 
-- Evolution CMS **3.3+**
-- PHP **8.3+**
+- Evolution CMS **^3.5**. La version minimale peut dépendre de la version d’EvoUI résolue par Composer.
+- PHP **^8.4**
 - Composer **2.2+**
 - Une base de données parmi **MySQL 8.0+** / **MariaDB 10.5+** / **PostgreSQL 10+** / **SQLite 3.25+**
 
@@ -17,8 +21,10 @@ cd path/to/your/evolution/cms/core
 
 Exécutez la commande artisan:
 
+Une fois la version stable 2.x publiée sur Packagist, la commande suivante permet de l’installer.
+
 ```console
-php artisan package:installrequire seiger/slang "*"
+php artisan package:installrequire seiger/slang "^2.0"
 ```
 
 Publiez les fichiers du package:
@@ -39,7 +45,7 @@ Après l'installation, le module peut être utilisé immédiatement. Chemin dans
 
 La ressource contient des onglets séparés pour chaque langue.
 
-![Multilingual tabs](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.png)
+![Éditeur de ressources avec l’onglet ukrainien sélectionné](../assets/images/slang-resource-editor.png)
 
 [Onglets de gestion](management-tabs.md)
 
@@ -66,4 +72,4 @@ $items = sLangContent::active()->get(); // locale resolved automatically
 $itemsEn = sLangContent::lang('en')->withTVs(['preview'])->get();
 ```
 
-> **Deprecated:** Le scope `langAndTvs()` est déprécié depuis `1.0.8` et sera supprimé en `v1.2`. Utilisez `lang()` et `withTVs()`.
+> **Deprecated:** `langAndTvs()` reste disponible pour le code existant. Utilisez `lang()` et `withTVs()` pour les nouvelles requêtes.

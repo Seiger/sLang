@@ -1,3 +1,7 @@
+---
+sidebar_position: 7
+---
+
 # Guide développeur
 
 Ce guide fixe les limites techniques de sLang pour la maintenance et les releases.

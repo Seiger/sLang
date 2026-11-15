@@ -1,3 +1,7 @@
+---
+sidebar_position: 12
+---
+
 # Release Checklist
 
 Use this checklist before publishing a new sLang package build or before asking QA to close the migration tasks.

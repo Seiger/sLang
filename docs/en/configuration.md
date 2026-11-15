@@ -1,3 +1,7 @@
+---
+sidebar_position: 5
+---
+
 # Configuration
 
 This reference lists the settings and files that control sLang behavior.

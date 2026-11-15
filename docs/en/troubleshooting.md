@@ -1,3 +1,7 @@
+---
+sidebar_position: 11
+---
+
 # Troubleshooting
 
 Use this guide when sLang behaves unexpectedly in the manager or templates.

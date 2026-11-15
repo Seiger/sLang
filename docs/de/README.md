@@ -1,6 +1,19 @@
+---
+slug: /
+sidebar_position: 1
+---
+
 # sLang Dokumentation
 
 **sLang** ist ein Modul zur Verwaltung mehrsprachiger Inhalte in Evolution CMS. Es unterstützt Übersetzungsphrasen, Frontend-Sprachen, mehrsprachige Ressource-Tabs, URL-Sprachsegmente, automatische Übersetzung und locale-aware Content-APIs.
+
+## Screenshots
+
+![Übersetzungswörterbuch](../assets/images/slang-dictionary.png)
+
+![Spracheinstellungen](../assets/images/slang-configuration.png)
+
+![Ressourcen-Editor mit ausgewähltem ukrainischen Tab](../assets/images/slang-resource-editor.png)
 
 ## Seiten
 
@@ -29,4 +42,4 @@
 - `Seiger\sLang\Models\sLangContent` verwendet standardmäßig die aktuelle Sprache über `evo()->getLocale()`.
 - Eine Sprache kann explizit über den Scope `lang()` gewählt werden.
 - Template Variables können mit `withTVs()` geladen werden.
-- `langAndTvs()` bleibt aus Gründen der Abwärtskompatibilität erhalten, ist aber seit `1.0.8` veraltet und wird in `v1.2` entfernt.
+- `langAndTvs()` bleibt für bestehenden Code verfügbar. Verwenden Sie für neue Abfragen `lang()` und `withTVs()`.

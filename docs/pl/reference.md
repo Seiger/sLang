@@ -1,3 +1,7 @@
+---
+sidebar_position: 8
+---
+
 # Referencja
 
 Szybki lookup API i klas sLang.

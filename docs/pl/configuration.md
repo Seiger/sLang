@@ -1,3 +1,7 @@
+---
+sidebar_position: 5
+---
+
 # Konfiguracja
 
 Ta referencja opisuje główne ustawienia.

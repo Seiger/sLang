@@ -1,3 +1,7 @@
+---
+sidebar_position: 7
+---
+
 # Entwicklerhandbuch
 
 Dieses Dokument beschreibt die technischen Grenzen von sLang für Wartung und Release.

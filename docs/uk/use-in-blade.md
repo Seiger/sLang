@@ -1,3 +1,7 @@
+---
+sidebar_position: 6
+---
+
 # Використання в Blade
 
 ## Поточна мова
@@ -105,7 +109,7 @@ $resource = sLangContent::withTVs(['tv_image'])->active()->first();
 $resources = sLangContent::withTVs(['tv_image'])->whereTv('tv_image', '!=', '')->get();
 ```
 
-> **Deprecated:** helper `langAndTvs()` застарів з версії `1.0.8` і буде видалений у `v1.2`. Замініть його на `lang()` і `withTVs()`.
+> **Deprecated:** `langAndTvs()` працює в наявному коді. Для нових запитів використовуйте `lang()` і `withTVs()`.
 
 ## Поля ресурсу в адмін-панелі
 

@@ -1,3 +1,7 @@
+---
+sidebar_position: 7
+---
+
 # Przewodnik dewelopera
 
 Ten dokument opisuje granice techniczne sLang dla utrzymania i release.

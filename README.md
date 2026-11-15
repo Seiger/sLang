@@ -1,7 +1,10 @@
 # sLang for Evolution CMS 3
+
+![sLang dictionary with English, Ukrainian, and German translations](docs/assets/images/slang-dictionary.png)
+
 [![Latest Stable Version](https://img.shields.io/packagist/v/seiger/slang?label=version)](https://packagist.org/packages/seiger/slang)
 [![Evolution CMS version requirement](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FSeiger%2FsLang%2F2.x%2Fcomposer.json&query=%24.require%5B%27evolution-cms%2Fevolution%27%5D&label=CMS&prefix=Evolution%20&color=brightgreen)](https://github.com/evolution-cms/evolution)
-[![PHP: 8.4, 8.5 and 8.6](https://img.shields.io/badge/PHP-8.4_%7C_8.5_%7C_8.6-777BB4?logo=php&logoColor=white)](composer.json#L19-L22)
+[![PHP: 8.4, 8.5 and 8.6](https://img.shields.io/badge/PHP-8.4_%7C_8.5_%7C_8.6-777BB4?logo=php&logoColor=white)](#compatibility)
 [![License](https://img.shields.io/packagist/l/seiger/slang)](https://packagist.org/packages/seiger/slang)
 [![Issues](https://img.shields.io/github/issues/Seiger/slang)](https://github.com/Seiger/slang/issues)
 [![Stars](https://img.shields.io/packagist/stars/Seiger/slang)](https://packagist.org/packages/seiger/slang)
@@ -31,19 +34,14 @@ Evolution CMS-powered websites.
 - [x] Unlimited Translation Language Support.
 - [x] Multilingual SEO Support.
 
-## Screenshots
+<details>
+<summary>More screenshots</summary>
 
-### Dictionary
+![Language configuration](docs/assets/images/slang-configuration.png)
 
-![Translation dictionary with English, Ukrainian, and German columns](docs/assets/images/slang-dictionary.png)
+![Resource editor with the Ukrainian translation tab selected](docs/assets/images/slang-resource-editor.png)
 
-### Configuration
-
-![sLang configuration with the default, site, and frontend languages](docs/assets/images/slang-configuration.png)
-
-### Resource editor
-
-![Evolution CMS resource editor with the Ukrainian translation tab selected](docs/assets/images/slang-resource-editor.png)
+</details>
 
 ## Install by artisan package installer
 
@@ -53,10 +51,10 @@ Go to You /core/ folder:
 cd core
 ```
 
-Run php artisan command
+Install the stable 2.x release once it is available on Packagist.
 
 ```console
-php artisan package:installrequire seiger/slang "*"
+php artisan package:installrequire seiger/slang "^2.0"
 ```
 
 ```console
@@ -69,12 +67,16 @@ Run make DB structure with command:
 php artisan migrate
 ```
 
+## Compatibility
+
+Composer requires PHP ^8.4 and Evolution CMS ^3.5. The installed EvoUI version can require a newer Evolution CMS patch. Manager access was verified on Evolution CMS 3.5.9. Package checks passed on PHP 8.4, 8.5 and the PHP 8.6.0 RC5 preview.
+
 ## Local shared demo workflow
 
 This repo is developed inside the shared Extras demo:
 
 ```console
-cd /Users/dmi3yy/PhpstormProjects/Extras/sArticles/demo/core
+cd /path/to/Extras/sArticles/demo/core
 composer update seiger/slang --with-all-dependencies
 php artisan package:discover
 php artisan migrate --force
@@ -85,7 +87,7 @@ The shared demo also loads `sArticles`, `dmi3yy/dissues`, `sSeo`, `evo-ui`,
 backup:
 
 ```console
-php /Users/dmi3yy/PhpstormProjects/MiddleDuck/skills/dissues-demo-ops/scripts/dissues-demo.php backup
+php /path/to/MiddleDuck/skills/dissues-demo-ops/scripts/dissues-demo.php backup
 ```
 
 Run the sLang smoke check from this repo:
@@ -176,9 +178,14 @@ The `Seiger\sLang\Models\sLangContent` model now applies the current locale auto
   ```php
   $items = sLangContent::langAndTvs('en', ['color', 'price'])->get();
   ```
-  > **Deprecated:** `langAndTvs()` is deprecated since `1.0.8` and is scheduled for removal in `v1.2`. Use `lang()->withTVs()` instead.
+  > **Deprecated:** `langAndTvs()` still works for existing code. Use `lang()` and `withTVs()` for new queries.
 
 ## Documentation
 
-- [Multilingual dDocs package](docs/README.md)
-- [Legacy published documentation](https://seiger.github.io/sLang/)
+- [English](docs/en/README.md)
+- [Українська](docs/uk/README.md)
+- [Deutsch](docs/de/README.md)
+- [Français](docs/fr/README.md)
+- [Polski](docs/pl/README.md)
+
+See the [2.x documentation site](https://seiger.github.io/sLang/), its [1.x archive](https://seiger.github.io/sLang/1.x/), and [GitHub Releases](https://github.com/Seiger/sLang/releases).

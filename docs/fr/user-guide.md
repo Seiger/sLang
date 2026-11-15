@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Guide utilisateur
 
 Ce guide décrit les tâches courantes dans sLang: dictionnaire, configuration des langues et onglets multilingues des ressources.

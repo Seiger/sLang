@@ -1,3 +1,7 @@
+---
+sidebar_position: 10
+---
+
 # Most zakladek zasobu
 
 sLang ma dwie powierzchnie administracyjne z roznymi kontraktami.

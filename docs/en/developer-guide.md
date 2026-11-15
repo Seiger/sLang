@@ -1,3 +1,7 @@
+---
+sidebar_position: 7
+---
+
 # Developer Guide
 
 This guide explains the sLang implementation boundaries for maintainers and release agents.

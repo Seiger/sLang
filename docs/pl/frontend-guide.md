@@ -1,3 +1,7 @@
+---
+sidebar_position: 9
+---
+
 # Przewodnik frontend
 
 Ten przewodnik opisuje użycie w szablonach i granice UI managera.

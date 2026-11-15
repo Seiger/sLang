@@ -1,3 +1,7 @@
+---
+sidebar_position: 8
+---
+
 # Référence
 
 Lookup rapide des APIs et classes sLang.

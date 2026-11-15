@@ -1,3 +1,7 @@
+---
+sidebar_position: 9
+---
+
 # Frontend-Leitfaden
 
 Dieser Leitfaden beschreibt Template-Nutzung und Manager-UI-Grenzen.

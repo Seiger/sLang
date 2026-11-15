@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Przewodnik użytkownika
 
 Ten przewodnik opisuje codzienną pracę z sLang: słownik, konfigurację języków i wielojęzyczne zakładki zasobu.

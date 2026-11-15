@@ -1,3 +1,7 @@
+---
+sidebar_position: 9
+---
+
 # Frontend Guide
 
 This guide describes how sLang output is used in templates and how manager UI code must stay scoped.

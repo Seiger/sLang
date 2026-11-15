@@ -1,3 +1,7 @@
+---
+sidebar_position: 11
+---
+
 # Dépannage
 
 Problèmes fréquents dans sLang.

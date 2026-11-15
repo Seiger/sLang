@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # User Guide
 
 This guide explains the daily manager workflows in sLang: maintaining the dictionary, configuring site languages, and using multilingual resource tabs.

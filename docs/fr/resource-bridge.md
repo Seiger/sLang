@@ -1,3 +1,7 @@
+---
+sidebar_position: 10
+---
+
 # Pont des onglets de ressource
 
 sLang expose deux surfaces d'administration avec des contrats differents.

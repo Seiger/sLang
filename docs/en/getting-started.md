@@ -1,9 +1,13 @@
+---
+sidebar_position: 2
+---
+
 # Getting Started
 
 ## Requirements
 
-- Evolution CMS **3.3+**
-- PHP **8.3+**
+- Evolution CMS **^3.5**. The minimum patch version can depend on the resolved EvoUI version.
+- PHP **^8.4**
 - Composer **2.2+**
 - One of: **MySQL 8.0+** / **MariaDB 10.5+** / **PostgreSQL 10+** / **SQLite 3.25+**
 
@@ -17,8 +21,10 @@ cd path/to/your/evolution/cms/core
 
 Run the artisan command:
 
+The command below installs the stable 2.x release once it is available on Packagist.
+
 ```console
-php artisan package:installrequire seiger/slang "*"
+php artisan package:installrequire seiger/slang "^2.0"
 ```
 
 Publish package files:
@@ -39,7 +45,7 @@ After installing the module, you can use it immediately. Path to the module in t
 
 The resource includes tabs for each language separately.
 
-![Multilingual tabs](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.png)
+![Resource editor with the Ukrainian tab selected](../assets/images/slang-resource-editor.png)
 
 [Management tabs](management-tabs.md)
 
@@ -66,4 +72,4 @@ $items = sLangContent::active()->get(); // locale resolved automatically
 $itemsEn = sLangContent::lang('en')->withTVs(['preview'])->get();
 ```
 
-> **Deprecated:** The `langAndTvs()` scope is deprecated since `1.0.8` and will be removed in `v1.2`. Replace it with `lang()` and `withTVs()`.
+> **Deprecated:** `langAndTvs()` still works for existing code. Use `lang()` and `withTVs()` for new queries.

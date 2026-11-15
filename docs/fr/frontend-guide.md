@@ -1,3 +1,7 @@
+---
+sidebar_position: 9
+---
+
 # Guide frontend
 
 Ce guide décrit l'usage dans les templates et la limite de l'UI manager.

@@ -1,3 +1,7 @@
+---
+sidebar_position: 6
+---
+
 # Utilisation dans Blade
 
 ## Langue courante
@@ -101,7 +105,7 @@ Filtrer par valeur TV:
 $resources = sLangContent::withTVs(['tv_image'])->whereTv('tv_image', '!=', '')->get();
 ```
 
-> **Deprecated:** Le helper `langAndTvs()` est déprécié depuis `1.0.8` et sera supprimé en `v1.2`. Remplacez-le par `lang()` et `withTVs()`.
+> **Deprecated:** `langAndTvs()` reste disponible pour le code existant. Utilisez `lang()` et `withTVs()` pour les nouvelles requêtes.
 
 ## Champs de ressource dans l'admin
 

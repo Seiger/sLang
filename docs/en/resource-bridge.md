@@ -1,3 +1,7 @@
+---
+sidebar_position: 10
+---
+
 # Resource Bridge
 
 sLang has two admin surfaces with different contracts.

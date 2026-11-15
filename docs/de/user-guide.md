@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Benutzerhandbuch
 
 Dieses Handbuch beschreibt die Arbeit mit sLang im Manager: Wörterbuch, Sprachkonfiguration und mehrsprachige Resource-Tabs.

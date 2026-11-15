@@ -1,3 +1,7 @@
+---
+sidebar_position: 10
+---
+
 # Resource Bridge
 
 sLang hat zwei Admin-Oberflächen mit unterschiedlichen Verträgen.

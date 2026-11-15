@@ -1,3 +1,7 @@
+---
+sidebar_position: 12
+---
+
 # Release Checklist
 
 Diese Checkliste wird vor einem neuen sLang Release oder vor der Übergabe an QA genutzt.

@@ -1,3 +1,7 @@
+---
+sidebar_position: 8
+---
+
 # Referenz
 
 Schneller Überblick über APIs und Klassen.

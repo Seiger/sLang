@@ -1,3 +1,7 @@
+---
+sidebar_position: 8
+---
+
 # Довідник
 
 Короткий lookup по API, класах і діях sLang.

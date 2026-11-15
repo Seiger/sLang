@@ -1,3 +1,7 @@
+---
+sidebar_position: 6
+---
+
 # Use in Blade
 
 ## Current language
@@ -164,7 +168,7 @@ Combine multiple helpers:
 $resources = sLangContent::lang('uk')->withTVs(['color', 'price'])->whereParent($parentId)->active()->get();
 ```
 
-> **Deprecated:** The `langAndTvs()` helper is deprecated since `1.0.8` and will be removed in `v1.2`. Replace it with the `lang()` and `withTVs()` scopes.
+> **Deprecated:** `langAndTvs()` still works for existing code. Use `lang()` and `withTVs()` for new queries.
 
 ## Resource fields in Admin panel
 
