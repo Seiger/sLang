@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Seiger\sLang\Models\sLangTranslate;
 use Seiger\sLang\Support\DocumentTranslations;
+use Seiger\sLang\Support\LanguageFileWriter;
 use Seiger\sLang\Support\ResourceTranslationAccess;
 
 class sLangController
@@ -390,18 +391,18 @@ class sLangController
     }
 
     /**
-     * Modify translation tables and files
+     * Add missing translation columns and seed empty dictionaries for supported locales.
      *
-     * This method modifies the translation tables and files based on the language configuration.
-     * It adds missing language columns to the translation table and creates empty JSON files for missing languages.
-     * After making the necessary modifications, it clears the cache.
+     * Validate the configured dictionary destinations before changing the table. Clear the cache
+     * after all dictionaries are available.
      *
-     * @return bool True if the tables and files were successfully modified, false otherwise.
+     * @return bool True when the table and dictionaries are ready.
      */
     public function setModifyTables()
     {
         $tblName = 's_lang_translates';
-        $langConfig = array_values(array_unique(array_merge([sLang::langDefault()], sLang::langConfig())));
+        $files = new LanguageFileWriter(EVO_BASE_PATH, array_keys(sLang::langList()));
+        $langConfig = $files->validatedLocales([sLang::langDefault(), ...sLang::langConfig()]);
 
         /**
          * Translation table modification
@@ -418,9 +419,7 @@ class sLangController
          * Translation files configuration
          */
         foreach ($langConfig as $lang) {
-            if (!is_file(EVO_BASE_PATH . 'core/lang/' . $lang . '.json')) {
-                file_put_contents(EVO_BASE_PATH . 'core/lang/' . $lang . '.json', '{}');
-            }
+            $files->ensureExists($lang);
         }
 
         /**
@@ -1025,15 +1024,19 @@ class sLangController
     }
 
     /**
-     * Updates the language files based on the current translations.
+     * Rebuild the configured dictionaries from the translation table.
      *
-     * @return void
+     * Validate destinations before reading the translations. Encoding and filesystem errors
+     * propagate to the manager action that requested the rebuild.
      */
     protected function updateLangFiles(): void
     {
-        foreach (sLang::langConfig() as &$lang) {
-            $json = sLangTranslate::all()->pluck($lang, 'key')->toJson();
-            file_put_contents(EVO_BASE_PATH . 'core/lang/' . $lang . '.json', $json);
+        $files = new LanguageFileWriter(EVO_BASE_PATH, array_keys(sLang::langList()));
+        $locales = $files->validatedLocales(sLang::langConfig());
+        $translations = sLangTranslate::all();
+        foreach ($locales as $lang) {
+            $json = $translations->pluck($lang, 'key')->toJson(JSON_THROW_ON_ERROR);
+            $files->replace($lang, $json);
         }
     }
 }

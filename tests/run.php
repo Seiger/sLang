@@ -989,6 +989,7 @@ slang_group('regression-entrypoint', function (): void {
 
 require slang_path('tests/settings-access.php');
 require slang_path('tests/dictionary-access.php');
+require slang_path('tests/language-files.php');
 
 $failedCount = (int) ($GLOBALS['failed'] ?? 0);
 
