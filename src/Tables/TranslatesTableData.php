@@ -196,7 +196,7 @@ class TranslatesTableData
         }
 
         $controller = $this->controller();
-        $controller->setModifyTables();
+        $controller->requireTranslationColumns();
 
         $translate = sLangTranslate::create(['key' => $key]);
         $translateId = (int) $translate->getKey();
@@ -204,6 +204,8 @@ class TranslatesTableData
         foreach (sLang::langConfig() as $locale) {
             $controller->updateTranslate((string) $translateId, $locale, trim((string) ($data[$locale] ?? '')));
         }
+
+        evo()->clearCache('full');
 
         return $translateId;
     }
@@ -215,12 +217,13 @@ class TranslatesTableData
     {
         $this->authorize(write: true);
 
-        $this->controller()->setModifyTables();
+        $this->controller()->requireTranslationColumns();
         $key = $this->uniqueKey('new.translation.' . date('YmdHis'));
         $translate = sLangTranslate::create(['key' => $key]);
         $default = sLang::langDefault();
         $translate->{$default} = $key;
         $translate->save();
+        evo()->clearCache('full');
 
         return (int) $translate->getKey();
     }
@@ -323,8 +326,10 @@ class TranslatesTableData
         }
 
         if (in_array($field, sLang::langConfig(), true)) {
-            $this->controller()->setModifyTables();
-            $this->controller()->updateTranslate((string) $id, $field, $value);
+            $controller = $this->controller();
+            $controller->requireTranslationColumns();
+            $controller->updateTranslate((string) $id, $field, $value);
+            evo()->clearCache('full');
         }
 
         return $value;
@@ -349,9 +354,11 @@ class TranslatesTableData
         }
 
         $controller = $this->controller();
-        $controller->setModifyTables();
+        $controller->requireTranslationColumns();
+        $result = $controller->setAutomaticTranslate((string) $id, $field);
+        evo()->clearCache('full');
 
-        return $controller->setAutomaticTranslate((string) $id, $field);
+        return $result;
     }
 
     /**
@@ -370,7 +377,7 @@ class TranslatesTableData
 
         $default = sLang::langDefault();
         $controller = $this->controller();
-        $controller->setModifyTables();
+        $controller->requireTranslationColumns();
 
         $ids = sLangTranslate::query()
             ->where(function (Builder $query) use ($field) {
@@ -392,6 +399,8 @@ class TranslatesTableData
                 $translated++;
             }
         }
+
+        evo()->clearCache('full');
 
         return $translated;
     }

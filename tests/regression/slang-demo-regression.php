@@ -31,11 +31,6 @@ class SlangRegressionFakeController extends sLangController
      */
     public static array $calls = [];
 
-    public function setModifyTables()
-    {
-        return true;
-    }
-
     public function setAutomaticTranslate($source, $target): string
     {
         $translate = sLangTranslate::query()->find((int) $source);
@@ -95,11 +90,6 @@ class SlangRegressionCleanupController extends sLangController
     public function discoveredTranslationKeys(): array
     {
         return $this->discoveredKeys;
-    }
-
-    public function setModifyTables()
-    {
-        return true;
     }
 
     protected function updateLangFiles(): void

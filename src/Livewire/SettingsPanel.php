@@ -2,6 +2,7 @@
 
 use EvolutionCMS\Models\SiteTmplvar;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Seiger\sLang\Controllers\sLangController;
@@ -112,7 +113,7 @@ class SettingsPanel extends Component
     }
 
     /**
-     * Validate and persist settings, then update the translation schema for the selected languages.
+     * Prepare the proposed dictionary schema and files, then publish the settings together.
      */
     public function save(): void
     {
@@ -148,15 +149,25 @@ class SettingsPanel extends Component
         }
 
         $controller = new sLangController();
-        $controller->setLangDefault($default);
-        $controller->setLangDefaultShow(!empty($payload['s_lang_default_show']) ? 1 : 0);
-        $controller->setLangConfig($config);
-        $controller->setLangFront($front);
-        $controller->setLangUrlMap((array) ($payload['s_lang_url_map'] ?? []));
-        $controller->setLangTvs((array) ($payload['s_lang_tvs'] ?? []));
-        $controller->setModifyTables();
-        $controller->setOnOffLangModule(1);
+        $controller->prepareTranslationSchema($config);
 
+        try {
+            DB::transaction(function () use ($controller, $default, $config, $front, $payload): void {
+                $controller->setLangDefault($default);
+                $controller->setLangDefaultShow(!empty($payload['s_lang_default_show']) ? 1 : 0);
+                $controller->setLangConfig($config);
+                $controller->setLangFront($front);
+                $controller->setLangUrlMap((array) ($payload['s_lang_url_map'] ?? []));
+                $controller->setLangTvs((array) ($payload['s_lang_tvs'] ?? []));
+                $controller->setOnOffLangModule(1);
+            });
+        } finally {
+            // The setters read these two values back during the transaction.
+            sLang::forgetLanguageSetting('s_lang_default');
+            sLang::forgetLanguageSetting('s_lang_config');
+        }
+
+        evo()->clearCache('full');
         $this->fillData();
         $this->saved = true;
         $this->dirty = false;

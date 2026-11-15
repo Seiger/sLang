@@ -157,8 +157,8 @@ slang_group('dictionary-table', function (): void {
             'public function autoTranslateEmptyColumn',
             'foreach (sLang::langConfig() as $locale)',
             '$this->controller()->deleteTranslate',
-            '$this->controller()->updateTranslate',
-            '$this->controller()->setModifyTables',
+            '$controller->updateTranslate',
+            '$this->controller()->requireTranslationColumns',
         ] as $marker) {
             slang_assert_contains($marker, $provider, 'Missing dictionary provider marker: ' . $marker);
         }
@@ -1021,6 +1021,7 @@ require slang_path('tests/settings-access.php');
 require slang_path('tests/dictionary-access.php');
 require slang_path('tests/language-files.php');
 require slang_path('tests/uri-routing.php');
+require slang_path('tests/dictionary-schema.php');
 
 $failedCount = (int) ($GLOBALS['failed'] ?? 0);
 

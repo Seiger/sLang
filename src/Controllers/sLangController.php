@@ -5,6 +5,7 @@ use EvolutionCMS\Models\SiteContent;
 use EvolutionCMS\Models\SiteTmplvar;
 use EvolutionCMS\Models\SiteTmplvarContentvalue;
 use EvolutionCMS\Models\SystemSetting;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View as ViewFacade;
 use Illuminate\Support\Facades\Storage;
@@ -20,9 +21,12 @@ use Seiger\sLang\Models\sLangTranslate;
 use Seiger\sLang\Support\DocumentTranslations;
 use Seiger\sLang\Support\LanguageFileWriter;
 use Seiger\sLang\Support\ResourceTranslationAccess;
+use Seiger\sLang\Support\SettingsAccess;
 
 class sLangController
 {
+    private const TRANSLATES_TABLE = 's_lang_translates';
+
     public string $tblLang = '';
 
     /**
@@ -391,43 +395,96 @@ class sLangController
     }
 
     /**
-     * Add missing translation columns and seed empty dictionaries for supported locales.
+     * Prepare the dictionary for the current settings and refresh the site cache.
      *
-     * Validate the configured dictionary destinations before changing the table. Clear the cache
-     * after all dictionaries are available.
+     * This administrative entry point uses the same permission and validation as a settings save.
      *
      * @return bool True when the table and dictionaries are ready.
      */
     public function setModifyTables()
     {
-        $tblName = 's_lang_translates';
-        $files = new LanguageFileWriter(EVO_BASE_PATH, array_keys(sLang::langList()));
-        $langConfig = $files->validatedLocales([sLang::langDefault(), ...sLang::langConfig()]);
-
-        /**
-         * Translation table modification
-         */
-        foreach ($langConfig as $lang) {
-            if (!Schema::hasColumn($tblName, $lang)) {
-                Schema::table($tblName, function (Blueprint $table) use ($lang) {
-                    $table->text($lang)->nullable();
-                });
-            }
-        }
-
-        /**
-         * Translation files configuration
-         */
-        foreach ($langConfig as $lang) {
-            $files->ensureExists($lang);
-        }
-
-        /**
-         * Clearing the cache
-         */
+        $this->prepareTranslationSchema([sLang::langDefault(), ...sLang::langConfig()]);
         evo()->clearCache('full');
 
         return true;
+    }
+
+    /**
+     * Add missing columns and seed dictionaries for the proposed settings before publishing them.
+     *
+     * The locale allowlist bounds the columns that can be added. A competing save can add a column
+     * between inspection and ALTER. A failed ALTER is recoverable only if the column now exists.
+     *
+     * @param array<mixed> $requestedLocales Proposed default and site locales.
+     * @since 2.1.0
+     */
+    public function prepareTranslationSchema(array $requestedLocales): void
+    {
+        SettingsAccess::authorize();
+
+        $files = $this->languageFileWriter();
+        $locales = $files->validatedLocales($requestedLocales);
+        $missing = $this->missingTranslationColumns($locales);
+        $connection = Schema::getConnection();
+        if ($missing && in_array($connection->getDriverName(), ['mysql', 'mariadb'], true)
+            && $connection->transactionLevel() > 0) {
+            throw new \LogicException('Prepare the sLang dictionary schema before starting a settings transaction.');
+        }
+
+        foreach ($missing as $locale) {
+            try {
+                Schema::table(self::TRANSLATES_TABLE, static function (Blueprint $table) use ($locale) {
+                    $table->text($locale)->nullable();
+                });
+            } catch (QueryException $failure) {
+                if ($this->missingTranslationColumns([$locale])) {
+                    throw $failure;
+                }
+            }
+        }
+
+        foreach ($locales as $locale) {
+            $files->ensureExists($locale);
+        }
+    }
+
+    /**
+     * Verify that dictionary operations can use all configured locales without changing the schema.
+     *
+     * @since 2.1.0
+     */
+    public function requireTranslationColumns(): void
+    {
+        $files = $this->languageFileWriter();
+        $locales = $files->validatedLocales([sLang::langDefault(), ...sLang::langConfig()]);
+        $missing = $this->missingTranslationColumns($locales);
+        if ($missing) {
+            throw new \RuntimeException(
+                'Save the sLang language settings to prepare the missing dictionary columns: ' . implode(', ', $missing)
+            );
+        }
+    }
+
+    /**
+     * Report locale columns absent from the dictionary table.
+     *
+     * @param list<string> $locales Validated locale identifiers.
+     * @return list<string>
+     * @since 2.1.0
+     */
+    private function missingTranslationColumns(array $locales): array
+    {
+        return array_values(array_diff($locales, Schema::getColumnListing(self::TRANSLATES_TABLE)));
+    }
+
+    /**
+     * Use the same allowed locales and directory for preparing and rebuilding the dictionaries.
+     *
+     * @since 2.1.0
+     */
+    protected function languageFileWriter(): LanguageFileWriter
+    {
+        return new LanguageFileWriter(EVO_BASE_PATH, array_keys(sLang::langList()));
     }
 
     /**
@@ -506,7 +563,7 @@ class sLangController
     }
 
     /**
-     * Delete obsolete parser-managed translation keys and refresh language files.
+     * Delete obsolete keys and refresh language files using the prepared dictionary schema.
      */
     public function cleanupObsoleteTranslations(): int
     {
@@ -516,20 +573,20 @@ class sLangController
             return 0;
         }
 
+        $this->requireTranslationColumns();
         $deleted = sLangTranslate::query()->whereIn('key', $keys)->delete();
         $this->updateLangFiles();
-        $this->setModifyTables();
+        evo()->clearCache('full');
 
         return (int) $deleted;
     }
 
     /**
-     * Parse blade views to extract translations and add them to the database if necessary.
+     * Scan Blade views and add missing dictionary keys using the prepared language columns.
      */
     public function parseBlade(): void
     {
-        // A fresh installation may not have saved language settings yet.
-        $this->setModifyTables();
+        $this->requireTranslationColumns();
         $list = $this->discoveredTranslationKeys();
         $langDefault = sLang::langDefault();
 
@@ -549,6 +606,7 @@ class sLangController
         }
 
         $this->updateLangFiles();
+        evo()->clearCache('full');
     }
 
     /**
@@ -622,7 +680,7 @@ class sLangController
     }
 
     /**
-     * Delete a dictionary phrase and refresh generated language files.
+     * Delete a dictionary phrase and refresh files without changing the dictionary schema.
      */
     public function deleteTranslate(int $id): bool
     {
@@ -632,9 +690,10 @@ class sLangController
             return false;
         }
 
+        $this->requireTranslationColumns();
         $phrase->delete();
         $this->updateLangFiles();
-        $this->setModifyTables();
+        evo()->clearCache('full');
 
         return true;
     }
@@ -1031,7 +1090,7 @@ class sLangController
      */
     protected function updateLangFiles(): void
     {
-        $files = new LanguageFileWriter(EVO_BASE_PATH, array_keys(sLang::langList()));
+        $files = $this->languageFileWriter();
         $locales = $files->validatedLocales(sLang::langConfig());
         $translations = sLangTranslate::all();
         foreach ($locales as $lang) {
