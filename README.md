@@ -71,41 +71,6 @@ php artisan migrate
 
 Composer requires PHP ^8.4 and Evolution CMS ^3.5. The installed EvoUI version can require a newer Evolution CMS patch. Manager access was verified on Evolution CMS 3.5.9. Package checks passed on PHP 8.4, 8.5 and the PHP 8.6.0 RC5 preview.
 
-## Local shared demo workflow
-
-This repo is developed inside the shared Extras demo:
-
-```console
-cd /path/to/Extras/sArticles/demo/core
-composer update seiger/slang --with-all-dependencies
-php artisan package:discover
-php artisan migrate --force
-```
-
-The shared demo also loads `sArticles`, `dmi3yy/dissues`, `sSeo`, `evo-ui`,
-`dTui-editor`, and `eTinyMCE`. Before writing to dIssues task data, create a DB
-backup:
-
-```console
-php /path/to/MiddleDuck/skills/dissues-demo-ops/scripts/dissues-demo.php backup
-```
-
-Run the sLang smoke check from this repo:
-
-```console
-php tests/demo-smoke.php --url=http://127.0.0.1:8791
-```
-
-Run the targeted regression test for Dictionary CRUD and Settings state:
-
-```console
-php tests/regression/slang-demo-regression.php
-```
-
-The manager module shell now uses evo-ui for Dictionary and Settings. Resource
-edit multilingual tabs remain legacy-compatible and keep the existing
-Evolution mutate form contract.
-
 ## Usage in blade
 Current language:
 ```php
