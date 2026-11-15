@@ -14,8 +14,6 @@ sidebar_position: 1
 [![Downloads insgesamt](https://img.shields.io/packagist/dt/seiger/slang)](https://packagist.org/packages/seiger/slang)
 ![Hergestellt in der Ukraine](https://img.shields.io/badge/made_in-Ukraine-ffd700.svg?labelColor=0057b7)
 
-[★ Auf GitHub einen Stern vergeben](https://github.com/Seiger/sLang)
-
 **sLang** ist ein Modul zur Verwaltung mehrsprachiger Inhalte in Evolution CMS. Es unterstützt Übersetzungsphrasen, Frontend-Sprachen, mehrsprachige Ressource-Tabs, URL-Sprachsegmente, automatische Übersetzung und locale-aware Content-APIs.
 
 ## Screenshots

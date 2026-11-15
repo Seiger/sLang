@@ -14,8 +14,6 @@ sidebar_position: 1
 [![Total downloads](https://img.shields.io/packagist/dt/seiger/slang)](https://packagist.org/packages/seiger/slang)
 ![Made in Ukraine](https://img.shields.io/badge/made_in-Ukraine-ffd700.svg?labelColor=0057b7)
 
-[★ Star on GitHub](https://github.com/Seiger/sLang)
-
 **sLang** is a multilingual management module for Evolution CMS. It helps manage translation phrases, frontend languages, multilingual resource tabs, URL language segments, automatic translation helpers, and locale-aware content APIs.
 
 ## Screenshots

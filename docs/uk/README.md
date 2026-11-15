@@ -14,8 +14,6 @@ sidebar_position: 1
 [![Загальна кількість завантажень](https://img.shields.io/packagist/dt/seiger/slang)](https://packagist.org/packages/seiger/slang)
 ![Зроблено в Україні](https://img.shields.io/badge/made_in-Ukraine-ffd700.svg?labelColor=0057b7)
 
-[★ Поставити зірочку на GitHub](https://github.com/Seiger/sLang)
-
 **sLang** — модуль керування мультимовністю для Evolution CMS. Він допомагає працювати зі словником перекладів, мовами фронтенду, мультимовними вкладками ресурсів, мовними сегментами URL, автоматичним перекладом і locale-aware API для контенту.
 
 ## Скриншоти
