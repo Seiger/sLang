@@ -4,6 +4,7 @@ use EvolutionCMS\ManagerTheme;
 use EvolutionCMS\Models\SiteContent;
 use EvolutionCMS\Models\SiteTmplvar;
 use EvolutionCMS\Models\SiteTmplvarContentvalue;
+use EvolutionCMS\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View as ViewFacade;
 use Illuminate\Support\Facades\Storage;
@@ -145,20 +146,20 @@ class sLangController
     }
 
     /**
-     * Set the default language
+     * Save a supported default language, falling back to the stored locale or Ukrainian.
      *
-     * @param string $value The value to set as the default language.
-     * @return bool Returns true if the default language was successfully set; otherwise, returns false.
+     * @param mixed $value Requested locale code. Other values use the fallback.
+     * @return bool Whether the setting was saved.
      */
     public function setLangDefault($value)
     {
-        $langs = array_keys(sLang::langList());
-        $lang_default = sLang::langDefault();
-        if (trim($value) && in_array($value, $langs)) {
-            $lang_default = trim($value);
-        }
+        $supportedLocales = array_keys(sLang::langList());
+        $locale = is_string($value) ? trim($value) : '';
+        $default = in_array($locale, $supportedLocales, true)
+            ? $locale
+            : $this->defaultLocaleForSettings($supportedLocales);
 
-        return $this->updateTblSetting('s_lang_default', $lang_default);
+        return $this->updateTblSetting('s_lang_default', $default);
     }
 
     /**
@@ -175,89 +176,67 @@ class sLangController
     }
 
     /**
-     * Set the language configuration
+     * Save the supported site languages with the default language first.
      *
-     * @param mixed $value The value to set for the language configuration
-     * @return bool Returns true if the language configuration was successfully set, otherwise false
+     * Filter the stored list as well when the caller leaves the selection unchanged.
+     *
+     * @param mixed $value Requested locale list. Other values reuse the stored selection.
+     * @return bool Whether the setting was saved.
      */
     public function setLangConfig($value)
     {
-        $langList = array_keys(sLang::langList());
-        $langConfig = sLang::langConfig();
-        $lang_default = sLang::langDefault();
+        $supportedLocales = array_keys(sLang::langList());
+        $default = $this->defaultLocaleForSettings($supportedLocales);
+        $requested = is_array($value) ? $value : sLang::langConfig();
+        $locales = array_filter($requested, static fn ($locale) => in_array($locale, $supportedLocales, true));
+        $locales = array_unique([$default, ...array_values($locales)]);
 
-        if (is_array($value)) {
-            $langConfig = array_filter($value, function ($var) use ($langList) {
-                return in_array($var, $langList) ? true : false;
-            });
-        }
-
-        $langConfig = array_flip($langConfig);
-        unset($langConfig[$lang_default]);
-        $langConfig = array_flip($langConfig);
-        array_unshift($langConfig, $lang_default);
-
-        $langConfig = implode(',', $langConfig);
-
-        return $this->updateTblSetting('s_lang_config', $langConfig);
+        return $this->updateTblSetting('s_lang_config', implode(',', $locales));
     }
 
     /**
-     * Set the frontend languages in the system configuration
+     * Save the supported frontend languages selected from the site configuration.
      *
-     * @param mixed $value An array of language codes or a single language code
-     * @return bool True if the frontend languages were successfully updated, false otherwise
+     * The default language remains first even if the selection omits it.
+     *
+     * @param mixed $value Requested locale list. Other values reuse the stored selection.
+     * @return bool Whether the setting was saved.
      */
     public function setLangFront($value)
     {
-        $langConfig = sLang::langConfig();
-        $langFront = sLang::langFront();
-        $lang_default = sLang::langDefault();
+        $supportedLocales = array_keys(sLang::langList());
+        $default = $this->defaultLocaleForSettings($supportedLocales);
+        $siteLocales = sLang::langConfig();
+        $requested = is_array($value) ? $value : sLang::langFront();
+        $locales = array_filter($requested, static fn ($locale) =>
+            in_array($locale, $siteLocales, true) && in_array($locale, $supportedLocales, true)
+        );
+        $locales = array_unique([$default, ...array_values($locales)]);
 
-        if (is_array($value)) {
-            $langFront = array_filter($value, function ($var) use ($langConfig) {
-                return in_array($var, $langConfig) ? true : false;
-            });
-        }
-
-        $langFront = array_flip($langFront);
-        unset($langFront[$lang_default]);
-        $langFront = array_flip($langFront);
-        array_unshift($langFront, $lang_default);
-
-        $langFront = implode(',', $langFront);
-
-        return $this->updateTblSetting('s_lang_front', $langFront);
+        return $this->updateTblSetting('s_lang_front', implode(',', $locales));
     }
 
     /**
-     * Set custom frontend URL segments for configured languages.
+     * Save normalized URL segments for supported languages in the site configuration.
      *
      * @param mixed $value Associative array locale => segment
      * @return bool
      */
     public function setLangUrlMap($value)
     {
-        $langConfig = sLang::langConfig();
+        $supportedLocales = array_keys(sLang::langList());
+        $requested = is_array($value) ? $value : [];
         $segments = [];
 
-        if (is_array($value)) {
-            foreach ($langConfig as $locale) {
-                $segment = trim((string)($value[$locale] ?? $locale));
-                $segment = Str::lower($segment);
-                $segment = preg_replace('/[^a-z0-9_-]+/', '-', $segment) ?? '';
-                $segment = trim($segment, '-');
-                if ($segment === '') {
-                    $segment = $locale;
-                }
-                $segments[$locale] = $segment;
+        foreach (sLang::langConfig() as $locale) {
+            if (!in_array($locale, $supportedLocales, true)) {
+                continue;
             }
-        }
 
-        if (count($segments) === 0) {
-            foreach ($langConfig as $locale) {
-                $segments[$locale] = $locale;
-            }
+            $segment = $requested[$locale] ?? $locale;
+            $segment = is_scalar($segment) ? Str::lower(trim((string) $segment)) : $locale;
+            $segment = trim(preg_replace('/[^a-z0-9_-]+/', '-', $segment) ?? '', '-');
+            $segments[$locale] = $segment !== '' ? $segment : $locale;
         }
 
         $encoded = json_encode($segments, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -266,7 +245,7 @@ class sLangController
     }
 
     /**
-     * Sets the language TV values for the current instance.
+     * Save the IDs of existing template variables selected for translation.
      *
      * @param mixed $value The value(s) to set as language TV(s).
      *
@@ -274,14 +253,14 @@ class sLangController
      */
     public function setLangTvs($value)
     {
-        $templateVariables = sLang::templateVariablesId();
+        $templateVariables = array_map('strval', sLang::templateVariablesId());
 
         if ($templateVariables) {
             $multilangTvs = [];
             if (is_array($value)) {
-                $multilangTvs = array_filter($value, function ($var) use ($templateVariables) {
-                    return in_array($var, $templateVariables) ? true : false;
-                });
+                $multilangTvs = array_filter($value, static fn ($id) =>
+                    (is_int($id) || is_string($id)) && in_array((string) $id, $templateVariables, true)
+                );
             }
             $multilangTvs = implode(',', $multilangTvs);
 
@@ -905,26 +884,44 @@ class sLangController
     }
 
     /**
-     * Updates a system setting and invalidates its cached value after a successful write.
+     * Resolve the default locale for settings writes without reusing an unsupported stored value.
+     *
+     * @param list<string> $supportedLocales Locale codes from the package language list.
+     * @return string The stored locale if supported, otherwise the package default.
+     * @since 2.1.0
+     */
+    private function defaultLocaleForSettings(array $supportedLocales): string
+    {
+        $locale = sLang::langDefault();
+
+        return in_array($locale, $supportedLocales, true) ? $locale : 'uk';
+    }
+
+    /**
+     * Insert or update a system setting with bound values and invalidate its request cache.
+     *
+     * The core model supplies the table and the query builder quotes the configured prefix.
      *
      * @param string $name The name of the setting to update.
      * @param string $value The new value to be set for the setting.
      *
-     * @return bool True if the setting was successfully updated, false otherwise.
+     * @return bool True after a successful write, including when the value was unchanged.
+     * @throws \Illuminate\Database\QueryException If the database rejects the write.
      */
     protected function updateTblSetting($name, $value)
     {
-        $tbl = evo()->getDatabase()->getFullTableName('system_settings');
+        SystemSetting::query()->upsert(
+            [['setting_name' => $name, 'setting_value' => $value]],
+            ['setting_name'],
+            ['setting_value']
+        );
 
-        $saved = evo()->getDatabase()->query("REPLACE INTO {$tbl} (`setting_name`, `setting_value`) VALUES ('{$name}', '{$value}')") !== false;
-        if ($saved) {
-            $lang = sLang::getFacadeRoot();
-            if (is_object($lang) && method_exists($lang, 'forgetLanguageSetting')) {
-                $lang->forgetLanguageSetting($name);
-            }
+        $lang = sLang::getFacadeRoot();
+        if (is_object($lang) && method_exists($lang, 'forgetLanguageSetting')) {
+            $lang->forgetLanguageSetting($name);
         }
 
-        return $saved;
+        return true;
     }
 
     /**

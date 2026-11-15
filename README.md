@@ -2,7 +2,7 @@
 ![sLang](https://github.com/Seiger/slang/releases/download/v1.0.0/sLang.jpg)
 [![Latest Stable Version](https://img.shields.io/packagist/v/seiger/slang?label=version)](https://packagist.org/packages/seiger/slang)
 [![CMS Evolution](https://img.shields.io/badge/CMS-Evolution-brightgreen.svg)](https://github.com/evolution-cms/evolution)
-![PHP version](https://img.shields.io/packagist/php-v/seiger/slang)
+[![PHP: 8.4 and 8.5](https://img.shields.io/badge/PHP-8.4_%7C_8.5-777BB4?logo=php&logoColor=white)](#compatibility)
 [![License](https://img.shields.io/packagist/l/seiger/slang)](https://packagist.org/packages/seiger/slang)
 [![Issues](https://img.shields.io/github/issues/Seiger/slang)](https://github.com/Seiger/slang/issues)
 [![Stars](https://img.shields.io/packagist/stars/Seiger/slang)](https://packagist.org/packages/seiger/slang)
