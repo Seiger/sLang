@@ -679,8 +679,13 @@ class sLang
     public function moduleUrl(): string
     {
         $title = __('sLang::global.slang');
+        $url = 'index.php?a=112';
 
-        return 'index.php?a=112&id=' . md5(is_string($title) ? $title : 'sLang');
+        if (!empty($_SESSION['mgrValidated'])) {
+            $url .= '&_token=' . rawurlencode(csrf_token());
+        }
+
+        return $url . '&id=' . md5(is_string($title) ? $title : 'sLang');
     }
 
     /**

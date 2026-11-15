@@ -9,6 +9,17 @@ define('EVO_SITE_URL', 'https://example.test/');
 
 require slang_path('src/sLang.php');
 
+function __(string $key): string
+{
+    return $key === 'sLang::global.slang' ? 'Multilingual' : $key;
+}
+
+function csrf_token(): string
+{
+    slang_assert(!empty($_SESSION['mgrValidated']), 'Read the module token only in a validated manager session.');
+    return $_SESSION['_token'];
+}
+
 final class SlangRoutingStringStub
 {
     public static function lower(string $value): string
@@ -87,6 +98,25 @@ function slang_expect_route_response(string $message, int $code): void
 }
 
 slang_group('uri-routing', function (): void {
+    slang_test('module URL includes the encoded CSRF token only for a validated manager', function (): void {
+        $routing = new SlangRoutingFixture();
+        $session = $_SESSION ?? null;
+        $moduleId = md5('Multilingual');
+
+        try {
+            $_SESSION = ['_token' => 'a+b/c=d&e'];
+            slang_assert($routing->moduleUrl() === 'index.php?a=112&id=' . $moduleId, 'A guest URL must omit the token.');
+
+            $_SESSION['mgrValidated'] = true;
+            slang_assert(
+                $routing->moduleUrl() === 'index.php?a=112&_token=a%2Bb%2Fc%3Dd%26e&id=' . $moduleId,
+                'A manager URL must include the session token and preserve the module ID.'
+            );
+        } finally {
+            $_SESSION = $session;
+        }
+    });
+
     slang_test('language prefixes match one literal beginning segment', function (): void {
         $routing = new SlangRoutingFixture();
         foreach ([
