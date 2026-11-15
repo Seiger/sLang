@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 final class SlangDocFormSaveSiteContentStub
 {
+    private ?int $updateId = null;
+
     public function __construct(
         public int $id = 0,
         public int $template = 10,
@@ -19,6 +21,26 @@ final class SlangDocFormSaveSiteContentStub
     public function find(int $id, array $columns): ?self
     {
         return SlangDocFormSaveStub::$resources[$id] ?? null;
+    }
+
+    public function whereKey(int $id): self
+    {
+        $this->updateId = $id;
+
+        return $this;
+    }
+
+    public function toBase(): self
+    {
+        return $this;
+    }
+
+    public function update(array $data): int
+    {
+        slang_assert($this->updateId !== null, 'A site_content update must be constrained by a resource ID.');
+        SlangDocFormSaveStub::$siteContentUpdates[] = ['data' => $data, 'id' => $this->updateId];
+
+        return 1;
     }
 }
 

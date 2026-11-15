@@ -352,7 +352,7 @@ Event::listen('evolution.OnDocFormSave', function ($params) {
     $data = [];
     foreach (['pagetitle', 'longtitle', 'description', 'introtext', 'content', 'menutitle'] as $field) {
         if (isset($defaultFields[$field])) {
-            $data[$field] = evo()->getDatabase()->escape($defaultFields[$field]);
+            $data[$field] = $defaultFields[$field];
         }
     }
 
@@ -367,7 +367,7 @@ Event::listen('evolution.OnDocFormSave', function ($params) {
     }
 
     if ($data) {
-        evo()->db->update($data, evo()->getDatabase()->getFullTableName('site_content'), 'id=' . $id);
+        SiteContent::withTrashed()->whereKey($id)->toBase()->update($data);
     }
 
     $controller->storeTranslatedTemplateVariables($id, (int) $resource->template, $locales, $input);

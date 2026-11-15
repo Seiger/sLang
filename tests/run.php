@@ -664,40 +664,11 @@ final class SlangDocFormSaveLangStub
     }
 }
 
-final class SlangDocFormSaveDatabaseStub
-{
-    public function escape(string $value): string
-    {
-        return $value;
-    }
-
-    public function getFullTableName(string $table): string
-    {
-        return $table;
-    }
-
-    public function update(array $data, string $table, string $where): void
-    {
-        SlangDocFormSaveStub::$siteContentUpdates[] = ['data' => $data, 'table' => $table, 'where' => $where];
-    }
-}
-
 final class SlangDocFormSaveEvoStub
 {
-    public SlangDocFormSaveDatabaseStub $db;
     public int $managerId = 12;
     public string $locale = 'uk';
     public array $config = ['use_udperms' => 1];
-
-    public function __construct()
-    {
-        $this->db = new SlangDocFormSaveDatabaseStub();
-    }
-
-    public function getDatabase(): SlangDocFormSaveDatabaseStub
-    {
-        return $this->db;
-    }
 
     public function getLoginUserID(string $context): int
     {
@@ -811,7 +782,20 @@ slang_group('docformsave', function (): void {
         slang_assert(count(SlangDocFormSaveStub::$siteContentUpdates) === 1, 'Expected one site_content update.');
         $update = SlangDocFormSaveStub::$siteContentUpdates[0];
         slang_assert($update['data'] === ['pagetitle' => 'Uk title', 'longtitle' => 'Uk long'], 'Only whitelisted fields must be written, got: ' . json_encode($update['data']));
-        slang_assert($update['where'] === 'id=7', 'Update must target the saved document id.');
+        slang_assert($update['id'] === 7, 'Update must bind the saved document id.');
+    });
+
+    slang_test('site_content receives the original text bound to the saved resource', function (): void {
+        $title = "L'atelier — ранок";
+        $content = <<<'HTML'
+<p data-path="assets\images">L'atelier — ранок</p>
+HTML;
+        SlangDocFormSaveStub::reset(['id' => '7', 'uk_pagetitle' => $title, 'uk_content' => $content]);
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', ['mode' => 'upd', 'id' => '42']);
+
+        slang_assert(SlangDocFormSaveStub::$siteContentUpdates === [
+            ['data' => ['pagetitle' => $title, 'content' => $content], 'id' => 42],
+        ], 'Bind the original field values and the authorized integer ID from the core event.');
     });
 
     slang_test('on doc form save never writes published parent template or id from default language keys', function () use ($request): void {
@@ -867,6 +851,7 @@ slang_group('docformsave', function (): void {
         slang_assert(isset($byLang['uk'], $byLang['en']), 'Expected translations for every configured language.');
         slang_assert($byLang['en'] === ['pagetitle' => 'English title'], 'English translation fields mismatch.');
         slang_assert(($byLang['uk']['pagetitle'] ?? null) === 'Uk title', 'Default language translation must contain pagetitle.');
+        slang_assert((SlangDocFormSaveStub::$siteContentUpdates[0]['id'] ?? null) === 250, 'The base fields must update the newly saved resource.');
     });
 
     slang_test('on doc form save does not leak a longer language prefix into a shorter language row', function (): void {
@@ -905,7 +890,7 @@ slang_group('docformsave', function (): void {
     slang_test('resource translations require the actual resource ID and the permissions for its save mode', function () use ($request): void {
         SlangDocFormSaveStub::reset($request);
 
-        foreach ([['id' => 0, 'mode' => 'upd'], ['id' => 999, 'mode' => 'upd'], ['id' => 7]] as $event) {
+        foreach ([['id' => 0, 'mode' => 'upd'], ['id' => '7.5', 'mode' => 'upd'], ['id' => 999, 'mode' => 'upd'], ['id' => 7]] as $event) {
             SlangDocFormSaveStub::fire('evolution.OnDocFormSave', $event);
         }
         slang_assert(SlangDocFormSaveStub::$langContent === [] && SlangDocFormSaveStub::$siteContentUpdates === [], 'An invalid resource ID or mode must leave translations untouched.');
