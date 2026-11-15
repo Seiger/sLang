@@ -1,4 +1,5 @@
 @php global $content, $richtexteditorIds, $richtexteditorOptions; @endphp
+@php($canTranslateResource = \Seiger\sLang\Support\ManagerAccess::allows('save_document'))
 
 @include('sLang::resourceGeneralTab')
 @include('sLang::resourceTemplateVariablesTab')
@@ -153,12 +154,21 @@
             let targetField = targetLang + elementName;
             let _text = (element.type == 'textarea' && which_editor != 'none' && tinymce.get(sourceField)) ? tinymce.get(sourceField).getContent() : document.querySelector(`[name="${sourceField}"]`).value;
 
-            fetch('{!!sLang::moduleUrl()!!}&get=translates&action=translate-only', {
-                body: new URLSearchParams({'text': _text, 'source': defaultLang, 'target': targetLang}),
+            fetch(@js(sLang::moduleUrl() . '&get=translates&action=translate-only'), {
+                body: new URLSearchParams({
+                    'text': _text,
+                    'source': defaultLang,
+                    'target': targetLang,
+                    '_token': @js($_SESSION['_token'] ?? '')
+                }),
                 method: "post",
                 cache: "no-store",
                 headers: { "X-Requested-With": "XMLHttpRequest" }
             }).then((response) => {
+                if (!response.ok) {
+                    throw new Error('Translation request failed: ' + response.status);
+                }
+
                 return response.text();
             }).then((data) => {
                 if (element.type == 'textarea' && which_editor != 'none' && tinymce.get(sourceField)) {
@@ -166,15 +176,11 @@
                 } else {
                     document.querySelector(`[name="${targetField}"]`).value = data;
                 }
+            }).catch((error) => {
+                console.error(error);
+            }).finally(() => {
                 clicked.disabled = false;
                 window.parent.document.getElementById('mainloader').classList.remove('show');
-            }).catch(function(error) {
-                if (error == 'SyntaxError: Unexpected token < in JSON at position 0') {
-                    console.error('Request failed SyntaxError: The response must contain a JSON string.');
-                } else {
-                    console.error('Request failed', error, '.');
-                }
-                clicked.disabled = false;
             });
         });
     });

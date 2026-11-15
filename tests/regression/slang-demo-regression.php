@@ -53,7 +53,26 @@ class SlangRegressionFakeController extends sLangController
     }
 }
 
-class SlangRegressionBulkTableData extends TranslatesTableData
+/**
+ * Exercise dictionary persistence in the demo CLI fixture, which has no manager session.
+ *
+ * @since 2.1.0
+ */
+class SlangRegressionAuthorizedTableData extends TranslatesTableData
+{
+    /** Allow the demo fixture to execute dictionary operations after bootstrap. */
+    protected function authorize(bool $write = false): void
+    {
+    }
+
+    /** Render the editor's column configuration in the demo fixture. */
+    protected function canWrite(): bool
+    {
+        return true;
+    }
+}
+
+class SlangRegressionBulkTableData extends SlangRegressionAuthorizedTableData
 {
     protected function controller(): sLangController
     {
@@ -197,7 +216,7 @@ function assertDictionarySchemaAndSeed(PDO $pdo, string $table): void
 
 function assertDictionaryCrud(): int
 {
-    $table = new TranslatesTableData();
+    $table = new SlangRegressionAuthorizedTableData();
     $suffix = date('YmdHis');
     $key = 'regression.translation.create.' . $suffix;
 
@@ -265,7 +284,7 @@ function assertDictionaryCrud(): int
 
 function assertDictionaryDelete(): void
 {
-    $table = new TranslatesTableData();
+    $table = new SlangRegressionAuthorizedTableData();
     $suffix = date('YmdHis');
     $modalData = ['key' => 'delete.translation.' . $suffix];
     foreach (sLang::langConfig() as $locale) {

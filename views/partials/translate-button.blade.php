@@ -2,6 +2,7 @@
     'lang',
 ])
 
+@if($canTranslateResource ?? false)
 @php($label = __('sLang::global.auto_translate') . ' ' . strtoupper(sLang::langDefault()) . ' => ' . strtoupper($lang))
 
 <button
@@ -15,3 +16,4 @@
     <x-evo::icon name="language" class="evo-ui-btn__icon" />
     <span class="evo-ui-sr-only">{{ $label }}</span>
 </button>
+@endif

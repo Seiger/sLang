@@ -6,7 +6,12 @@ use Illuminate\Validation\ValidationException;
 use Seiger\sLang\Controllers\sLangController;
 use Seiger\sLang\Facades\sLang;
 use Seiger\sLang\Models\sLangTranslate;
+use Seiger\sLang\Support\ManagerAccess;
+use Seiger\sLang\Support\SettingsAccess;
 
+/**
+ * Serve the site-wide dictionary. All keys and configured locales share the same manager permissions.
+ */
 class TranslatesTableData
 {
     protected string $moduleUrl;
@@ -45,26 +50,30 @@ class TranslatesTableData
     }
 
     /**
+     * Expose editable language columns and translation actions according to the manager's permissions.
+     *
      * @param array<int, array<string, mixed>> $columns
      * @return array<int, array<string, mixed>>
      */
     public function columns(array $columns): array
     {
+        $this->authorize();
+        $canWrite = $this->canWrite();
         $defaultLocale = sLang::langDefault();
 
         $languageColumns = collect(sLang::langConfig())
-            ->map(function (string $locale) use ($defaultLocale) {
+            ->map(function (string $locale) use ($defaultLocale, $canWrite) {
                 $column = [
                     'key' => $locale,
                     'type' => 'text',
                     'label' => strtoupper($locale),
                     'sortable' => true,
                     'sort_field' => $locale,
-                    'editable' => true,
+                    'editable' => $canWrite,
                     'rules' => ['nullable', 'string'],
                 ];
 
-                if ($locale !== $defaultLocale) {
+                if ($canWrite && $locale !== $defaultLocale) {
                     $column['inline_actions'] = [
                         [
                             'key' => 'auto_translate',
@@ -102,10 +111,14 @@ class TranslatesTableData
     }
 
     /**
+     * Supply the create modal's initial values to managers who can write the dictionary.
+     *
      * @return array<string, string>
      */
     public function modalDefaults(): array
     {
+        $this->authorize(write: true);
+
         return collect(sLang::langConfig())
             ->mapWithKeys(fn (string $locale): array => [$locale => ''])
             ->prepend('', 'key')
@@ -113,12 +126,19 @@ class TranslatesTableData
     }
 
     /**
+     * Supply fields for the create modal. EvoUI also asks for these when rendering a closed modal.
+     *
      * @param array<int, array<string, mixed>> $fields
      * @param array<string, mixed> $data
      * @return array<int, array<string, mixed>>
      */
     public function modalFields(array $fields, array $data, ?int $id, string $mode): array
     {
+        $this->authorize();
+        if (!$this->canWrite()) {
+            return [];
+        }
+
         $languageFields = collect(sLang::langConfig())
             ->map(fn (string $locale): array => [
                 'name' => $locale,
@@ -143,10 +163,14 @@ class TranslatesTableData
     }
 
     /**
+     * Create a dictionary entry and save its values for the configured locales.
+     *
      * @param array<string, mixed> $data
      */
     public function saveModal(array $data, ?int $id, string $mode): int
     {
+        $this->authorize(write: true);
+
         if ($mode !== 'create') {
             return 0;
         }
@@ -184,8 +208,13 @@ class TranslatesTableData
         return $translateId;
     }
 
+    /**
+     * Create an entry with a generated key through EvoUI's inline creation action.
+     */
     public function createInlineRow(): int
     {
+        $this->authorize(write: true);
+
         $this->controller()->setModifyTables();
         $key = $this->uniqueKey('new.translation.' . date('YmdHis'));
         $translate = sLangTranslate::create(['key' => $key]);
@@ -196,23 +225,37 @@ class TranslatesTableData
         return (int) $translate->getKey();
     }
 
+    /**
+     * Resolve an entry's label for an authorized delete confirmation.
+     */
     public function deleteName(int $id): string
     {
+        $this->authorize(write: true);
+
         $translate = sLangTranslate::find($id);
 
         return $translate ? (string) $translate->key : (string) $id;
     }
 
+    /**
+     * Delete a dictionary entry and refresh the generated translations.
+     */
     public function deleteRow(int $id): void
     {
+        $this->authorize(write: true);
+
         $this->controller()->deleteTranslate($id);
     }
 
     /**
+     * Scan templates, add missing dictionary entries and rebuild translation files.
+     *
      * @param array<string, mixed> $action
      */
     public function synchronizeTranslations(array $action = [], ?int $selectedId = null): int
     {
+        $this->authorize(write: true);
+
         $before = sLangTranslate::query()->count();
         $this->controller()->parseBlade();
         $after = sLangTranslate::query()->count();
@@ -221,8 +264,10 @@ class TranslatesTableData
     }
 
     /**
+     * Provide the synchronization tooltip and disable the action for read-only managers.
+     *
      * @param array<string, mixed> $action
-     * @return array<string, string>
+     * @return array{title: string, disabled: bool}
      */
     public function synchronizeAttributes(array $action = [], ?int $selectedId = null): array
     {
@@ -230,14 +275,41 @@ class TranslatesTableData
 
         return [
             'title' => is_string($title) ? $title : '',
-        ];
+        ] + $this->managementAttributes();
     }
 
     /**
+     * Disable mutation buttons in the toolbar for managers with read-only access.
+     *
+     * @return array{disabled: bool}
+     * @since 2.1.0
+     */
+    public function managementAttributes(): array
+    {
+        return ['disabled' => !$this->canWrite()];
+    }
+
+    /**
+     * Expose row actions only to managers who can change the dictionary.
+     *
+     * @param array<int, array<string, mixed>> $actions
+     * @return array<int, array<string, mixed>>
+     * @since 2.1.0
+     */
+    public function rowActions(array $actions): array
+    {
+        return $this->canWrite() ? $actions : [];
+    }
+
+    /**
+     * Save a translation in a configured locale while keeping the dictionary key fixed.
+     *
      * @param array<string, mixed> $column
      */
     public function updateInlineField(int $id, string $field, string $value, array $column = []): string
     {
+        $this->authorize(write: true);
+
         $translate = sLangTranslate::find($id);
 
         if (!$translate) {
@@ -259,26 +331,39 @@ class TranslatesTableData
     }
 
     /**
+     * Translate an existing entry into a configured non-default locale and save the result.
+     *
      * @param array<string, mixed> $action
      * @param array<string, mixed> $column
      */
     public function autoTranslateInlineField(int $id, string $field, array $action = [], array $column = []): string
     {
+        $this->authorize(write: true);
+
         if (!in_array($field, sLang::langConfig(), true) || $field === sLang::langDefault()) {
             return '';
         }
 
-        $this->controller()->setModifyTables();
+        if (!sLangTranslate::query()->whereKey($id)->exists()) {
+            return '';
+        }
 
-        return $this->controller()->setAutomaticTranslate((string) $id, $field);
+        $controller = $this->controller();
+        $controller->setModifyTables();
+
+        return $controller->setAutomaticTranslate((string) $id, $field);
     }
 
     /**
+     * Fill empty translations in a configured non-default locale with the same authority as an inline edit.
+     *
      * @param array<string, mixed> $action
      * @param array<string, mixed> $column
      */
     public function autoTranslateEmptyColumn(string $field, array $action = [], array $column = []): int
     {
+        $this->authorize(write: true);
+
         if (!in_array($field, sLang::langConfig(), true) || $field === sLang::langDefault()) {
             return 0;
         }
@@ -330,10 +415,14 @@ class TranslatesTableData
     }
 
     /**
+     * Build the search and sort query for authorized dictionary readers.
+     *
      * @return Builder<sLangTranslate>
      */
     protected function query(): Builder
     {
+        $this->authorize();
+
         $query = sLangTranslate::query();
         $search = trim((string) ($this->state['search'] ?? ''));
 
@@ -359,6 +448,31 @@ class TranslatesTableData
         $query->orderBy($sort, $direction);
 
         return $query;
+    }
+
+    /**
+     * Check the permission used by the writable dictionary controls.
+     *
+     * @since 2.1.0
+     */
+    protected function canWrite(): bool
+    {
+        return SettingsAccess::allows();
+    }
+
+    /**
+     * Require module access for reads or the settings permission for dictionary administration.
+     *
+     * @since 2.1.0
+     */
+    protected function authorize(bool $write = false): void
+    {
+        if ($write) {
+            SettingsAccess::authorize();
+            return;
+        }
+
+        ManagerAccess::authorize();
     }
 
     protected function uniqueKey(string $key, int $ignoreId = 0): string

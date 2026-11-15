@@ -139,7 +139,7 @@ slang_group('dictionary-table', function (): void {
             'public function columns(array $columns): array',
             'collect(sLang::langConfig())',
             "'key' => \$locale",
-            "'editable' => true",
+            "'editable' => \$canWrite",
             "'inline_actions'",
             "'provider' => 'autoTranslateInlineField'",
             "'header_actions'",
@@ -326,11 +326,11 @@ slang_group('release-cleanup', function (): void {
             slang_assert(!str_contains($module, $marker), 'Manager module must not expose migrated legacy action: ' . $marker);
         }
 
-        slang_assert_contains('case "synchronize"', $module, 'Dictionary synchronize action must remain available for template key scanning.');
+        slang_assert_contains("\$action === 'synchronize'", $module, 'Dictionary synchronize action must remain available for template key scanning.');
         slang_assert_contains('parseBlade', $module, 'Dictionary synchronize action must call the legacy backend parser.');
 
         foreach ([
-            'case "translate-only"',
+            "\$action === 'translate-only'",
             'getAutomaticTranslate',
         ] as $marker) {
             slang_assert_contains($marker, $module, 'Resource translation endpoint must stay available: ' . $marker);
@@ -875,6 +875,7 @@ slang_group('regression-entrypoint', function (): void {
 });
 
 require slang_path('tests/settings-access.php');
+require slang_path('tests/dictionary-access.php');
 
 $failedCount = (int) ($GLOBALS['failed'] ?? 0);
 

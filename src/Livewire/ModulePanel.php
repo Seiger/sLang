@@ -3,6 +3,7 @@
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Seiger\sLang\Support\ManagerAccess;
 use Seiger\sLang\Support\SettingsAccess;
 
 /**
@@ -18,6 +19,16 @@ class ModulePanel extends Component
     #[Locked]
     public array $context = [];
     public string $activeTab = 'translates';
+
+    /**
+     * Require module access on the first render and on later Livewire requests.
+     *
+     * @since 2.1.0
+     */
+    public function boot(): void
+    {
+        ManagerAccess::authorize();
+    }
 
     /**
      * Store the module's navigation and select an available tab on initial load.
