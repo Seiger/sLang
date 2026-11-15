@@ -1,0 +1,29 @@
+{
+  "defaultLocale": "en",
+  "locales": {
+    "en": "English",
+    "uk": "Українська",
+    "de": "Deutsch",
+    "fr": "Français",
+    "pl": "Polski"
+  },
+  "lines": [
+    {
+      "version": "2.x",
+      "branch": "2.x",
+      "label": "2.x",
+      "status": "current",
+      "cover": "assets/images/slang-dictionary.png",
+      "screenshots": [
+        "assets/images/slang-configuration.png",
+        "assets/images/slang-resource-editor.png"
+      ]
+    },
+    {
+      "version": "1.x",
+      "branch": "1.x",
+      "label": "1.x",
+      "status": "legacy"
+    }
+  ]
+}

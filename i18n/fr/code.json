@@ -1,0 +1,47 @@
+{
+  "docs.status.current": {
+    "message": "Actuelle"
+  },
+  "docs.status.previous": {
+    "message": "Précédente"
+  },
+  "docs.status.legacy": {
+    "message": "Archive"
+  },
+  "docs.legacy.message": {
+    "message": "Cette documentation concerne une version antérieure."
+  },
+  "docs.legacy.current": {
+    "message": "Lire la documentation actuelle"
+  },
+  "gallery.carousel": {
+    "message": "Carrousel"
+  },
+  "gallery.label": {
+    "message": "Captures d’écran sLang"
+  },
+  "gallery.slide": {
+    "message": "Diapositive"
+  },
+  "gallery.screenshot": {
+    "message": "Capture {number}"
+  },
+  "gallery.open": {
+    "message": "Ouvrir {title} en taille réelle"
+  },
+  "gallery.unavailable": {
+    "message": "Image indisponible. Ouvrir l’original."
+  },
+  "gallery.previous": {
+    "message": "Capture précédente"
+  },
+  "gallery.next": {
+    "message": "Capture suivante"
+  },
+  "gallery.show": {
+    "message": "Afficher la capture {number} : {title}"
+  },
+  "gallery.hint": {
+    "message": "Utilisez les flèches ou balayez pour parcourir les images. Sélectionnez une image pour l’ouvrir en taille réelle."
+  }
+}
