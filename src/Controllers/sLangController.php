@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Seiger\sLang\Models\sLangTranslate;
 use Seiger\sLang\Support\DocumentTranslations;
+use Seiger\sLang\Support\ResourceTranslationAccess;
 
 class sLangController
 {
@@ -114,7 +115,7 @@ class sLangController
     }
 
     /**
-     * Set language content for a resource
+     * Set content fields for an authorized resource and locale selected by the caller.
      *
      * @param int $resourceId The ID of the resource
      * @param string $langKey The language key
@@ -123,12 +124,18 @@ class sLangController
      */
     public function setLangContent(int $resourceId, string $langKey, array $fields): void
     {
+        unset($fields['resource'], $fields['lang']);
+        $fields = array_intersect_key($fields, array_flip(sLang::siteContentFields()));
+        if (!$fields) {
+            return;
+        }
+
         sLangContent::withoutGlobalScope('language')
             ->updateOrCreate(['resource' => $resourceId, 'lang' => $langKey], $fields);
     }
 
     /**
-     * Sets the content value for multiple template variables in a specific language.
+     * Store values for the resource, locale and TVs already authorized by the caller.
      *
      * @param int $resourceId The ID of the resource.
      * @param string $langKey The language key.
@@ -143,6 +150,105 @@ class sLangController
                 SiteTmplvarContentvalue::query()->updateOrCreate(['tmplvarid' => $tmplvarId, 'contentid' => $resourceId], ['value' => $value]);
             }
             sLangTmplvarContentvalue::updateOrCreate(['tmplvarid' => $tmplvarId, 'contentid' => $resourceId, 'lang' => $langKey], ['value' => $value]);
+        }
+    }
+
+    /**
+     * Save posted translations for the TVs configured in sLang and assigned to the saved template.
+     *
+     * The save event has already authorized the resource. Apply the TV's own group restrictions
+     * before writing both the translated values and the default-language values used by Evolution.
+     *
+     * @param array<int, string> $locales The resource editor's configured locales.
+     * @param array<string, mixed> $input The posted resource editor form.
+     * @since 2.1.0
+     */
+    public function storeTranslatedTemplateVariables(int $resourceId, int $templateId, array $locales, array $input): void
+    {
+        $submitted = [];
+        $tvIds = [];
+        foreach (sLang::langTvs() as $configuredId) {
+            $id = (int) $configuredId;
+            if ($id <= 0) {
+                continue;
+            }
+
+            foreach ($locales as $locale) {
+                $value = $input['tv' . $id . '_' . $locale] ?? null;
+                if (is_array($value) && array_all($value, static fn ($option) => is_string($option))) {
+                    $value = implode('||', $value);
+                }
+                if (is_string($value) && ResourceTranslationAccess::allowsValue($value)) {
+                    $submitted[$locale][$id] = $value;
+                    $tvIds[$id] = true;
+                }
+            }
+        }
+
+        if (!$tvIds) {
+            return;
+        }
+
+        $query = SiteTmplvar::query()->whereKey(array_keys($tvIds))
+            ->whereHas('tmplvarTemplate', static fn ($templates) => $templates->where('templateid', $templateId));
+        $allowed = array_flip(ResourceTranslationAccess::restrictTemplateVariables($query)->pluck('site_tmplvars.id')->all());
+        foreach ($submitted as $locale => $values) {
+            $values = array_intersect_key($values, $allowed);
+            if ($values) {
+                $this->setLangTmplvarContentvalue($resourceId, $locale, $values);
+            }
+        }
+    }
+
+    /**
+     * Store the resource's two site-wide menu flags for a manager who can publish it.
+     *
+     * Existing flag TVs retain their own group restrictions. Creating a missing definition also
+     * requires the permissions Evolution uses to create and save a TV.
+     *
+     * @param array<string, mixed> $input The posted resource editor form.
+     * @since 2.1.0
+     */
+    public function saveMenuFlags(int $resourceId, array $input): void
+    {
+        $evo = evo();
+        if (!$evo->hasPermission('publish_document', 'mgr')) {
+            return;
+        }
+
+        foreach (['menu_main', 'menu_footer'] as $name) {
+            $value = $input[$name] ?? null;
+            if (!in_array($value, ['0', '1'], true)) {
+                continue;
+            }
+
+            $tv = SiteTmplvar::query()->where('name', $name)->first();
+            if ($tv) {
+                if (!ResourceTranslationAccess::restrictTemplateVariables(SiteTmplvar::query())->whereKey($tv->id)->exists()) {
+                    continue;
+                }
+            } else {
+                if (!$evo->hasPermission('new_template', 'mgr') || !$evo->hasPermission('save_template', 'mgr')) {
+                    continue;
+                }
+
+                $tv = new SiteTmplvar();
+                $tv->type = 'checkbox';
+                $tv->name = $name;
+                $tv->caption = $name;
+                $tv->description = $name;
+                $tv->editor_type = 0;
+                $tv->category = 1;
+                $tv->locked = 1;
+                $tv->elements = '==1';
+                $tv->default_text = '0';
+                $tv->save();
+            }
+
+            SiteTmplvarContentvalue::query()->updateOrCreate(
+                ['tmplvarid' => $tv->id, 'contentid' => $resourceId],
+                ['value' => $value]
+            );
         }
     }
 
@@ -548,7 +654,7 @@ class sLangController
     }
 
     /**
-     * Retrieves the HTML output of the template variables for a specific content.
+     * Render the template variables available to the manager for this resource editor.
      *
      * @param array<string, mixed> $params The parameters for retrieving the template variables.
      *
@@ -583,7 +689,7 @@ class sLangController
                 ->leftJoin('site_tmplvar_contentvalues', function ($join) use ($id) {
                     $join->on('site_tmplvar_contentvalues.tmplvarid', '=', 'site_tmplvars.id');
                     $join->on('site_tmplvar_contentvalues.contentid', '=', \DB::raw($id));
-                })->leftJoin('site_tmplvar_access', 'site_tmplvar_access.tmplvarid', '=', 'site_tmplvars.id');
+                });
 
             if ($group_tvs) {
                 $tvs = $tvs->select('site_tmplvars.*',
@@ -598,15 +704,7 @@ class sLangController
             $tvs = $tvs->orderBy('site_tmplvars.id', 'ASC');
             $tvs = $tvs->where('site_tmplvar_templates.templateid', $template);
 
-            if ($_SESSION['mgrRole'] != 1) {
-                $tvs = $tvs->leftJoin('document_groups', 'site_tmplvar_contentvalues.contentid', '=', 'document_groups.document');
-                $tvs = $tvs->where(function ($query) {
-                    $query->whereNull('site_tmplvar_access.documentgroup')
-                        ->orWhereIn('document_groups.document_group', $_SESSION['mgrDocgroups']);
-                });
-            }
-
-            $tvs = $tvs->get();
+            $tvs = ResourceTranslationAccess::restrictTemplateVariables($tvs)->get();
             if (count($tvs) > 0) {
                 $tvsArray = $tvs->toArray();
 

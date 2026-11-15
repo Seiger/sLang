@@ -5,12 +5,11 @@
 
 use EvolutionCMS\Facades\UrlProcessor;
 use EvolutionCMS\Models\SiteContent;
-use EvolutionCMS\Models\SiteTmplvar;
-use EvolutionCMS\Models\SiteTmplvarContentvalue;
 use Illuminate\Http\Request;
 use Seiger\sLang\Controllers\sLangController;
 use Seiger\sLang\Facades\sLang;
 use Seiger\sLang\Support\DocumentTranslations;
+use Seiger\sLang\Support\ResourceTranslationAccess;
 
 /**
  * Parse legacy resource IDs and localized URLs.
@@ -291,164 +290,86 @@ Event::listen('evolution.OnDocFormTemplateRender', function($params) {
 });
 
 /**
- * Modifying fields before saving a resource
+ * Remember whether the manager could edit the resource before the core save changed its groups.
  */
-Event::listen('evolution.OnBeforeDocFormSave', function($params) {
+Event::listen('evolution.OnBeforeDocFormSave', function ($params) {
     $request = request();
-    if (!$request instanceof Request) {
+    if (!$request instanceof Request || !$request->isMethod('POST')) {
         return;
     }
 
-    $isNew = ($params['mode'] ?? '') === 'new';
-    if (!$isNew && empty($params['id'])) {
-        $params['id'] = \DB::table('site_content')->max('id') + 1;
-    }
-
-    $sLangController = new sLangController();
-    foreach (sLang::langConfig() as $langConfig) {
-        $fields = [];
-        //$tvs = [];
-        foreach ($request->all() as $key => $value) {
-            $matches = [];
-            if (str_starts_with($key, $langConfig.'_')) {
-                $keyName = str_replace($langConfig.'_', '', $key);
-                $fields[$keyName] = $value;
-                unset($_REQUEST[$key]);
-            } /*elseif(preg_match_all('/tv([0-9]*)_'.$langConfig.'$/', $key, $matches)) {
-                $keyName = $matches[1][0];
-                $tvs[$keyName] = $value;
-                unset($_REQUEST[$key]);
-            }*/
-        }
-
-        if (count($fields) && !$isNew) {
-            $sLangController->setLangContent($params['id'], $langConfig, $fields);
-        }
-        /*if (count($tvs)) {
-            $sLangController->setLangTmplvarContentvalue($params['id'], $langConfig, $tvs);
-        }*/
-
+    $request->attributes->remove('slang.resourceTranslation.editId');
+    if (($params['mode'] ?? null) === 'upd' && isset($params['id'])) {
+        $resource = ResourceTranslationAccess::savedResource($params['id'], 'upd', checkStoredPrivacy: true);
+        $request->attributes->set('slang.resourceTranslation.editId', $resource ? (int) $resource->id : false);
     }
 });
 
 /**
- * Alias generation and Menu areas
+ * Save translations only after the core persisted the resource and supplied its actual ID.
  */
-Event::listen('evolution.OnDocFormSave', function($params) {
-    if (isset($params['id']) && !empty($params['id'])) {
-        $request = request();
-        if (!$request instanceof Request) {
-            return;
-        }
+Event::listen('evolution.OnDocFormSave', function ($params) {
+    $request = request();
+    if (!$request instanceof Request || !$request->isMethod('POST')) {
+        return;
+    }
 
-        $sLangController = new sLangController();
-        $defaultLang = sLang::langDefault();
+    $mode = $params['mode'] ?? null;
+    $beforeId = $request->attributes->get('slang.resourceTranslation.editId');
+    $request->attributes->remove('slang.resourceTranslation.editId');
+    $resource = ResourceTranslationAccess::savedResource(
+        $params['id'] ?? null,
+        $mode,
+        checkStoredPrivacy: $mode === 'upd' && $beforeId === null
+    );
+    if (!$resource || ($mode === 'upd' && $beforeId !== null && $beforeId !== (int) $resource->id)) {
+        return;
+    }
 
-        if (($params['mode'] ?? '') === 'new') {
-            foreach (sLang::langConfig() as $langConfig) {
-                $fields = [];
-                foreach (sLang::siteContentFields() as $siteContentField) {
-                    if ($request->has($langConfig . '_' . $siteContentField)) {
-                        $fields[$siteContentField] = $request->input($langConfig . '_' . $siteContentField);
-                    }
-                }
+    $id = (int) $resource->id;
+    $input = $request->post();
+    $controller = new sLangController();
+    $defaultLang = sLang::langDefault();
+    $locales = array_unique([$defaultLang, ...sLang::langConfig()]);
+    $defaultFields = [];
 
-                if (count($fields)) {
-                    $sLangController->setLangContent((int) $params['id'], $langConfig, $fields);
-                }
+    foreach ($locales as $locale) {
+        $fields = [];
+        foreach (sLang::siteContentFields() as $field) {
+            $value = $input[$locale . '_' . $field] ?? null;
+            if (is_string($value) && ResourceTranslationAccess::allowsValue($value)) {
+                $fields[$field] = $value;
             }
         }
-
-        $data = [];
-        foreach (sLang::siteContentFields() as $siteContentField) {
-            if ($request->has($defaultLang . '_' . $siteContentField)) {
-                $data[$siteContentField] = evo()->getDatabase()->escape((string) $request->input($defaultLang . '_' . $siteContentField));
-            }
-        }
-
-        if ($request->has('alias') && !trim((string) $request->input('alias')) && $request->has($defaultLang . '_pagetitle')) {
-            $alias = strtolower(evo()->stripAlias(trim((string) $request->input($defaultLang . '_pagetitle'))));
-            if (SiteContent::withTrashed()
-                    ->where('id', '<>', $params['id'])
-                    ->where('alias', $alias)->count() > 0) {
-                $cnt = 1;
-                $tempAlias = $alias;
-                while (SiteContent::withTrashed()
-                        ->where('id', '<>', $params['id'])
-                        ->where('alias', $tempAlias)->count() > 0) {
-                    $tempAlias = $alias;
-                    $tempAlias .= $cnt;
-                    $cnt++;
-                }
-                $alias = $tempAlias;
-            }
-            $data['alias'] = $alias;
-        }
-
-        if (!empty($data)) {
-            unset($data['seotitle'], $data['seodescription']);
-            evo()->db->update($data, evo()->getDatabase()->getFullTableName('site_content'), 'id=' . $params['id']);
-        }
-
-        if ($request->has('menu_main')) {
-            $tv = SiteTmplvar::query()->where('name', 'menu_main')->first();
-            if (!$tv) {
-                $tv = new SiteTmplvar();
-                $tv->type = 'checkbox';
-                $tv->name = 'menu_main';
-                $tv->caption = 'menu_main';
-                $tv->description = 'menu_main';
-                $tv->editor_type = 0;
-                $tv->category = 1;
-                $tv->locked = 1;
-                $tv->elements = '==1';
-                $tv->default_text = '0';
-                $tv->save();
-            }
-
-            $value = SiteTmplvarContentvalue::query()->where('tmplvarid', $tv->id)->where('contentid', $params['id'])->firstOrNew();
-            $value->tmplvarid = $tv->id;
-            $value->contentid = $params['id'];
-            $value->value = (string) $request->input('menu_main', 0);
-            $value->save();
-        }
-
-        if ($request->has('menu_footer')) {
-            $tv = SiteTmplvar::query()->where('name', 'menu_footer')->first();
-            if (!$tv) {
-                $tv = new SiteTmplvar();
-                $tv->type = 'checkbox';
-                $tv->name = 'menu_footer';
-                $tv->caption = 'menu_footer';
-                $tv->description = 'menu_footer';
-                $tv->editor_type = 0;
-                $tv->category = 1;
-                $tv->locked = 1;
-                $tv->elements = '==1';
-                $tv->default_text = '0';
-                $tv->save();
-            }
-
-            $value = SiteTmplvarContentvalue::query()->where('tmplvarid', $tv->id)->where('contentid', $params['id'])->firstOrNew();
-            $value->tmplvarid = $tv->id;
-            $value->contentid = $params['id'];
-            $value->value = (string) $request->input('menu_footer', 0);
-            $value->save();
-        }
-
-        foreach (sLang::langConfig() as $langConfig) {
-            $tvs = [];
-            foreach ($request->all() as $key => $value) {
-                $matches = [];
-                if(preg_match_all('/tv([0-9]*)_'.$langConfig.'$/', $key, $matches)) {
-                    $keyName = $matches[1][0];
-                    $tvs[$keyName] = $value;
-                    unset($_REQUEST[$key]);
-                }
-            }
-            if (count($tvs)) {
-                $sLangController->setLangTmplvarContentvalue($params['id'], $langConfig, $tvs);
+        if ($fields) {
+            $controller->setLangContent($id, $locale, $fields);
+            if ($locale === $defaultLang) {
+                $defaultFields = $fields;
             }
         }
     }
+
+    $data = [];
+    foreach (['pagetitle', 'longtitle', 'description', 'introtext', 'content', 'menutitle'] as $field) {
+        if (isset($defaultFields[$field])) {
+            $data[$field] = evo()->getDatabase()->escape($defaultFields[$field]);
+        }
+    }
+
+    if (is_string($input['alias'] ?? null) && trim($input['alias']) === '' && isset($defaultFields['pagetitle'])) {
+        $baseAlias = strtolower(evo()->stripAlias(trim($defaultFields['pagetitle'])));
+        $alias = $baseAlias;
+        $suffix = 1;
+        while (SiteContent::withTrashed()->where('id', '<>', $id)->where('alias', $alias)->exists()) {
+            $alias = $baseAlias . $suffix++;
+        }
+        $data['alias'] = $alias;
+    }
+
+    if ($data) {
+        evo()->db->update($data, evo()->getDatabase()->getFullTableName('site_content'), 'id=' . $id);
+    }
+
+    $controller->storeTranslatedTemplateVariables($id, (int) $resource->template, $locales, $input);
+    $controller->saveMenuFlags($id, $input);
 });

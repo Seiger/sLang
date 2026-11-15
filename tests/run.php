@@ -556,7 +556,13 @@ final class SlangDocFormSaveStub
     public static array $siteContentUpdates = [];
     public static array $siteContentFields = [];
     public static array $langConfig = ['uk', 'en'];
-    public static int $maxId = 100;
+    public static array $permissions = [];
+    public static array $resources = [];
+    public static array $resourceGroups = [];
+    public static array $tvTranslations = [];
+    public static array $nativeTvWrites = [];
+    public static array $languageTvs = [];
+    public static array $tvs = [];
 
     public static function reset(array $request): void
     {
@@ -564,6 +570,20 @@ final class SlangDocFormSaveStub
         self::$langContent = [];
         self::$siteContentUpdates = [];
         self::$langConfig = ['uk', 'en'];
+        self::$permissions = ['access_permissions', 'save_document', 'new_document', 'edit_document'];
+        self::$resources = [
+            7 => new SlangDocFormSaveSiteContentStub(7),
+            42 => new SlangDocFormSaveSiteContentStub(42),
+            250 => new SlangDocFormSaveSiteContentStub(250),
+        ];
+        self::$resourceGroups = [];
+        self::$tvTranslations = [];
+        self::$nativeTvWrites = [];
+        self::$languageTvs = [];
+        self::$tvs = [];
+        $_SESSION['mgrRole'] = 2;
+        $_SESSION['mgrDocgroups'] = [3];
+        request()->attributes = new SlangDocFormSaveAttributesStub();
     }
 
     public static function fire(string $event, array $params): void
@@ -576,31 +596,41 @@ final class SlangDocFormSaveStub
 
 final class SlangDocFormSaveRequestStub
 {
-    public function all(): array
+    public SlangDocFormSaveAttributesStub $attributes;
+
+    public function __construct()
+    {
+        $this->attributes = new SlangDocFormSaveAttributesStub();
+    }
+
+    public function isMethod(string $method): bool
+    {
+        return $method === 'POST';
+    }
+
+    public function post(): array
     {
         return SlangDocFormSaveStub::$request;
     }
-
-    public function has(string $key): bool
-    {
-        return array_key_exists($key, SlangDocFormSaveStub::$request);
-    }
-
-    public function input(string $key, $default = null)
-    {
-        return SlangDocFormSaveStub::$request[$key] ?? $default;
-    }
 }
 
-final class SlangDocFormSaveControllerStub
+final class SlangDocFormSaveAttributesStub
 {
-    public function setLangContent($id, string $lang, array $fields): void
+    private array $values = [];
+
+    public function get(string $key): mixed
     {
-        SlangDocFormSaveStub::$langContent[] = ['id' => $id, 'lang' => $lang, 'fields' => $fields];
+        return $this->values[$key] ?? null;
     }
 
-    public function setLangTmplvarContentvalue($id, string $lang, array $tvs): void
+    public function set(string $key, mixed $value): void
     {
+        $this->values[$key] = $value;
+    }
+
+    public function remove(string $key): void
+    {
+        unset($this->values[$key]);
     }
 }
 
@@ -614,6 +644,11 @@ final class SlangDocFormSaveLangStub
     public static function langConfig(): array
     {
         return SlangDocFormSaveStub::$langConfig;
+    }
+
+    public static function langTvs(): array
+    {
+        return SlangDocFormSaveStub::$languageTvs;
     }
 
     public static function siteContentFields(): array
@@ -653,13 +688,20 @@ final class SlangDocFormSaveEvoStub
     {
         return $this->db;
     }
-}
 
-final class SlangDocFormSaveQueryStub
-{
-    public function max(string $column): int
+    public function getLoginUserID(string $context): int
     {
-        return SlangDocFormSaveStub::$maxId;
+        return $context === 'mgr' ? 12 : 0;
+    }
+
+    public function hasPermission(string $permission, string $context): bool
+    {
+        return $context === 'mgr' && in_array($permission, SlangDocFormSaveStub::$permissions, true);
+    }
+
+    public function getConfig(string $key): mixed
+    {
+        return $key === 'use_udperms' ? 1 : null;
     }
 }
 
@@ -671,17 +713,11 @@ final class SlangDocFormSaveEventStub
     }
 }
 
-final class SlangDocFormSaveDbStub
-{
-    public static function table(string $table): SlangDocFormSaveQueryStub
-    {
-        return new SlangDocFormSaveQueryStub();
-    }
-}
-
 function request()
 {
-    return new SlangDocFormSaveRequestStub();
+    static $request = null;
+
+    return $request ??= new SlangDocFormSaveRequestStub();
 }
 
 function evo()
@@ -705,11 +741,12 @@ function slang_docformsave_boot(): void
     SlangDocFormSaveStub::$siteContentFields = $fields[1];
 
     class_alias('SlangDocFormSaveRequestStub', 'Illuminate\Http\Request');
-    class_alias('SlangDocFormSaveControllerStub', 'Seiger\sLang\Controllers\sLangController');
     class_alias('SlangDocFormSaveLangStub', 'Seiger\sLang\Facades\sLang');
     class_alias('SlangDocFormSaveEventStub', 'Event');
-    class_alias('SlangDocFormSaveDbStub', 'DB');
 
+    require slang_path('tests/fixtures/docform-save-models.php');
+    require slang_path('src/Support/ResourceTranslationAccess.php');
+    require slang_path('src/Controllers/sLangController.php');
     require slang_path('plugins/sLangPlugin.php');
     $booted = true;
 }
@@ -723,6 +760,8 @@ slang_group('docformsave', function (): void {
         'uk_parent' => '5',
         'uk_template' => '3',
         'uk_id' => '999',
+        'uk_resource' => '250',
+        'uk_lang' => 'en',
         'en_pagetitle' => 'English title',
     ];
 
@@ -819,37 +858,111 @@ slang_group('docformsave', function (): void {
         slang_assert(($byLang['en_gb'] ?? null) === ['pagetitle' => 'British title', 'longtitle' => 'British long'], 'en_gb row mismatch, got: ' . json_encode($byLang['en_gb'] ?? null));
     });
 
-    slang_test('on before doc form save still writes translations for an existing document', function () use ($request): void {
-        slang_docformsave_boot();
+    slang_test('existing translations are written once after the save, using only editable fields', function () use ($request): void {
         SlangDocFormSaveStub::reset($request);
 
-        SlangDocFormSaveStub::fire('evolution.OnBeforeDocFormSave', ['mode' => 'upd', 'id' => 42]);
+        $event = ['mode' => 'upd', 'id' => 42];
+        SlangDocFormSaveStub::fire('evolution.OnBeforeDocFormSave', $event);
+        slang_assert(SlangDocFormSaveStub::$langContent === [], 'Translations must wait until the resource save succeeds.');
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', $event);
 
-        slang_assert(count(SlangDocFormSaveStub::$langContent) === 2, 'Expected translations for both languages.');
-        foreach (SlangDocFormSaveStub::$langContent as $call) {
-            slang_assert($call['id'] === 42, 'Update must use the given id, got: ' . var_export($call['id'], true));
+        slang_assert(SlangDocFormSaveStub::$langContent === [
+            ['id' => 42, 'lang' => 'uk', 'fields' => ['pagetitle' => 'Uk title', 'longtitle' => 'Uk long']],
+            ['id' => 42, 'lang' => 'en', 'fields' => ['pagetitle' => 'English title']],
+        ], 'Only editable fields for the saved resource and its configured locales may be written.');
+    });
+
+    slang_test('resource translations require the actual resource ID and the permissions for its save mode', function () use ($request): void {
+        SlangDocFormSaveStub::reset($request);
+
+        foreach ([['id' => 0, 'mode' => 'upd'], ['id' => 999, 'mode' => 'upd'], ['id' => 7]] as $event) {
+            SlangDocFormSaveStub::fire('evolution.OnDocFormSave', $event);
+        }
+        slang_assert(SlangDocFormSaveStub::$langContent === [] && SlangDocFormSaveStub::$siteContentUpdates === [], 'An invalid resource ID or mode must leave translations untouched.');
+
+        foreach (['save_document' => 'upd', 'edit_document' => 'upd', 'new_document' => 'new'] as $permission => $mode) {
+            SlangDocFormSaveStub::reset($request);
+            SlangDocFormSaveStub::$permissions = array_diff(SlangDocFormSaveStub::$permissions, [$permission]);
+            SlangDocFormSaveStub::fire('evolution.OnDocFormSave', ['mode' => $mode, 'id' => 7]);
+            slang_assert(SlangDocFormSaveStub::$langContent === [] && SlangDocFormSaveStub::$siteContentUpdates === [], "Saving without {$permission} must leave translations untouched.");
         }
     });
 
-    slang_test('on doc form save does not write translations again for an existing document', function () use ($request): void {
-        slang_docformsave_boot();
+    slang_test('resource translations respect the saved resource groups', function () use ($request): void {
         SlangDocFormSaveStub::reset($request);
+        SlangDocFormSaveStub::$resources[42]->privatemgr = 1;
+        SlangDocFormSaveStub::$resourceGroups = [42 => [5], 7 => [3]];
+        $event = ['mode' => 'upd', 'id' => 42];
 
-        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', ['mode' => 'upd', 'id' => 42]);
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', $event);
+        slang_assert(SlangDocFormSaveStub::$langContent === [] && SlangDocFormSaveStub::$siteContentUpdates === [], 'Access to a different resource must not grant access to the saved resource.');
 
-        slang_assert(SlangDocFormSaveStub::$langContent === [], 'Existing documents are written in OnBeforeDocFormSave only.');
+        SlangDocFormSaveStub::fire('evolution.OnBeforeDocFormSave', $event);
+        SlangDocFormSaveStub::$resources[42]->privatemgr = 0;
+        SlangDocFormSaveStub::$resourceGroups[42] = [];
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', $event);
+        slang_assert(SlangDocFormSaveStub::$langContent === [], 'Preserve the access decision from before the save.');
+
+        SlangDocFormSaveStub::$resources[42]->privatemgr = 1;
+        SlangDocFormSaveStub::$resourceGroups[42] = [3];
+        SlangDocFormSaveStub::fire('evolution.OnBeforeDocFormSave', $event);
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', $event);
+        slang_assert(count(SlangDocFormSaveStub::$langContent) === 2, 'A manager in the resource group can save translations.');
+
+        SlangDocFormSaveStub::reset($request);
+        SlangDocFormSaveStub::fire('evolution.OnBeforeDocFormSave', $event);
+        SlangDocFormSaveStub::$resourceGroups[42] = [5];
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', $event);
+        slang_assert(SlangDocFormSaveStub::$langContent === [], 'Apply the saved groups even before the core refreshes the privacy flag.');
     });
 
-    slang_test('on before doc form save without mode keeps the max id fallback', function () use ($request): void {
-        slang_docformsave_boot();
-        SlangDocFormSaveStub::reset($request);
+    slang_test('translated TVs must be configured, assigned to the saved template and accessible', function (): void {
+        SlangDocFormSaveStub::reset([
+            'template' => '20',
+            'en_content' => '<p><strong>Rich content</strong></p>',
+            'tv1_uk' => '<p>Allowed TV</p>',
+            'tv1_en' => ['One', 'Two'],
+            'tv2_en' => 'Different group',
+            'tv3_en' => 'Different template',
+            'tv4_en' => 'Non-multilingual TV',
+        ]);
+        SlangDocFormSaveStub::$languageTvs = ['1', '2', '3'];
+        SlangDocFormSaveStub::$tvs = [
+            1 => ['templates' => [10], 'groups' => [3]],
+            2 => ['templates' => [10], 'groups' => [5]],
+            3 => ['templates' => [20], 'groups' => []],
+            4 => ['templates' => [10], 'groups' => []],
+        ];
 
-        SlangDocFormSaveStub::fire('evolution.OnBeforeDocFormSave', ['id' => 0]);
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', ['mode' => 'new', 'id' => 250]);
+        slang_assert(SlangDocFormSaveStub::$langContent[0]['fields']['content'] === '<p><strong>Rich content</strong></p>', 'Permitted rich content must survive the save.');
+        slang_assert(SlangDocFormSaveStub::$tvTranslations === [
+            ['tmplvarid' => 1, 'contentid' => 250, 'lang' => 'uk', 'value' => '<p>Allowed TV</p>'],
+            ['tmplvarid' => 1, 'contentid' => 250, 'lang' => 'en', 'value' => 'One||Two'],
+        ], 'Only authorized TVs on the saved template may receive translations.');
+        slang_assert(SlangDocFormSaveStub::$nativeTvWrites === [
+            ['tmplvarid' => 1, 'contentid' => 250, 'value' => '<p>Allowed TV</p>'],
+        ], 'Only the authorized default-language TV is copied back to Evolution.');
+    });
 
-        slang_assert(count(SlangDocFormSaveStub::$langContent) === 2, 'Expected translations for both languages.');
-        foreach (SlangDocFormSaveStub::$langContent as $call) {
-            slang_assert($call['id'] === 101, 'Fallback id must be max(id)+1, got: ' . var_export($call['id'], true));
-        }
+    slang_test('menu flags require publish permission and access to the existing menu TVs', function (): void {
+        SlangDocFormSaveStub::reset(['menu_main' => '1', 'menu_footer' => '1']);
+        SlangDocFormSaveStub::$tvs = [
+            1 => ['name' => 'menu_main', 'templates' => [], 'groups' => [5]],
+        ];
+        $event = ['mode' => 'upd', 'id' => 42];
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', $event);
+        slang_assert(SlangDocFormSaveStub::$nativeTvWrites === [], 'Resource editors need publish permission to update the menu flags.');
+
+        SlangDocFormSaveStub::$permissions[] = 'publish_document';
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', $event);
+        slang_assert(SlangDocFormSaveStub::$nativeTvWrites === [], 'A restricted or missing menu TV must not be written by the publisher.');
+
+        SlangDocFormSaveStub::$tvs[1]['groups'] = [3];
+        SlangDocFormSaveStub::fire('evolution.OnDocFormSave', $event);
+        slang_assert(SlangDocFormSaveStub::$nativeTvWrites === [
+            ['tmplvarid' => 1, 'contentid' => 42, 'value' => '1'],
+        ], 'A publisher with access to the menu TV can update the flag.');
     });
 });
 
