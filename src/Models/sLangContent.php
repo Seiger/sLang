@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Seiger\sLang\Support\TreeCollection;
 
 /**
@@ -69,28 +70,41 @@ class sLangContent extends Eloquent\Model
     }
 
     /**
-     * Adds TV selections to the query based on the given TV names.
+     * Select each resource's TV value under an alias matching the TV name.
      *
-     * @param Builder<self> $query The database query builder instance
-     * @param array<int, string> $tvNames The array of TV names to select
-     * @return Builder<self> The modified query builder instance
+     * The lookup binds the name as a value. The alias must be a single identifier
+     * made of letters, combining marks, numbers, underscores, dollar signs, or hyphens.
+     *
+     * @param Builder<self> $query The resource query to extend.
+     * @param array<int, string> $tvNames The TV names to select.
+     * @return Builder<self> The resource query with the requested TV columns.
+     * @throws InvalidArgumentException If a TV name cannot be used as an alias.
      */
     public function scopeSelectTvs(Builder $query, array $tvNames = []): Builder
     {
-        if (count($tvNames)) {
-            foreach ($tvNames as $tvName) {
-                $query->addSelect(
-                    DB::raw("(SELECT value FROM " . DB::getTablePrefix() . "site_tmplvar_contentvalues
-                        WHERE " . DB::getTablePrefix() . "site_tmplvar_contentvalues.contentid = " . DB::getTablePrefix() . "s_lang_content.resource
-                        AND " . DB::getTablePrefix() . "site_tmplvar_contentvalues.tmplvarid = (
-                            SELECT " . DB::getTablePrefix() . "site_tmplvars.id 
-                            FROM " . DB::getTablePrefix() . "site_tmplvars
-                            WHERE " . DB::getTablePrefix() . "site_tmplvars.name = '" . $tvName . "'
-                        ) LIMIT 1) as " . $tvName
-                    )
-                );
+        foreach ($tvNames as $tvName) {
+            if (!is_string($tvName) || preg_match('/\A[\p{L}\p{M}\p{N}_$-]+\z/u', $tvName) !== 1) {
+                throw new InvalidArgumentException('TV names must contain only letters, combining marks, numbers, underscores, dollar signs, or hyphens.');
             }
         }
+
+        $baseQuery = $query->getQuery();
+        foreach ($tvNames as $tvName) {
+            $definition = $baseQuery->newQuery()
+                ->from('site_tmplvars')
+                ->select('id')
+                ->where('name', '=', $tvName);
+
+            $value = $baseQuery->newQuery()
+                ->from('site_tmplvar_contentvalues')
+                ->select('value')
+                ->whereColumn('contentid', $this->qualifyColumn('resource'))
+                ->where('tmplvarid', '=', $definition)
+                ->limit(1);
+
+            $query->selectSub($value, $tvName);
+        }
+
         return $query;
     }
 
