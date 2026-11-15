@@ -140,13 +140,13 @@
                                 @if((!empty($content['richtext']) || evo()->getManagerApi()->action == '4') && evo()->getConfig('use_editor') && evo()->getConfig('which_editor') !== 'none')
                                     @php($htmlContent = get_by_key($content, $lang.'_content', '', 'is_scalar'))
                                     <div class="section-editor clearfix">
-                                        <textarea id="{{$lang}}_content" name="{{$lang}}_content" data-slang-dirty="1">{!!evo()->getPhpCompat()->htmlspecialchars($htmlContent)!!}</textarea>
+                                        <textarea id="{{$lang}}_content" name="{{$lang}}_content" data-slang-dirty="1">{{ $htmlContent }}</textarea>
                                     </div>
                                     {{-- Richtext-[*content*] --}}
                                     @php($richtexteditorIds[evo()->getConfig('which_editor')][] = $lang.'_content')
                                     @php($richtexteditorOptions[evo()->getConfig('which_editor')][] = [$lang.'_content' => ''])
                                 @else
-                                    @php($plainContent = get_by_key($content, $lang.'_content', ''))
+                                    @php($plainContent = get_by_key($content, $lang.'_content', '', 'is_scalar'))
                                     @if($isDefaultLang)
                                         <div>
                                             <textarea
@@ -158,17 +158,17 @@
                                                 data-slang-default-content="1"
                                                 data-slang-codemirror-target="1"
                                                 data-slang-editor-key="ta"
-                                            >{!!evo()->getPhpCompat()->htmlspecialchars($plainContent)!!}</textarea>
+                                            >{{ $plainContent }}</textarea>
                                             <input
                                                 type="hidden"
                                                 id="{{$lang}}_content_proxy"
                                                 name="{{$lang}}_content"
-                                                value="{!!evo()->getPhpCompat()->htmlspecialchars($plainContent)!!}"
+                                                value="{{ $plainContent }}"
                                                 data-slang-default-content-proxy="1"
                                             />
                                         </div>
                                     @else
-                                        <div><textarea class="phptextarea" id="{{$lang}}_content" name="{{$lang}}_content" rows="20" wrap="soft" data-slang-dirty="1" data-slang-codemirror-target="1" data-slang-editor-key="{{$lang}}_content">{!!evo()->getPhpCompat()->htmlspecialchars($plainContent)!!}</textarea></div>
+                                        <div><textarea class="phptextarea" id="{{$lang}}_content" name="{{$lang}}_content" rows="20" wrap="soft" data-slang-dirty="1" data-slang-codemirror-target="1" data-slang-editor-key="{{$lang}}_content">{{ $plainContent }}</textarea></div>
                                     @endif
                                 @endif
                             </div>

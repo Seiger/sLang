@@ -5,12 +5,13 @@
 @include('sLang::resourceSettingsTab')
 
 @foreach (sLang::siteContentFields() as $siteContentField)
+    @php($fieldValue = $content[sLang::langDefault() . '_' . $siteContentField] ?? '')
     @if($siteContentField == 'content')
         @if(evo()->getConfig('use_editor') && evo()->getConfig('which_editor') !== 'none')
-            <input name="ta" type="hidden" value="{{$content[sLang::langDefault() . '_' . $siteContentField]}}">
+            <input name="ta" type="hidden" value="{{ $fieldValue }}">
         @endif
     @else
-        <input name="{{$siteContentField}}" type="hidden" value="{!!$content[sLang::langDefault() . '_' . $siteContentField]!!}">
+        <input name="{{ $siteContentField }}" type="hidden" value="{{ $fieldValue }}">
     @endif
 @endforeach
 
