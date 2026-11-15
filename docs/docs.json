@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "package": "seiger/slang",
+  "title": "sLang 1.x",
+  "canonicalLocale": "en",
+  "visibility": "public",
+  "generated": false,
+  "legacy": true,
+  "audience": [
+    "manager-users",
+    "developers",
+    "integrators"
+  ],
+  "status": "complete",
+  "locales": {
+    "en": "complete"
+  },
+  "entrypoints": {
+    "overview": {
+      "type": "explanation",
+      "path": "en/README.md",
+      "status": "complete"
+    },
+    "user": {
+      "type": "how-to",
+      "path": "en/getting-started.md",
+      "status": "complete"
+    },
+    "frontend": {
+      "type": "how-to",
+      "path": "en/use-in-blade.md",
+      "status": "complete"
+    }
+  }
+}

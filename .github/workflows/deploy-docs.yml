@@ -1,0 +1,16 @@
+name: Rebuild branch documentation
+
+on:
+  push:
+    branches: ['[0-9]+.x']
+    paths: ['docs/**', '.github/workflows/deploy-docs.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  documentation:
+    uses: Seiger/sLang/.github/workflows/deploy-docs.yml@docs
