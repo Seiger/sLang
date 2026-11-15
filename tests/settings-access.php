@@ -28,39 +28,61 @@ final class SettingsManagerStub
     }
 }
 
-final class SettingsRoleQueryStub
+final class SettingsRolePermissionsStub
 {
-    public static ?object $role = null;
+    public static array $roleIds = [];
+    public static array $grants = [];
+    private bool $readsPrimary = false;
+    private array $joins = [];
+    private array $permissions = [];
 
     public static function query(): self
     {
         return new self();
     }
 
-    public function select(string $column): self
+    public function useWritePdo(): self
     {
-        slang_assert($column === 'role', 'Use the role currently assigned to the manager.');
-
+        $this->readsPrimary = true;
         return $this;
     }
 
-    public function where(string $column, int $id): self
+    public function join(string $table, string $first, string $operator, string $second): self
     {
-        slang_assert($column === 'internalKey' && $id === evo()->userId, 'Use the signed-in manager ID.');
-
+        $this->joins[$table] = [$first, $operator, $second];
         return $this;
     }
 
-    public function whereIn(string $column, self $query): self
+    public function where(string $column, int $userId): self
     {
-        slang_assert($column === 'id', 'Look up the assigned role by ID.');
-
+        slang_assert($column === 'users.id' && $userId === evo()->userId, 'Use the signed-in manager ID.');
         return $this;
     }
 
-    public function first(array $columns): ?object
+    public function whereIn(string $column, array $permissions): self
     {
-        return self::$role;
+        slang_assert($column === 'role_permissions.permission', 'Filter grants by permission name.');
+        $this->permissions = $permissions;
+        return $this;
+    }
+
+    public function get(array $columns): array
+    {
+        slang_assert($this->readsPrimary, 'Read grants from the primary connection.');
+        slang_assert($this->joins === [
+            'user_roles' => ['user_roles.id', '=', 'role_permissions.role_id'],
+            'user_attributes' => ['user_attributes.role', '=', 'user_roles.id'],
+            'users' => ['users.id', '=', 'user_attributes.internalKey'],
+        ], 'Match permissions against the current user and role.');
+        slang_assert($columns === ['role_permissions.role_id', 'role_permissions.permission'], 'Read role IDs and permission names.');
+
+        $rows = [];
+        foreach (self::$roleIds as $roleId) {
+            foreach (array_intersect(self::$grants[$roleId] ?? [], $this->permissions) as $permission) {
+                $rows[] = (object) ['role_id' => $roleId, 'permission' => $permission];
+            }
+        }
+        return $rows;
     }
 }
 
@@ -81,9 +103,28 @@ function evo(): SettingsManagerStub
     return $manager ??= new SettingsManagerStub();
 }
 
-function abort(int $status): never
+function __(string $key): string
 {
-    throw new \RuntimeException('Denied', $status);
+    slang_assert($key === 'global.access_permission_denied', 'Use the localized Evolution permission denial.');
+    return 'Access permission denied.';
+}
+
+final class SettingsDeniedResponseStub
+{
+    public const HTTP_FORBIDDEN = 403;
+
+    public function __construct(string $body, private int $status, array $headers)
+    {
+        slang_assert($body === 'Access permission denied.', 'Return the localized denial.');
+        slang_assert($headers === ['Content-Type' => 'text/plain; charset=UTF-8', 'Cache-Control' => 'no-store'], 'Send a non-cacheable plain-text denial.');
+    }
+
+    public function sendHeaders(): void {}
+
+    public function sendContent(): never
+    {
+        throw new \RuntimeException('Denied', $this->status);
+    }
 }
 
 function assertSettingsDenied(SettingsPanel $panel): void
@@ -100,8 +141,8 @@ function assertSettingsDenied(SettingsPanel $panel): void
     }
 }
 
-class_alias(SettingsRoleQueryStub::class, 'EvolutionCMS\Models\UserAttribute');
-class_alias(SettingsRoleQueryStub::class, 'EvolutionCMS\Models\UserRole');
+class_alias(SettingsRolePermissionsStub::class, 'EvolutionCMS\Models\RolePermissions');
+class_alias(SettingsDeniedResponseStub::class, 'Symfony\Component\HttpFoundation\Response');
 class_alias(SettingsComponentStub::class, 'Livewire\Component');
 
 require slang_path('src/Support/ManagerAccess.php');
@@ -114,20 +155,18 @@ slang_group('settings-access', function (): void {
         $panel = new SettingsPanel();
         $manager = evo();
         $manager->permissions = ['access_permissions', 'exec_module', 'settings'];
+        $_SESSION['mgrValidated'] = false;
         assertSettingsDenied($panel);
 
         $manager->userId = 42;
-        $role = new class {
-            public int $access_permissions = 1;
-            public int $exec_module = 1;
-            public int $settings = 1;
+        SettingsRolePermissionsStub::$roleIds = [5];
+        SettingsRolePermissionsStub::$grants = [5 => $manager->permissions, 6 => $manager->permissions];
+        assertSettingsDenied($panel);
 
-            public function getKey(): int
-            {
-                return 5;
-            }
-        };
-        SettingsRoleQueryStub::$role = $role;
+        $_SESSION['mgrValidated'] = true;
+        SettingsRolePermissionsStub::$roleIds = [];
+        assertSettingsDenied($panel);
+        SettingsRolePermissionsStub::$roleIds = [5];
 
         foreach ($manager->permissions as $permission) {
             $permissions = $manager->permissions;
@@ -142,12 +181,18 @@ slang_group('settings-access', function (): void {
         slang_assert($modulePanel->activeTab === 'settings', 'The authorized manager can select settings.');
 
         foreach ($manager->permissions as $permission) {
-            $role->{$permission} = 0;
+            SettingsRolePermissionsStub::$grants[5] = array_diff($manager->permissions, [$permission]);
             assertSettingsDenied($panel);
             $modulePanel->switchTab('settings');
             slang_assert($modulePanel->activeTab === 'translates', 'Settings should be unavailable after revocation.');
-            $role->{$permission} = 1;
+            SettingsRolePermissionsStub::$grants[5] = $manager->permissions;
         }
+
+        SettingsRolePermissionsStub::$roleIds = [5, 6];
+        SettingsRolePermissionsStub::$grants = [5 => ['access_permissions', 'exec_module'], 6 => ['settings']];
+        assertSettingsDenied($panel);
+        SettingsRolePermissionsStub::$roleIds = [5];
+        SettingsRolePermissionsStub::$grants = [5 => $manager->permissions];
 
         class_alias(SettingsModuleAccessStub::class, 'EvolutionCMS\Support\ModuleAccess');
         $moduleFile = dirname(__DIR__) . '/modules/sLangModule.php';

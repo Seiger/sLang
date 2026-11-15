@@ -106,19 +106,12 @@ function slang_schema_fixture(Closure $test): void
     $manager = evo();
     $manager->userId = 42;
     $manager->permissions = ['access_permissions', 'exec_module', 'settings'];
+    $_SESSION['mgrValidated'] = true;
     $manager->modulesFromFile = [
         ['file' => dirname(__DIR__) . '/modules/sLangModule.php', 'properties' => ['roles' => [5]]],
     ];
-    SettingsRoleQueryStub::$role = new class {
-        public int $access_permissions = 1;
-        public int $exec_module = 1;
-        public int $settings = 1;
-
-        public function getKey(): int
-        {
-            return 5;
-        }
-    };
+    SettingsRolePermissionsStub::$roleIds = [5];
+    SettingsRolePermissionsStub::$grants = [5 => $manager->permissions];
     DictionarySchemaStub::$columns = ['tid', 'key', 'uk', 'en'];
     DictionarySchemaStub::$attempts = [];
     DictionarySchemaStub::$reads = 0;
@@ -134,9 +127,9 @@ function slang_schema_fixture(Closure $test): void
 slang_group('dictionary-schema', function (): void {
     slang_test('schema preparation requires settings access and validates all proposed locales before inspecting columns', function (): void {
         slang_schema_fixture(function (sLangController $controller, string $directory): void {
-            SettingsRoleQueryStub::$role->settings = 0;
+            SettingsRolePermissionsStub::$grants[5] = ['access_permissions', 'exec_module'];
             assertDictionaryDenied(fn () => $controller->prepareTranslationSchema(['uk', 'pt-br']));
-            SettingsRoleQueryStub::$role->settings = 1;
+            SettingsRolePermissionsStub::$grants[5][] = 'settings';
 
             slang_language_file_error(InvalidArgumentException::class, fn () => $controller->prepareTranslationSchema(['uk', 'pt-br', 'unknown']));
             slang_assert(DictionarySchemaStub::$reads === 0 && DictionarySchemaStub::$attempts === [], 'Denial must happen before inspecting or attempting ALTER.');
