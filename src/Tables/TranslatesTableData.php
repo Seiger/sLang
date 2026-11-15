@@ -439,12 +439,21 @@ class TranslatesTableData
 
         if ($search !== '') {
             $query->where(function (Builder $where) use ($search) {
-                $like = '%' . Str::lower($search) . '%';
-                $grammar = $where->getQuery()->getGrammar();
+                $search = Str::lower($search);
+                $builder = $where->getQuery();
+                $grammar = $builder->getGrammar();
+
+                // PostgreSQL's C locale leaves Cyrillic uppercase letters unchanged in LOWER().
+                $cyrillic = $builder->getConnection()->getDriverName() === 'pgsql'
+                    ? (preg_replace('/\P{Cyrillic}+/u', '', $search) ?? '')
+                    : '';
+                $bindings = $cyrillic !== '' ? [Str::upper($cyrillic), $cyrillic] : [];
+                $bindings[] = '%' . $search . '%';
 
                 foreach (['key', ...sLang::langConfig()] as $column) {
                     $identifier = $grammar->wrap($column);
-                    $where->orWhereRaw("LOWER({$identifier}) LIKE ?", [$like]);
+                    $expression = $cyrillic !== '' ? "TRANSLATE({$identifier}, ?, ?)" : $identifier;
+                    $where->orWhereRaw("LOWER({$expression}) LIKE ?", $bindings);
                 }
             });
         }
