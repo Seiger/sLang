@@ -426,6 +426,8 @@ class TranslatesTableData
     /**
      * Build the search and sort query for authorized dictionary readers.
      *
+     * Quote dictionary identifiers using the active database grammar and bind the search pattern.
+     *
      * @return Builder<sLangTranslate>
      */
     protected function query(): Builder
@@ -438,10 +440,11 @@ class TranslatesTableData
         if ($search !== '') {
             $query->where(function (Builder $where) use ($search) {
                 $like = '%' . Str::lower($search) . '%';
-                $where->orWhereRaw('LOWER(`key`) LIKE ?', [$like]);
+                $grammar = $where->getQuery()->getGrammar();
 
-                foreach (sLang::langConfig() as $locale) {
-                    $where->orWhereRaw('LOWER(`' . str_replace('`', '', $locale) . '`) LIKE ?', [$like]);
+                foreach (['key', ...sLang::langConfig()] as $column) {
+                    $identifier = $grammar->wrap($column);
+                    $where->orWhereRaw("LOWER({$identifier}) LIKE ?", [$like]);
                 }
             });
         }
