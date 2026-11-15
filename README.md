@@ -23,7 +23,7 @@ The work of the module is based on the use of the standard Laravel functionality
 multilingualism. This foundation ensures a reliable and well-established framework for
 managing multilingual aspects, enhancing the module's performance and aligning it with
 industry best practices. With its focus on simplicity and integration, sLang emerges as
-an essential companion for  those aiming to enhance the linguistic versatility of their
+an essential companion for those aiming to enhance the linguistic versatility of their
 Evolution CMS-powered websites.
 
 ## Features
