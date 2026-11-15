@@ -25,4 +25,6 @@
         :active-tab="$get"
         :context="['moduleUrl' => $moduleUrl]"
     />
+
+    @include('sLang::partials.documentation-link')
 </div>

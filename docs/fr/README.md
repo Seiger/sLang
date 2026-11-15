@@ -5,6 +5,17 @@ sidebar_position: 1
 
 # Documentation sLang
 
+[![Dernière version stable](https://img.shields.io/packagist/v/seiger/slang?label=version)](https://packagist.org/packages/seiger/slang)
+[![Version requise d’Evolution CMS](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FSeiger%2FsLang%2F2.x%2Fcomposer.json&query=%24.require%5B%27evolution-cms%2Fevolution%27%5D&label=CMS&prefix=Evolution%20&color=brightgreen)](https://github.com/evolution-cms/evolution)
+[![PHP 8.4, 8.5 et 8.6](https://img.shields.io/badge/PHP-8.4_%7C_8.5_%7C_8.6-777BB4?logo=php&logoColor=white)](getting-started.md)
+[![Licence](https://img.shields.io/packagist/l/seiger/slang)](https://packagist.org/packages/seiger/slang)
+[![Issues ouvertes](https://img.shields.io/github/issues/Seiger/slang)](https://github.com/Seiger/slang/issues)
+[![Étoiles sur GitHub](https://img.shields.io/packagist/stars/Seiger/slang)](https://github.com/Seiger/sLang)
+[![Total des téléchargements](https://img.shields.io/packagist/dt/seiger/slang)](https://packagist.org/packages/seiger/slang)
+![Fabriqué en Ukraine](https://img.shields.io/badge/made_in-Ukraine-ffd700.svg?labelColor=0057b7)
+
+[★ Ajouter une étoile sur GitHub](https://github.com/Seiger/sLang)
+
 **sLang** est un module de gestion multilingue pour Evolution CMS. Il permet de gérer les phrases de traduction, les langues frontend, les onglets multilingues des ressources, les segments d'URL, la traduction automatique et les API de contenu sensibles à la locale.
 
 ## Captures d’écran

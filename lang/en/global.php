@@ -81,6 +81,7 @@
     'seotitle' => 'SEO title document',
     'settings' => 'Settings',
     'slang_desc' => 'Managing site language settings',
+    'documentation' => 'sLang documentation',
     'module_title' => 'Multilingual',
     'module_icon' => 'tabler-world',
     'slang_icon' => 'tabler-world',
