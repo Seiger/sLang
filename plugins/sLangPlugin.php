@@ -90,33 +90,31 @@ Event::listen('evolution.OnAfterLoadDocumentObject', function($params) {
 });
 
 /**
- * Parameterization of the current language
+ * Resolve a localized fallback route using a confirmed first path segment.
  */
 Event::listen('evolution.OnPageNotFound', function() {
     $langDefault = sLang::langDefault();
-    $defaultSegment = sLang::langSegment(sLang::langDefault());
-    $resolvedLocale = null;
     $resolvedIdentifier = null;
     $requestUri = (string)($_SERVER['REQUEST_URI'] ?? '/');
+    $cleanUri = $requestUri;
+    $path = substr($requestUri, 0, strcspn($requestUri, '?#'));
+    $firstSegment = explode('/', ltrim($path, '/'), 2)[0];
+    $resolvedLocale = $firstSegment !== '' ? sLang::localeFromSegment($firstSegment) : null;
 
-    if ($requestUri !== '') {
-        $url = explode('/', ltrim($requestUri, '/'), 2);
+    if ($resolvedLocale === $langDefault && !sLang::defaultInUrl()) {
+        evo()->sendErrorPage(true);
+        exit();
+    }
 
-        if (trim($url[0])) {
-            if ($url[0] == $defaultSegment && !sLang::defaultInUrl()) {
-                evo()->sendErrorPage(true);
-                exit();
-            }
-
-            $resolvedLocale = sLang::localeFromSegment($url[0]);
-            if (
-                (!is_null($resolvedLocale) && in_array($resolvedLocale, sLang::langFront()))
-                || (evo()->getLoginUserID('mgr') && !is_null($resolvedLocale) && in_array($resolvedLocale, sLang::langConfig()))
-            ) {
-                $langDefault = $resolvedLocale;
-                $_SERVER['REQUEST_URI'] = preg_replace('/' . $url[0] . '\//', '', $requestUri, 1);
-            }
-        }
+    if ($resolvedLocale !== null && (
+        in_array($resolvedLocale, sLang::langFront(), true)
+        || (evo()->getLoginUserID('mgr') && in_array($resolvedLocale, sLang::langConfig(), true))
+    )) {
+        $langDefault = $resolvedLocale;
+        $cleanUri = sLang::stripLeadingUriSegment($requestUri, $firstSegment);
+        $_SERVER['REQUEST_URI'] = $cleanUri;
+    } else {
+        $resolvedLocale = null;
     }
 
     evo()->setLocale($langDefault);
@@ -147,14 +145,14 @@ Event::listen('evolution.OnPageNotFound', function() {
         exit();
     }
 
-    if (!is_null($resolvedLocale) && trim(sLang::stripLanguageSegmentFromUri($requestUri, $resolvedLocale), '/') === '') {
+    if ($resolvedLocale !== null && trim(substr($cleanUri, 0, strcspn($cleanUri, '?#')), '/') === '') {
         evo()->sendForward((int)evo()->getConfig('site_start', 1));
         exit();
     }
 });
 
 /**
- * Make Lang Config
+ * Set the frontend locale from the request path or an explicit locale.
  */
 Event::listen('evolution.OnLoadSettings', function($params) {
     $resolvedLocale = null;
@@ -166,13 +164,15 @@ Event::listen('evolution.OnLoadSettings', function($params) {
         $langDefault = $defaultLocale;
 
         if (isset($_SERVER['REQUEST_URI'])) {
-            $url = explode('/', ltrim($_SERVER['REQUEST_URI'], '/'), 2);
+            $requestUri = (string)$_SERVER['REQUEST_URI'];
+            $path = substr($requestUri, 0, strcspn($requestUri, '?#'));
+            $firstSegment = explode('/', ltrim($path, '/'), 2)[0];
 
-            if (trim($url[0])) {
-                $resolvedLocale = sLang::localeFromSegment($url[0]);
+            if ($firstSegment !== '') {
+                $resolvedLocale = sLang::localeFromSegment($firstSegment);
                 if (
                     !is_null($resolvedLocale)
-                    && in_array($resolvedLocale, sLang::langFront())
+                    && in_array($resolvedLocale, sLang::langFront(), true)
                     && ($resolvedLocale !== $defaultLocale || sLang::defaultInUrl())
                 ) {
                     $langDefault = $resolvedLocale;

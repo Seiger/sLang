@@ -461,7 +461,7 @@ class sLang
     }
 
     /**
-     * Remove the active language segment from a request URI.
+     * Remove the configured language prefix and normalize the remaining request path.
      */
     public function stripLanguageSegmentFromUri(string $uri, ?string $locale = null): string
     {
@@ -474,9 +474,7 @@ class sLang
         }
 
         $path = '/' . ltrim((string)($parts['path'] ?? '/'), '/');
-        if ($segment !== '') {
-            $path = preg_replace('#^/' . preg_quote($segment, '#') . '(?=/|$)#', '', $path, 1) ?? $path;
-        }
+        $path = $this->stripLeadingUriSegment($path, $segment);
         $path = preg_replace('#/+#', '/', $path);
         $path = $path === '' ? '/' : $path;
 
@@ -484,6 +482,34 @@ class sLang
         $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
 
         return $path . $query . $fragment;
+    }
+
+    /**
+     * Remove one confirmed segment at the beginning of a root-relative request URI.
+     *
+     * The segment is compared literally. The remaining path and any query or fragment
+     * keep their original spelling.
+     *
+     * @since 2.1.0
+     */
+    public function stripLeadingUriSegment(string $uri, string $segment): string
+    {
+        if ($segment === '' || strpbrk($segment, '/?#') !== false || !str_starts_with($uri, '/')) {
+            return $uri;
+        }
+
+        $path = ltrim($uri, '/');
+        if (!str_starts_with($path, $segment)) {
+            return $uri;
+        }
+
+        $rest = substr($path, strlen($segment));
+
+        return match ($rest[0] ?? '') {
+            '/' => $rest,
+            '', '?', '#' => '/' . $rest,
+            default => $uri,
+        };
     }
 
     /**

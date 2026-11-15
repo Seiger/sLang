@@ -636,6 +636,13 @@ final class SlangDocFormSaveAttributesStub
 
 final class SlangDocFormSaveLangStub
 {
+    public static ?\Seiger\sLang\sLang $routing = null;
+
+    public static function __callStatic(string $method, array $arguments): mixed
+    {
+        return self::$routing->{$method}(...$arguments);
+    }
+
     public static function langDefault(): string
     {
         return 'uk';
@@ -678,6 +685,9 @@ final class SlangDocFormSaveDatabaseStub
 final class SlangDocFormSaveEvoStub
 {
     public SlangDocFormSaveDatabaseStub $db;
+    public int $managerId = 12;
+    public string $locale = 'uk';
+    public array $config = ['use_udperms' => 1];
 
     public function __construct()
     {
@@ -691,7 +701,7 @@ final class SlangDocFormSaveEvoStub
 
     public function getLoginUserID(string $context): int
     {
-        return $context === 'mgr' ? 12 : 0;
+        return $context === 'mgr' ? $this->managerId : 0;
     }
 
     public function hasPermission(string $permission, string $context): bool
@@ -699,9 +709,29 @@ final class SlangDocFormSaveEvoStub
         return $context === 'mgr' && in_array($permission, SlangDocFormSaveStub::$permissions, true);
     }
 
-    public function getConfig(string $key): mixed
+    public function getConfig(string $key, mixed $default = null): mixed
     {
-        return $key === 'use_udperms' ? 1 : null;
+        return $this->config[$key] ?? $default;
+    }
+
+    public function setConfig(string $key, mixed $value): void
+    {
+        $this->config[$key] = $value;
+    }
+
+    public function setLocale(string $locale): void
+    {
+        $this->locale = $locale;
+    }
+
+    public function sendForward(int $id): never
+    {
+        throw new RuntimeException('Forward', $id);
+    }
+
+    public function sendErrorPage(bool $noEvent): never
+    {
+        throw new RuntimeException('Not found', 404);
     }
 }
 
@@ -990,6 +1020,7 @@ slang_group('regression-entrypoint', function (): void {
 require slang_path('tests/settings-access.php');
 require slang_path('tests/dictionary-access.php');
 require slang_path('tests/language-files.php');
+require slang_path('tests/uri-routing.php');
 
 $failedCount = (int) ($GLOBALS['failed'] ?? 0);
 
