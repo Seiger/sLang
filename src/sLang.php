@@ -12,9 +12,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Seiger\sLang\Models\sLangContent;
 use Seiger\sLang\Models\sLangTmplvarContentvalue;
+use Seiger\sLang\Support\DocumentTranslations;
 
 class sLang
 {
@@ -117,6 +119,19 @@ class sLang
             $langList = require dirname(__DIR__).'/config/lang-list.php';
         }
         return $langList;
+    }
+
+    /**
+     * Render allowed dictionary markup inside a Blade element body.
+     *
+     * @param string $key The translation key for the active locale.
+     * @since 2.1.0
+     */
+    public function translateHtml(string $key): HtmlString
+    {
+        $value = __($key);
+
+        return DocumentTranslations::html(is_string($value) ? $value : '');
     }
 
     /**

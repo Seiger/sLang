@@ -17,6 +17,7 @@ use Seiger\sLang\Models\sLangTmplvarContentvalue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Seiger\sLang\Models\sLangTranslate;
+use Seiger\sLang\Support\DocumentTranslations;
 
 class sLangController
 {
@@ -325,7 +326,7 @@ class sLangController
     }
 
     /**
-     * Discover translation keys used by project Blade views.
+     * Discover literal keys used for text, legacy placeholders, or allowed HTML in project views.
      *
      * @return array<int, string>
      */
@@ -352,18 +353,19 @@ class sLangController
             if (!is_string($data)) {
                 continue;
             }
-            preg_match_all("/@lang\('\K.+?(?='\))/", $data, $match);
-
-            if ($match[0] === []) {
-                continue;
+            preg_match_all(DocumentTranslations::LEGACY_MARKER, $data, $legacy);
+            preg_match_all('~(?<![\w>:])(?:__|sLang::translateHtml)\(\s*(["\'])((?:\\\\.|(?!\1)[^\\\\])*)\1\s*[,)]~s', $data, $blade, PREG_SET_ORDER);
+            $keys = $legacy[2];
+            foreach ($blade as [, $quote, $key]) {
+                $keys[] = strtr($key, ['\\' . $quote => $quote, '\\\\' => '\\']);
             }
 
-            foreach ($match[0] as $item) {
-                if (Str::of($item)->contains('::') || str_starts_with($item, 'global.')) {
+            foreach ($keys as $item) {
+                if ($item === '' || str_contains($item, '::') || str_starts_with($item, 'global.')) {
                     continue;
                 }
 
-                $list[] = Str::limit(str_replace(["@lang('", "')"], '', $item), 252, '...');
+                $list[] = Str::limit($item, 252, '...');
             }
         }
 

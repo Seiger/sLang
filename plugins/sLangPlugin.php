@@ -10,25 +10,14 @@ use EvolutionCMS\Models\SiteTmplvarContentvalue;
 use Illuminate\Http\Request;
 use Seiger\sLang\Controllers\sLangController;
 use Seiger\sLang\Facades\sLang;
+use Seiger\sLang\Support\DocumentTranslations;
 
 /**
- * Parse custom lang placeholders
+ * Parse legacy resource IDs and localized URLs.
  */
 Event::listen('evolution.OnParseDocument', function($params) {
     // parse id as number
     evo()->documentOutput = str_replace('[*id*]', (evo()->documentObject['id'] ?? evo()->getConfig('site_start', 1)), evo()->documentOutput);
-
-    preg_match_all("/@lang\(['|\"](.*?)['|\"]\)/", evo()->documentOutput, $match);
-
-    if (is_file($file = EVO_BASE_PATH . 'core/lang/' . evo()->getLocale() . '.json')) {
-        $json = file_get_contents($file);
-        $translates = is_string($json) ? json_decode($json, true) : [];
-        $translates = is_array($translates) ? $translates : [];
-
-        foreach ($match[0] as $key => $value) {
-            evo()->documentOutput = str_replace($value, (string) ($translates[$match[1][$key]] ?? ''), evo()->documentOutput);
-        }
-    }
 
     // parse language urls
     preg_match_all('/\[~~(\d+)~~\]/', evo()->documentOutput, $match);
@@ -46,6 +35,27 @@ Event::listen('evolution.OnParseDocument', function($params) {
             );
         }
     }
+});
+
+/**
+ * Render legacy dictionary markers after Evolution has finished processing template tags.
+ */
+Event::listen('evolution.OnWebPagePrerender', function () {
+    $evo = evo();
+    $contentType = $evo->contentTypes[$evo->documentIdentifier] ?? 'text/html';
+    if (strtolower(trim(explode(';', $contentType, 2)[0])) !== 'text/html'
+        || !str_contains($evo->documentOutput, '@lang(')) {
+        return;
+    }
+
+    $file = EVO_BASE_PATH . 'core/lang/' . $evo->getLocale() . '.json';
+    if (!is_file($file)) {
+        return;
+    }
+
+    $json = file_get_contents($file);
+    $dictionary = is_string($json) ? json_decode($json, true) : null;
+    $evo->documentOutput = DocumentTranslations::replace($evo->documentOutput, is_array($dictionary) ? $dictionary : []);
 });
 
 /**

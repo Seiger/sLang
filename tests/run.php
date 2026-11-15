@@ -405,6 +405,51 @@ slang_group('resource-tabs', function (): void {
     });
 });
 
+final class SlangHtmlStringStub
+{
+    public function __construct(private string $html) {}
+
+    public function toHtml(): string
+    {
+        return $this->html;
+    }
+}
+
+slang_group('document-translations', function (): void {
+    slang_test('legacy dictionary output preserves inline HTML only in HTML content', function (): void {
+        if (!class_exists(\Illuminate\Support\HtmlString::class)) {
+            class_alias(SlangHtmlStringStub::class, \Illuminate\Support\HtmlString::class);
+        }
+        require_once slang_path('src/Support/DocumentTranslations.php');
+
+        $template = <<<'HTML'
+<!doctype html>
+<p id="body">@lang('phrase')</p>
+<p id="label" title=@lang('phrase') data-static="keep"></p>
+<a id="link" href="@lang('address')">Link</a>
+<script id="code">/* @lang('address') */</script>
+HTML;
+        $output = \Seiger\sLang\Support\DocumentTranslations::replace($template, [
+            'phrase' => '<b>Bold</b><br><a href="/help?x=1&amp;y=2" target="_blank">Help</a> "quoted" &amp; text',
+            'address' => 'https://example.test/',
+        ]);
+        $document = \Dom\HTMLDocument::createFromString($output, LIBXML_NOERROR, 'UTF-8');
+        $body = $document->getElementById('body');
+        $label = $document->getElementById('label');
+        $link = $body->getElementsByTagName('a')->item(0);
+
+        $prefix = explode('<p id="body">', $template, 2)[0];
+        slang_assert(str_starts_with($output, $prefix), 'Template source around markers must be preserved.');
+        slang_assert($body->getElementsByTagName('b')->length === 1, 'Allowed inline markup must render.');
+        slang_assert($link->getAttribute('href') === '/help?x=1&y=2', 'Allowed link must keep its address.');
+        slang_assert(!$link->hasAttribute('target'), 'Unapproved HTML attributes must be dropped.');
+        slang_assert($label->getAttribute('title') === 'Bold Help "quoted" & text', 'Text attributes must keep one literal value.');
+        slang_assert($label->getAttribute('data-static') === 'keep', 'Adjacent attributes must be preserved.');
+        slang_assert($document->getElementById('link')->getAttribute('href') === '', 'URL attributes must not take dictionary values.');
+        slang_assert($document->getElementById('code')->textContent === '/*  */', 'Script context must not take dictionary values.');
+    });
+});
+
 slang_group('docs', function (): void {
     slang_test('old GitHub Pages docs are archived and standard multilingual docs are valid', function (): void {
         foreach ([
