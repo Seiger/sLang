@@ -166,7 +166,7 @@ class sLangController
      *
      * @param array<int, string> $locales The resource editor's configured locales.
      * @param array<string, mixed> $input The posted resource editor form.
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function storeTranslatedTemplateVariables(int $resourceId, int $templateId, array $locales, array $input): void
     {
@@ -212,7 +212,7 @@ class sLangController
      * requires the permissions Evolution uses to create and save a TV.
      *
      * @param array<string, mixed> $input The posted resource editor form.
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function saveMenuFlags(int $resourceId, array $input): void
     {
@@ -416,7 +416,7 @@ class sLangController
      * between inspection and ALTER. A failed ALTER is recoverable only if the column now exists.
      *
      * @param array<mixed> $requestedLocales Proposed default and site locales.
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function prepareTranslationSchema(array $requestedLocales): void
     {
@@ -451,7 +451,7 @@ class sLangController
     /**
      * Verify that dictionary operations can use all configured locales without changing the schema.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function requireTranslationColumns(): void
     {
@@ -470,7 +470,7 @@ class sLangController
      *
      * @param list<string> $locales Validated locale identifiers.
      * @return list<string>
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private function missingTranslationColumns(array $locales): array
     {
@@ -480,7 +480,7 @@ class sLangController
     /**
      * Use the same allowed locales and directory for preparing and rebuilding the dictionaries.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     protected function languageFileWriter(): LanguageFileWriter
     {
@@ -1046,7 +1046,7 @@ class sLangController
      *
      * @param list<string> $supportedLocales Locale codes from the package language list.
      * @return string The stored locale if supported, otherwise the package default.
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private function defaultLocaleForSettings(array $supportedLocales): string
     {

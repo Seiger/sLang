@@ -6,7 +6,7 @@ use RuntimeException;
 /**
  * Publish generated dictionaries inside the site's core/lang directory.
  *
- * @since 2.1.0
+ * @since 2.0.0
  */
 final class LanguageFileWriter
 {
@@ -16,7 +16,7 @@ final class LanguageFileWriter
      * Anchor language files to the canonical site root supplied by Evolution.
      *
      * @param list<string> $supportedLocales Locale codes from the sLang language list.
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function __construct(string $siteRoot, private readonly array $supportedLocales)
     {
@@ -34,7 +34,7 @@ final class LanguageFileWriter
      *
      * @param array<mixed> $locales Configured locale codes, including any legacy values.
      * @return list<string>
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function validatedLocales(array $locales): array
     {
@@ -51,7 +51,7 @@ final class LanguageFileWriter
     /**
      * Add an empty JSON dictionary when no other writer has published one.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function ensureExists(string $locale): void
     {
@@ -61,7 +61,7 @@ final class LanguageFileWriter
     /**
      * Replace a dictionary in one filesystem operation after encoding it successfully.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function replace(string $locale, string $json): void
     {
@@ -71,7 +71,7 @@ final class LanguageFileWriter
     /**
      * Recheck core/lang and its parent without following links inside the resolved site root.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private function assertDirectory(): void
     {
@@ -89,7 +89,7 @@ final class LanguageFileWriter
     /**
      * Build a file path only from an exact supported locale with a safe filename.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private function path(mixed $locale): string
     {
@@ -104,7 +104,7 @@ final class LanguageFileWriter
     /**
      * Reject symbolic links, directories and special files at a dictionary filename.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private function existingFile(string $path): bool
     {
@@ -122,7 +122,7 @@ final class LanguageFileWriter
      * A hard link creates a missing dictionary atomically without overwriting another writer's file.
      * Replacement uses a same-directory rename so readers always see a complete dictionary.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private function write(string $locale, string $json, bool $replace): void
     {

@@ -11,7 +11,7 @@ use Illuminate\Support\HtmlString;
 /**
  * Render dictionary values in their HTML context after Evolution finishes parsing a page.
  *
- * @since 2.1.0
+ * @since 2.0.0
  */
 final class DocumentTranslations
 {
@@ -32,7 +32,7 @@ final class DocumentTranslations
      * Markers in other contexts receive no translated value.
      *
      * @param array<string, mixed> $dictionary Values loaded from the selected locale's JSON file.
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public static function replace(string $output, array $dictionary): string
     {
@@ -87,7 +87,7 @@ final class DocumentTranslations
     /**
      * Return balanced inline HTML for a caller that chose an HTML body context.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public static function html(string $value): HtmlString
     {
@@ -104,7 +104,7 @@ final class DocumentTranslations
     /**
      * Classify text and attribute nodes using their final HTML ancestors.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private static function context(Node $node): ?string
     {
@@ -135,7 +135,7 @@ final class DocumentTranslations
     /**
      * Serialize sanitized children without copying stored attributes or markup verbatim.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private static function renderChildren(Node $parent): string
     {
@@ -172,7 +172,7 @@ final class DocumentTranslations
     /**
      * Accept relative links and explicitly supported web and contact schemes.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private static function linkTarget(string $value): string
     {
@@ -188,7 +188,7 @@ final class DocumentTranslations
     /**
      * Convert sanitized HTML to text and keep unquoted text attributes a single token.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private static function text(string $html, bool $attribute): string
     {
@@ -206,7 +206,7 @@ final class DocumentTranslations
     /**
      * Encode literal text for HTML and for quoted attribute values.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private static function escape(string $value): string
     {

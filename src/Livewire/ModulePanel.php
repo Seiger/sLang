@@ -23,7 +23,7 @@ class ModulePanel extends Component
     /**
      * Require module access on the first render and on later Livewire requests.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function boot(): void
     {
@@ -90,7 +90,7 @@ class ModulePanel extends Component
      * Keep the settings tab available only while the manager has permission to use it.
      *
      * @return array<int, array<string, mixed>>
-     * @since 2.1.0
+     * @since 2.0.0
      */
     protected function availableTabs(): array
     {

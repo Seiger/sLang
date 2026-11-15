@@ -125,7 +125,7 @@ class sLang
      * Render allowed dictionary markup inside a Blade element body.
      *
      * @param string $key The translation key for the active locale.
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function translateHtml(string $key): HtmlString
     {
@@ -490,7 +490,7 @@ class sLang
      * The segment is compared literally. The remaining path and any query or fragment
      * keep their original spelling.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function stripLeadingUriSegment(string $uri, string $segment): string
     {
@@ -801,7 +801,7 @@ class sLang
      *
      * @param string|null $fields URL-encoded form fields for the legacy POST endpoint.
      * @return string The body of a successful response, or an empty string on transport or HTTP failure.
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private function requestTranslationResponse(string $url, ?string $fields = null): string
     {

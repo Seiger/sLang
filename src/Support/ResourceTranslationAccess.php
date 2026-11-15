@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * Apply Evolution's resource and TV permissions to the resource translation save event.
  *
- * @since 2.1.0
+ * @since 2.0.0
  */
 final class ResourceTranslationAccess
 {
@@ -24,7 +24,7 @@ final class ResourceTranslationAccess
      * @param mixed $mode The save mode reported by Evolution.
      * @param bool $checkStoredPrivacy Also enforce the flag when checking the original resource.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public static function savedResource(mixed $eventId, mixed $mode, bool $checkStoredPrivacy = false): ?SiteContent
     {
@@ -64,7 +64,7 @@ final class ResourceTranslationAccess
      *
      * @param Builder<SiteTmplvar> $query
      * @return Builder<SiteTmplvar>
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public static function restrictTemplateVariables($query)
     {
@@ -83,7 +83,7 @@ final class ResourceTranslationAccess
     /**
      * Apply the core's backend-code permission to translated values where its binding guard is available.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public static function allowsValue(string $value): bool
     {
@@ -98,7 +98,7 @@ final class ResourceTranslationAccess
      * Use the manager document groups from the current Evolution session.
      *
      * @return list<int>
-     * @since 2.1.0
+     * @since 2.0.0
      */
     private static function managerGroups(): array
     {

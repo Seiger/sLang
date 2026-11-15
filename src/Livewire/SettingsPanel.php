@@ -26,7 +26,7 @@ class SettingsPanel extends Component
     /**
      * Authorize the initial mount and each Livewire update before reading settings or running actions.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function boot(): void
     {

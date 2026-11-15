@@ -7,7 +7,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Check the manager's session, current role and access to the sLang file module.
  *
- * @since 2.1.0
+ * @since 2.0.0
  */
 final class ManagerAccess
 {
@@ -17,7 +17,7 @@ final class ManagerAccess
      * Read the current role from the primary connection so revocations take effect on the next request.
      * Permission names must come from server code.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public static function allows(string ...$permissions): bool
     {
@@ -76,7 +76,7 @@ final class ManagerAccess
      * Stop the request when module access or a permission for the action is missing.
      * Send the denial directly because Evolution's exception handler can turn it into a 500.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public static function authorize(string ...$permissions): void
     {

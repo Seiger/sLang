@@ -285,7 +285,7 @@ class TranslatesTableData
      * Disable mutation buttons in the toolbar for managers with read-only access.
      *
      * @return array{disabled: bool}
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function managementAttributes(): array
     {
@@ -297,7 +297,7 @@ class TranslatesTableData
      *
      * @param array<int, array<string, mixed>> $actions
      * @return array<int, array<string, mixed>>
-     * @since 2.1.0
+     * @since 2.0.0
      */
     public function rowActions(array $actions): array
     {
@@ -474,7 +474,7 @@ class TranslatesTableData
     /**
      * Check the permission used by the writable dictionary controls.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     protected function canWrite(): bool
     {
@@ -484,7 +484,7 @@ class TranslatesTableData
     /**
      * Require module access for reads or the settings permission for dictionary administration.
      *
-     * @since 2.1.0
+     * @since 2.0.0
      */
     protected function authorize(bool $write = false): void
     {
