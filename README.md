@@ -174,11 +174,6 @@ The `Seiger\sLang\Models\sLangContent` model now applies the current locale auto
       ->active()
       ->get();
   ```
-- Legacy helper is preserved for backward compatibility:
-  ```php
-  $items = sLangContent::langAndTvs('en', ['color', 'price'])->get();
-  ```
-  > **Deprecated:** `langAndTvs()` still works for existing code. Use `lang()` and `withTVs()` for new queries.
 
 ## Documentation
 
@@ -188,4 +183,4 @@ The `Seiger\sLang\Models\sLangContent` model now applies the current locale auto
 - [Français](docs/fr/README.md)
 - [Polski](docs/pl/README.md)
 
-See the [2.x documentation site](https://seiger.github.io/sLang/), its [1.x archive](https://seiger.github.io/sLang/1.x/), and [GitHub Releases](https://github.com/Seiger/sLang/releases).
+See the [documentation site](https://seiger.github.io/sLang/) and [GitHub Releases](https://github.com/Seiger/sLang/releases).
