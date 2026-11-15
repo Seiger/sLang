@@ -608,7 +608,7 @@ class sLang
      * @param string $source The source language code.
      * @param string $target The target language code.
      *
-     * @return string The translated text.
+     * @return string The translated text, or an empty string when no translation is available.
      */
     public function getAutomaticTranslate(string $text, string $source, string $target): string
     {
@@ -728,17 +728,15 @@ class sLang
     }
 
     /**
-     * Translates the given text using Google Translate.
+     * Translate through the primary Google endpoint with a legacy POST fallback.
      *
-     * This method sends a request to the Google Translate API and retrieves
-     * the translated text for the given input text. The source and target
-     * languages can be specified. If the source and target languages are the
-     * same, the method returns the input text as is.
+     * Both requests use the same TLS policy. When the source and target languages match,
+     * return the input without a request.
      *
      * @param string $text The text to be translated.
      * @param string $source The source (input) language. Default is 'uk'.
      * @param string $target The target (output) language. Default is 'en'.
-     * @return string The translated text.
+     * @return string The translated text, or an empty string when neither endpoint provides it.
      */
     protected function googleTranslate(string $text, string $source = 'uk', string $target = 'en'): string
     {
@@ -757,8 +755,8 @@ class sLang
 
         if (is_array($primary[0] ?? null)) {
             foreach ($primary[0] as $sentence) {
-                if (is_array($sentence) && isset($sentence[0])) {
-                    $out .= (string) $sentence[0];
+                if (is_array($sentence) && is_string($sentence[0] ?? null)) {
+                    $out .= $sentence[0];
                 }
             }
         }
@@ -766,27 +764,14 @@ class sLang
         if (trim($out) === '') {
             // Legacy endpoint kept as a fallback for compatibility with the original module flow.
             $url = 'https://translate.google.com/translate_a/single?client=at&dt=t&dt=ld&dt=qca&dt=rm&dt=bd&dj=1&hl=uk-RU&ie=UTF-8&oe=UTF-8&inputm=2&otf=2&iid=1dd3b944-fa62-4b55-b330-74909a99969e';
-            $fields_string = 'sl=' . urlencode($source) . '&tl=' . urlencode($target) . '&q=' . urlencode($text);
+            $fields = 'sl=' . urlencode($source) . '&tl=' . urlencode($target) . '&q=' . urlencode($text);
+            $result = json_decode($this->requestTranslationResponse($url, $fields), true);
 
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_ENCODING, 'UTF-8');
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'AndroidTranslate/5.3.0.RC02.130475354-53000263 5.1 phone TRANSLATE_OPM5_TEST_1');
-
-            $response = curl_exec($ch);
-            curl_close($ch);
-            $result = is_string($response) ? json_decode($response, true) : [];
-
-            if (isset($result['sentences'])) {
-                foreach ($result['sentences'] as $s) {
-                    $out .= isset($s['trans']) ? $s['trans'] : '';
+            if (is_array($result['sentences'] ?? null)) {
+                foreach ($result['sentences'] as $sentence) {
+                    if (is_array($sentence) && is_string($sentence['trans'] ?? null)) {
+                        $out .= $sentence['trans'];
+                    }
                 }
             }
         }
@@ -798,26 +783,51 @@ class sLang
         return $out;
     }
 
+    /**
+     * Fetch the primary Google response with the shared translation transport.
+     */
     protected function fetchTranslationResponse(string $url): string
     {
-        if ($url === '') {
+        return $this->requestTranslationResponse($url);
+    }
+
+    /**
+     * Fetch a translation response using PHP/cURL's configured CA trust and strict host verification.
+     *
+     * @param string|null $fields URL-encoded form fields for the legacy POST endpoint.
+     * @return string The body of a successful response, or an empty string on transport or HTTP failure.
+     * @since 2.1.0
+     */
+    private function requestTranslationResponse(string $url, ?string $fields = null): string
+    {
+        if ($url === '' || ($handle = curl_init($url)) === false) {
             return '';
         }
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_ENCODING, 'UTF-8');
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 EvolutionCMS sLang');
+        $options = [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => 'UTF-8',
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT => 8,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 EvolutionCMS sLang',
+        ];
+        if ($fields !== null) {
+            $options[CURLOPT_POST] = true;
+            $options[CURLOPT_POSTFIELDS] = $fields;
+            $options[CURLOPT_USERAGENT] = 'AndroidTranslate/5.3.0.RC02.130475354-53000263 5.1 phone TRANSLATE_OPM5_TEST_1';
+        }
 
-        $response = curl_exec($ch);
-        curl_close($ch);
+        if (!curl_setopt_array($handle, $options)) {
+            return '';
+        }
 
-        return is_string($response) ? $response : '';
+        $response = curl_exec($handle);
+        $status = curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
+
+        return is_string($response) && $status >= 200 && $status < 300 ? $response : '';
     }
 
     /**

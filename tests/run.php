@@ -1007,6 +1007,7 @@ require slang_path('tests/dictionary-access.php');
 require slang_path('tests/language-files.php');
 require slang_path('tests/uri-routing.php');
 require slang_path('tests/dictionary-schema.php');
+require slang_path('tests/translation-tls.php');
 
 $failedCount = (int) ($GLOBALS['failed'] ?? 0);
 

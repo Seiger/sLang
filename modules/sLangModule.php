@@ -51,8 +51,11 @@ if ($action === 'synchronize') {
         422
     );
 
+    $translation = sLang::getAutomaticTranslate($text, $source, $target);
+    abort_unless(trim($text) === '' || trim($translation) !== '', 502);
+
     header('Content-Type: text/plain; charset=UTF-8');
-    exit(sLang::getAutomaticTranslate($text, $source, $target));
+    exit($translation);
 }
 
 echo $sLangController->view('index', $data)->render();
