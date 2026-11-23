@@ -33,6 +33,7 @@ class sLang
 
     /** @var array<string, string> Raw routing settings read during the current request. */
     private array $languageSettings = [];
+    private array $configValues = [];
 
     public function __construct()
     {
@@ -856,11 +857,19 @@ class sLang
      */
     protected function getConfigValue($name): string
     {
+        if (evo()->isFrontend() && array_key_exists($name, $this->configValues)) {
+            return $this->configValues[$name];
+        }
+
         $return = '';
         $result = SystemSetting::query()->where('setting_name', $name)->first();
 
         if ($result) {
             $return = $result->setting_value;
+        }
+
+        if (evo()->isFrontend()) {
+            $this->configValues[$name] = $return;
         }
 
         return $return;
