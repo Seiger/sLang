@@ -31,7 +31,7 @@ class sLang
     protected string $basePath = EVO_BASE_PATH . 'assets/modules/seigerlang/';
     protected string $tblSiteContent = 'site_content';
 
-    /** @var array<string, string> Raw routing settings read during the current request. */
+    /** @var array<string, string> Raw language settings read during the current request. */
     private array $languageSettings = [];
 
     public function __construct()
@@ -522,7 +522,9 @@ class sLang
      */
     public function langTvs(): array
     {
-        $langTvs = $this->getConfigValue('s_lang_tvs');
+        $langTvs = evo()->isFrontend()
+            ? $this->getLanguageSetting('s_lang_tvs')
+            : $this->getConfigValue('s_lang_tvs');
         if (trim($langTvs)) {
             $langTvs = explode(',', $langTvs);
         } else {
