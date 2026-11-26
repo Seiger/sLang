@@ -58,6 +58,29 @@ final class SlangRoutingFixture extends sLang
     }
 }
 
+final class SlangConfigSettingStub
+{
+    public static string $value = '';
+
+    public static function query(): self
+    {
+        return new self();
+    }
+
+    public function where(string $field, string $value): self
+    {
+        slang_assert($field === 'setting_name' && $value === 's_lang_tvs', 'Expected the language TVs setting.');
+        return $this;
+    }
+
+    public function first(): object
+    {
+        return (object) ['setting_value' => self::$value];
+    }
+}
+
+class_alias(SlangConfigSettingStub::class, 'EvolutionCMS\Models\SystemSetting');
+
 function slang_with_routing_fixture(Closure $test, bool $showDefault = false): void
 {
     slang_docformsave_boot();
@@ -98,6 +121,35 @@ function slang_expect_route_response(string $message, int $code): void
 }
 
 slang_group('uri-routing', function (): void {
+    slang_test('frontend TV settings are cached until invalidated; manager reads stay fresh', function (): void {
+        slang_with_routing_fixture(function ($routing, $evo): void {
+            $settings = (new ReflectionClass(sLang::class))->newInstanceWithoutConstructor();
+            $frontend = $evo->frontend;
+            $value = SlangConfigSettingStub::$value;
+
+            try {
+                $evo->frontend = true;
+                SlangConfigSettingStub::$value = '1';
+                slang_assert($settings->langTvs() === ['1'], 'Read the initial frontend setting.');
+
+                SlangConfigSettingStub::$value = '2';
+                slang_assert($settings->langTvs() === ['1'], 'Reuse the setting within the frontend request.');
+
+                $settings->forgetLanguageSetting('s_lang_tvs');
+                slang_assert($settings->langTvs() === ['2'], 'Read the saved value after invalidation.');
+
+                $evo->frontend = false;
+                SlangConfigSettingStub::$value = '3';
+                slang_assert($settings->langTvs() === ['3'], 'Read the manager setting without the frontend cache.');
+                SlangConfigSettingStub::$value = '4';
+                slang_assert($settings->langTvs() === ['4'], 'Keep subsequent manager reads fresh.');
+            } finally {
+                $evo->frontend = $frontend;
+                SlangConfigSettingStub::$value = $value;
+            }
+        });
+    });
+
     slang_test('module URL includes the encoded CSRF token only for a validated manager', function (): void {
         $routing = new SlangRoutingFixture();
         $session = $_SESSION ?? null;
