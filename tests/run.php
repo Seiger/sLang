@@ -666,7 +666,14 @@ final class SlangDocFormSaveLangStub
 
 final class SlangDocFormSaveEvoStub
 {
+    public bool $frontend = true;
     public int $managerId = 12;
+
+    public function isFrontend(): bool
+    {
+        return $this->frontend;
+    }
+
     public string $locale = 'uk';
     public array $config = ['use_udperms' => 1];
 
